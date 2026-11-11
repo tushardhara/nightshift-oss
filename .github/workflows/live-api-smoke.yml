@@ -1,0 +1,36 @@
+name: live API smoke (NON-GATING)
+
+# NON-GATING BY CONSTRUCTION (issue #92).
+#
+# This workflow does NOT run on push or pull_request, so it can never mark a
+# PR red and can never be a merge gate. It exists for one narrow purpose the
+# gated suite cannot serve: the gated suite fakes `gh`, so a GitHub API field
+# rename (headRefOid / headRefName) would pass every hermetic test and still
+# break `pr-head` in production. This job is the canary for that.
+#
+# If it goes red, `pr-head` is broken against the live API -- but no PR is
+# blocked, and the signal is read by a human, not by the merge queue.
+#
+# The gated suite lives in tests.yml and MUST stay hermetic. Do not move
+# anything from here into it.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily. Cheap, and a field rename is not an emergency.
+    - cron: "17 6 * * *"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: live pr-head smoke
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: PYTHONPATH=tests python3 tests/live/test_pr_head_live.py -v

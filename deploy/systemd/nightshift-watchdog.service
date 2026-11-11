@@ -1,0 +1,35 @@
+[Unit]
+Description=Omnigent liveness watchdog (alerts if the heartbeat goes silent or its scheduled runs fail)
+# Alert-only toward services: it never restarts anything (that kills
+# in-flight worker turns). See nightshift-watchdog.sh for the rationale.
+#
+# It renews NOTHING. Workers renew their own slots (ADR-0002 §4).
+
+[Service]
+Type=oneshot
+WorkingDirectory=__PROJECT_DIR__
+# __TEAMS_DIR__/bin COMES FIRST, and NIGHTSHIFT_CTL is set explicitly (#42).
+#
+# This unit used to export only `__HOME__/.local/bin`, where `nightshift-ctl`
+# is a symlink into a frozen checkout with no `beat` verb. The watchdog then ran
+# THIS tree's script against ANOTHER tree's binary and every `beat show` failed —
+# the dead-man's switch was down, and it reported the fault as a corrupt control
+# plane. The exact-SHA cutover did not fix it: that changed which checkout the
+# SCRIPT comes from and left this PATH untouched.
+#
+# Both lines below are deliberate, and the belt-and-braces is the point:
+#   - NIGHTSHIFT_CTL pins the binary to the same tree as the script, by name.
+#   - PATH puts that tree first anyway, for anything else the script shells out
+#     to, and so that an operator debugging by hand in this environment gets the
+#     same binary the unit does.
+# nightshift-watchdog.sh ALSO defaults to its own co-located ctl, so a box whose
+# unit was never re-rendered is still correct. Three independent ways to get the
+# right binary, because getting it wrong does not look like an error — it looks
+# like a healthy watchdog that answers every question with "unavailable".
+Environment=NIGHTSHIFT_CTL=__TEAMS_DIR__/bin/nightshift-ctl
+Environment=PATH=__TEAMS_DIR__/bin:__HOME__/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=HOME=__HOME__
+# OMNIGENT_REMOTE_AUTH_TOKEN for the scheduler probe, if the server requires
+# one. Root-owned beside server.env (deploy/install-root-config.sh); optional.
+EnvironmentFile=-/etc/nightshift/watchdog.env
+ExecStart=__TEAMS_DIR__/deploy/nightshift-watchdog.sh __PROJECT_DIR__

@@ -1,0 +1,154 @@
+test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED)
+An unreadable bound is not a bound. Fail closed. ... 
+  test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='')
+An unreadable bound is not a bound. Fail closed. ... FAIL
+  test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='   ')
+An unreadable bound is not a bound. Fail closed. ... FAIL
+  test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='not-a-timestamp')
+An unreadable bound is not a bound. Fail closed. ... FAIL
+  test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='-17')
+An unreadable bound is not a bound. Fail closed. ... FAIL
+  test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='99999999999999999999x')
+An unreadable bound is not a bound. Fail closed. ... FAIL
+test_rt28_a_recorded_run_ignores_the_stamp_entirely (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_recorded_run_ignores_the_stamp_entirely)
+The stamp bounds ONLY the not-yet-started grace. A recorded run with ... ok
+test_rt28_a_stamp_that_cannot_be_PERSISTED_does_not_buy_silence (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_stamp_that_cannot_be_PERSISTED_does_not_buy_silence)
+If the stamp cannot be written, every tick looks like the first one ... FAIL
+test_rt28_a_stray_NIGHTSHIFT_CTL_DB_cannot_redirect_the_watchdog (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_stray_NIGHTSHIFT_CTL_DB_cannot_redirect_the_watchdog)
+security residual 2: an exported NIGHTSHIFT_CTL_DB pointing at an ... FAIL
+test_rt28_an_expired_unarmed_state_alerts (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_an_expired_unarmed_state_alerts)
+The finding itself. A box that has been un-armable for longer than ... FAIL
+test_rt28_ctl_is_pinned_to_the_PROJECT_plane_with_db (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_ctl_is_pinned_to_the_PROJECT_plane_with_db)
+`--db` defaults to os.environ['NIGHTSHIFT_CTL_DB'] before ... FAIL
+test_rt28_inside_the_window_is_still_silent (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_inside_the_window_is_still_silent)
+RT-27's behaviour must survive: a genuine fresh install is quiet. ... ok
+test_rt28_the_expired_alert_names_the_state (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_the_expired_alert_names_the_state) ... FAIL
+test_rt28_the_first_ever_tick_stamps_and_stays_silent (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_the_first_ever_tick_stamps_and_stays_silent) ... FAIL
+test_rt28_the_grace_does_not_renew_itself_on_every_tick (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_the_grace_does_not_renew_itself_on_every_tick)
+The subtle fail-open: re-stamping each tick makes the window slide ... ERROR
+test_rt28_the_stamp_is_not_the_alert_marker (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_the_stamp_is_not_the_alert_marker)
+RT-27 asserts the graced path writes no alert marker. The bound must ... FAIL
+
+======================================================================
+ERROR: test_rt28_the_grace_does_not_renew_itself_on_every_tick (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_the_grace_does_not_renew_itself_on_every_tick)
+The subtle fail-open: re-stamping each tick makes the window slide
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 777, in test_rt28_the_grace_does_not_renew_itself_on_every_tick
+    first = b.stamp_value()
+            ^^^^^^^^^^^^^^^
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 240, in stamp_value
+    with open(self.stamp_path()) as fh:
+         ^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmp6d3o6_8y/state/omnigent/watchdog-unarmed-since'
+
+======================================================================
+FAIL: test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='')
+An unreadable bound is not a bound. Fail closed.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 810, in test_rt28_a_garbled_stamp_is_treated_as_EXPIRED
+    self.assertEqual(
+AssertionError: 0 != 1 : a stamp of '' could not be read as a time, so the grace has no known start and must not be granted
+
+======================================================================
+FAIL: test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='   ')
+An unreadable bound is not a bound. Fail closed.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 810, in test_rt28_a_garbled_stamp_is_treated_as_EXPIRED
+    self.assertEqual(
+AssertionError: 0 != 1 : a stamp of '   ' could not be read as a time, so the grace has no known start and must not be granted
+
+======================================================================
+FAIL: test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='not-a-timestamp')
+An unreadable bound is not a bound. Fail closed.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 810, in test_rt28_a_garbled_stamp_is_treated_as_EXPIRED
+    self.assertEqual(
+AssertionError: 0 != 1 : a stamp of 'not-a-timestamp' could not be read as a time, so the grace has no known start and must not be granted
+
+======================================================================
+FAIL: test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='-17')
+An unreadable bound is not a bound. Fail closed.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 810, in test_rt28_a_garbled_stamp_is_treated_as_EXPIRED
+    self.assertEqual(
+AssertionError: 0 != 1 : a stamp of '-17' could not be read as a time, so the grace has no known start and must not be granted
+
+======================================================================
+FAIL: test_rt28_a_garbled_stamp_is_treated_as_EXPIRED (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_garbled_stamp_is_treated_as_EXPIRED) (stamp='99999999999999999999x')
+An unreadable bound is not a bound. Fail closed.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 810, in test_rt28_a_garbled_stamp_is_treated_as_EXPIRED
+    self.assertEqual(
+AssertionError: 0 != 1 : a stamp of '99999999999999999999x' could not be read as a time, so the grace has no known start and must not be granted
+
+======================================================================
+FAIL: test_rt28_a_stamp_that_cannot_be_PERSISTED_does_not_buy_silence (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_stamp_that_cannot_be_PERSISTED_does_not_buy_silence)
+If the stamp cannot be written, every tick looks like the first one
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 827, in test_rt28_a_stamp_that_cannot_be_PERSISTED_does_not_buy_silence
+    self.assertEqual(
+AssertionError: 0 != 1 : the grace start could not be persisted, so every tick would restart the window - an unbounded grace. It must alert
+
+======================================================================
+FAIL: test_rt28_a_stray_NIGHTSHIFT_CTL_DB_cannot_redirect_the_watchdog (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_a_stray_NIGHTSHIFT_CTL_DB_cannot_redirect_the_watchdog)
+security residual 2: an exported NIGHTSHIFT_CTL_DB pointing at an
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 871, in test_rt28_a_stray_NIGHTSHIFT_CTL_DB_cannot_redirect_the_watchdog
+    self.assertTrue(dbs)
+AssertionError: [] is not true
+
+======================================================================
+FAIL: test_rt28_an_expired_unarmed_state_alerts (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_an_expired_unarmed_state_alerts)
+The finding itself. A box that has been un-armable for longer than
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 729, in test_rt28_an_expired_unarmed_state_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : a box with no heartbeat and no recorded run for longer than the grace stayed SILENT - that is 'the org never wrote its first heartbeat', silenced forever (security B1)
+
+======================================================================
+FAIL: test_rt28_ctl_is_pinned_to_the_PROJECT_plane_with_db (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_ctl_is_pinned_to_the_PROJECT_plane_with_db)
+`--db` defaults to os.environ['NIGHTSHIFT_CTL_DB'] before
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 856, in test_rt28_ctl_is_pinned_to_the_PROJECT_plane_with_db
+    self.assertTrue(dbs, f"no --db was passed to nightshift-ctl: {b.calls()}")
+AssertionError: [] is not true : no --db was passed to nightshift-ctl: ['nightshift-ctl beat show --who program --max-age 10800', 'CWD /tmp/tmpgj844yd5/project', 'nightshift-ctl run current', 'CWD /tmp/tmpgj844yd5/project']
+
+======================================================================
+FAIL: test_rt28_the_expired_alert_names_the_state (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_the_expired_alert_names_the_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 742, in test_rt28_the_expired_alert_names_the_state
+    self.assertIn(
+AssertionError: 'never_started' not found in '' : the operator must be told this is 'provisioned but never started', not a generic stale heartbeat: 
+
+======================================================================
+FAIL: test_rt28_the_first_ever_tick_stamps_and_stays_silent (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_the_first_ever_tick_stamps_and_stays_silent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 764, in test_rt28_the_first_ever_tick_stamps_and_stays_silent
+    self.assertTrue(b.stamp_exists(),
+AssertionError: False is not true : the first unarmed tick must record WHEN the grace started, or the grace cannot be bounded at all
+
+======================================================================
+FAIL: test_rt28_the_stamp_is_not_the_alert_marker (tests.test_watchdog.RT28TheGraceIsBounded.test_rt28_the_stamp_is_not_the_alert_marker)
+RT-27 asserts the graced path writes no alert marker. The bound must
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 792, in test_rt28_the_stamp_is_not_the_alert_marker
+    self.assertTrue(b.stamp_exists())
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.802s
+
+FAILED (failures=12, errors=1)

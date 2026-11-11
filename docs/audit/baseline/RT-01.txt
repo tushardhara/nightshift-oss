@@ -1,0 +1,37 @@
+test_rt01_resolves_a_version_under_set_euo_pipefail (tests.test_go_toolchain.RT01VersionDiscoverySurvivesPipefail.test_rt01_resolves_a_version_under_set_euo_pipefail) ... FAIL
+test_rt01_the_producer_is_never_cut_off_by_its_consumer (tests.test_go_toolchain.RT01VersionDiscoverySurvivesPipefail.test_rt01_the_producer_is_never_cut_off_by_its_consumer) ... FAIL
+test_rt01_the_real_provisioning_script_does_not_abort (tests.test_go_toolchain.RT01VersionDiscoverySurvivesPipefail.test_rt01_the_real_provisioning_script_does_not_abort)
+The DEFECT, against the real script: a producer cut off by `head -1` ... FAIL
+
+======================================================================
+FAIL: test_rt01_resolves_a_version_under_set_euo_pipefail (tests.test_go_toolchain.RT01VersionDiscoverySurvivesPipefail.test_rt01_resolves_a_version_under_set_euo_pipefail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 272, in test_rt01_resolves_a_version_under_set_euo_pipefail
+    self.assertEqual(code, 0, f"version discovery aborted under pipefail: {err}")
+AssertionError: 127 != 0 : version discovery aborted under pipefail: bash: line 1: nightshift_go_resolve_version: command not found
+
+======================================================================
+FAIL: test_rt01_the_producer_is_never_cut_off_by_its_consumer (tests.test_go_toolchain.RT01VersionDiscoverySurvivesPipefail.test_rt01_the_producer_is_never_cut_off_by_its_consumer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 284, in test_rt01_the_producer_is_never_cut_off_by_its_consumer
+    self.assertEqual(code, 0)
+AssertionError: 127 != 0
+
+======================================================================
+FAIL: test_rt01_the_real_provisioning_script_does_not_abort (tests.test_go_toolchain.RT01VersionDiscoverySurvivesPipefail.test_rt01_the_real_provisioning_script_does_not_abort)
+The DEFECT, against the real script: a producer cut off by `head -1`
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 263, in test_rt01_the_real_provisioning_script_does_not_abort
+    self.assertTrue(reached,
+AssertionError: False is not true : the real go section aborted before completing:
+=== go toolchain
+/tmp/tmpmkt9a7zv/bin/curl: line 13: printf: write error: Broken pipe
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.022s
+
+FAILED (failures=3)

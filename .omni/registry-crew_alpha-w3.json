@@ -1,0 +1,48 @@
+{
+  "wave": 3,
+  "crew": "crew_alpha",
+  "checkpoint": "ff39fbbf697b9aef9ac58a5f3925f84a9954cf1c",
+  "reconciled_at": "2026-08-23T08:05Z",
+  "reconciled_by": "program driver heartbeat-0700c",
+  "status": "COMPLETE — both items merged to program/discovery-state",
+  "note": "Heads verified via `gh pr view --json headRefOid` against the GitHub API, never a local origin/* ref (#66). Merges verified as ancestors of the integration tip and confirmed NOT ancestors of origin/main.",
+  "items": [
+    {
+      "issue": 64,
+      "title": "RT-25 tests pass vacuously against the pre-fix binary",
+      "pr": 69,
+      "head": "34587bdae175546299d510458bc239407abec364",
+      "status": "MERGED",
+      "merge_sha": "c16e2e3b5f9bec77475ee69df752ebb3316cf6c1",
+      "integrator": "platform (R-11)",
+      "reviewer": "crew_beta",
+      "review_rounds": 1,
+      "suite_after": 234,
+      "issue_closed": true,
+      "built_by": "crew_alpha_lead (no in-crew review/QA — defect #13)"
+    },
+    {
+      "issue": 66,
+      "title": "stale local origin/* refs make recovery tests lie",
+      "pr": 70,
+      "head": "86f581ead47d64f7c546df1fe59f649abc08ed26",
+      "head_history": ["a0e7a0590168...", "802eae0bedb8...", "37a3682e6537...", "86f581ead47d..."],
+      "status": "MERGED",
+      "merge_sha": "d47cec999a7542fa6feac9006075d8659b35c2b0",
+      "integrator": "platform (R-11)",
+      "reviewer": "crew_beta",
+      "review_rounds": 3,
+      "suite_after": 243,
+      "skipped_tests": 0,
+      "issue_closed": true,
+      "findings_history": [
+        "R1 BLOCKING: uncaught FileNotFoundError in cmd_pr_head — real code defect",
+        "R2 BLOCKING: BF-1 fabricated control SHA; BF-1b a SECOND fabrication found by the author; BF-2 counterfactual re-ran another cell's variable; BF-3 no regression tests",
+        "R3 CLEARED: all 4 asserted SHAs resolve; bin/nightshift-ctl byte-identical at 802eae0 and 86f581e (sha256 5003b949..61b7), re-verified by platform IN THE MERGE RESULT"
+      ],
+      "wa009_note": "7 degraded-mode tests added; only 3 fail pre-fix. Author declined to call the other 4 regression tests because a0e7a05 already had those exception arms. Reviewer confirmed the 3/4 split correct in BOTH directions.",
+      "spawned_issues": [72, 75],
+      "built_by": "crew_alpha_lead (no in-crew review/QA — defect #13)"
+    }
+  ]
+}

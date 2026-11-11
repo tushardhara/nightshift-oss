@@ -1,0 +1,103 @@
+PASS  PG4-A   expect=red   got=red    (1.6s)  bin/nightshift_provenance.py
+          GAP FOUND: the recursive .git CONTENT hash was never load-bearing (124 tests, OK) -- the existing 'changed' test appends bytes, so size alone caught it.
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4a_same_size_byte_change_inside_gitdir_is_a_violation
+          -> FAIL: test_pg4a_same_size_byte_change_inside_gitdir_is_a_violation (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4a_same_size_byte_change_inside_gitdir_is_a_violation)
+PASS  PG4-B   expect=red   got=red    (1.5s)  bin/nightshift_provenance.py
+          GAP FOUND: st_nlink -- the module's own [VERIFIED] answer to E2, `git clone --bare` hardlinking customer loose objects -- was untested (124 tests, OK).
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4b_hardlinking_a_loose_object_is_a_violation_via_nlink
+          -> FAIL: test_pg4b_hardlinking_a_loose_object_is_a_violation_via_nlink (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4b_hardlinking_a_loose_object_is_a_violation_via_nlink)
+PASS  PG4-C   expect=red   got=red    (1.4s)  bin/nightshift_provenance.py
+          an added file is a violation
+          test: test_publication_footprint.CompareFootprintDetectsDirt.test_stray_file_planted_inside_gitdir_is_reported_as_a_violation
+          -> FAIL: test_stray_file_planted_inside_gitdir_is_reported_as_a_violation (test_publication_footprint.CompareFootprintDetectsDirt.test_stray_file_planted_inside_gitdir_is_reported_as_a_violation)
+PASS  PG4-D   expect=red   got=red    (1.6s)  bin/nightshift_provenance.py
+          GAP FOUND: deletion inside .git was unproven (124 tests, OK).
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4d_a_file_removed_from_gitdir_is_a_violation
+          -> FAIL: test_pg4d_a_file_removed_from_gitdir_is_a_violation (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4d_a_file_removed_from_gitdir_is_a_violation)
+PASS  PG4-E   expect=red   got=red    (1.4s)  bin/nightshift_provenance.py
+          a changed entry is a violation
+          test: test_publication_footprint.CompareFootprintDetectsDirt.test_byte_changed_inside_an_existing_gitdir_file_is_reported_as_a_violation
+          -> FAIL: test_byte_changed_inside_an_existing_gitdir_file_is_reported_as_a_violation (test_publication_footprint.CompareFootprintDetectsDirt.test_byte_changed_inside_an_existing_gitdir_file_is_reported_as_a_violation)
+PASS  PG4-F   expect=red   got=red    (1.9s)  bin/nightshift_provenance.py
+          GAP FOUND: every existing call site fed compare_footprint a pristine pair, so the whole corroborating-views half of the oracle was untested (124 tests, OK).
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_git_view_drift_alone_is_a_violation
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one
+          -> FAIL: test_pg4f_git_view_drift_alone_is_a_violation (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_git_view_drift_alone_is_a_violation)
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='advertised')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='config')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='head')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='index')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='objects')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='objformat')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='refs')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='stash')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='status')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='submodule_status')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='submodule_tree')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='symref')
+          -> FAIL: test_pg4f_every_corroborating_view_is_compared_not_just_one (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4f_every_corroborating_view_is_compared_not_just_one) (view='worktrees')
+PASS  PG4-G   expect=red   got=red    (3.5s)  bin/nightshift_provenance.py
+          the gitdir manifest is compared
+          test: test_publication_footprint.CompareFootprintDetectsDirt
+          -> FAIL: test_byte_changed_inside_an_existing_gitdir_file_is_reported_as_a_violation (test_publication_footprint.CompareFootprintDetectsDirt.test_byte_changed_inside_an_existing_gitdir_file_is_reported_as_a_violation)
+          -> FAIL: test_stray_file_planted_inside_gitdir_is_reported_as_a_violation (test_publication_footprint.CompareFootprintDetectsDirt.test_stray_file_planted_inside_gitdir_is_reported_as_a_violation)
+PASS  PG4-H   expect=red   got=red    (1.4s)  bin/nightshift_provenance.py
+          GAP FOUND: the worktree half of compare_footprint had no test of its own (124 tests, OK) -- every existing worktree change also lands in .git/index via `git add`.
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4h_the_worktree_manifest_is_actually_compared
+          -> FAIL: test_pg4h_the_worktree_manifest_is_actually_compared (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4h_the_worktree_manifest_is_actually_compared)
+PASS  PG4-I   expect=red   got=red    (0.9s)  bin/nightshift_provenance.py
+          GAP FOUND: the self-proof was only ever read on a clean run, so the branch that refuses a poisoned capture was never taken (124 tests, OK).
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4i_capture_refuses_its_own_evidence_if_its_own_step_perturbed_the_repo
+          -> FAIL: test_pg4i_capture_refuses_its_own_evidence_if_its_own_step_perturbed_the_repo (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4i_capture_refuses_its_own_evidence_if_its_own_step_perturbed_the_repo)
+
+9/9 cases behaved as recorded
+PASS  PG4-J   expect=red   got=red    (0.4s)  bin/nightshift_provenance.py
+          the read-only exec choke point refuses write verbs
+          test: test_provenance.CustomerGitGuard.test_refuses_write_subcommands
+          -> FAIL: test_refuses_write_subcommands (test_provenance.CustomerGitGuard.test_refuses_write_subcommands) (args=['add', '-A'])
+          -> FAIL: test_refuses_write_subcommands (test_provenance.CustomerGitGuard.test_refuses_write_subcommands) (args=['commit', '-m', 'x'])
+          -> FAIL: test_refuses_write_subcommands (test_provenance.CustomerGitGuard.test_refuses_write_subcommands) (args=['update-ref', 'refs/x', 'HEAD'])
+          -> FAIL: test_refuses_write_subcommands (test_provenance.CustomerGitGuard.test_refuses_write_subcommands) (args=['notes', 'add', '-m', 'x'])
+          -> FAIL: test_refuses_write_subcommands (test_provenance.CustomerGitGuard.test_refuses_write_subcommands) (args=['gc'])
+          -> FAIL: test_refuses_write_subcommands (test_provenance.CustomerGitGuard.test_refuses_write_subcommands) (args=['repack', '-a'])
+PASS  PG4-K   expect=red   got=red    (0.2s)  bin/nightshift_provenance.py
+          -c / --git-dir / --work-tree / -C cannot be smuggled
+          test: test_provenance.CustomerGitGuard.test_refuses_smuggled_config_and_dir_overrides
+          -> FAIL: test_refuses_smuggled_config_and_dir_overrides (test_provenance.CustomerGitGuard.test_refuses_smuggled_config_and_dir_overrides) (args=['status', '-c', 'core.hooksPath=/tmp/evil'])
+          -> FAIL: test_refuses_smuggled_config_and_dir_overrides (test_provenance.CustomerGitGuard.test_refuses_smuggled_config_and_dir_overrides) (args=['status', '--git-dir=/tmp/elsewhere'])
+          -> FAIL: test_refuses_smuggled_config_and_dir_overrides (test_provenance.CustomerGitGuard.test_refuses_smuggled_config_and_dir_overrides) (args=['status', '--work-tree=/tmp/elsewhere'])
+          -> FAIL: test_refuses_smuggled_config_and_dir_overrides (test_provenance.CustomerGitGuard.test_refuses_smuggled_config_and_dir_overrides) (args=['status', '-C', '/tmp/elsewhere'])
+PASS  PG4-L   expect=red   got=red    (0.6s)  bin/nightshift_provenance.py
+          `worktree add` / `stash push` share argv[0] with a read verb
+          test: test_provenance.CustomerGitGuard.test_refuses_multi_word_write_variants
+          -> FAIL: test_refuses_multi_word_write_variants (test_provenance.CustomerGitGuard.test_refuses_multi_word_write_variants) (args=['worktree', 'add', '/tmp/x'])
+          -> FAIL: test_refuses_multi_word_write_variants (test_provenance.CustomerGitGuard.test_refuses_multi_word_write_variants) (args=['stash', 'push'])
+          -> FAIL: test_refuses_multi_word_write_variants (test_provenance.CustomerGitGuard.test_refuses_multi_word_write_variants) (args=['submodule', 'update'])
+          -> FAIL: test_refuses_multi_word_write_variants (test_provenance.CustomerGitGuard.test_refuses_multi_word_write_variants) (args=['config', '--add', 'x.y', 'z'])
+          -> FAIL: test_refuses_multi_word_write_variants (test_provenance.CustomerGitGuard.test_refuses_multi_word_write_variants) (args=['config', '--unset', 'x.y'])
+PASS  PG4-M   expect=red   got=red    (1.0s)  bin/nightshift_provenance.py
+          GAP FOUND: the E6a/E6b tests exercise detect_dirty, which builds its own argv -- the footprint VIEW's argv was unproven (124 tests, OK), so it could go blind to an ignored `.omni/`.
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4m_the_footprint_status_view_reports_ignored_files
+          -> FAIL: test_pg4m_the_footprint_status_view_reports_ignored_files (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4m_the_footprint_status_view_reports_ignored_files)
+PASS  PG4-N   expect=green got=green  (0.4s)  bin/nightshift_provenance.py
+          NOT A GAP: --no-optional-locks on argv still holds. Redundant pair, not dead code -- see PG4-NO.
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4no_the_guarded_status_does_not_rewrite_a_stale_index
+PASS  PG4-O   expect=green got=green  (0.4s)  bin/nightshift_provenance.py
+          NOT A GAP: GIT_OPTIONAL_LOCKS=0 in the env still holds. Redundant pair, not dead code -- see PG4-NO.
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4no_the_guarded_status_does_not_rewrite_a_stale_index
+PASS  PG4-NO  expect=red   got=red    (3.8s)  bin/nightshift_provenance.py
+          BOTH optional-lock controls removed at once (this case also strips --no-optional-locks from argv). This is what proves the pair is a real control rather than two no-ops.
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4no_the_guarded_status_does_not_rewrite_a_stale_index
+          test: test_pg4_independent_footprint.DefaultModeWritesNothingIntoTheCustomerRepository.test_the_full_default_mode_cycle_leaves_the_customer_repo_byte_identical
+          -> FAIL: test_pg4no_the_guarded_status_does_not_rewrite_a_stale_index (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4no_the_guarded_status_does_not_rewrite_a_stale_index)
+          -> FAIL: test_the_full_default_mode_cycle_leaves_the_customer_repo_byte_identical (test_pg4_independent_footprint.DefaultModeWritesNothingIntoTheCustomerRepository.test_the_full_default_mode_cycle_leaves_the_customer_repo_byte_identical)
+PASS  PG4-P   expect=red   got=red    (1.4s)  bin/nightshift_provenance.py
+          GAP FOUND: tier B's whole reason to exist -- the worktree CONTENT pass -- was unproven (124 tests, OK).
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4a_the_worktree_half_of_tier_b_also_hashes_content
+          -> FAIL: test_pg4a_the_worktree_half_of_tier_b_also_hashes_content (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4a_the_worktree_half_of_tier_b_also_hashes_content)
+PASS  PG4-Q   expect=red   got=red    (1.0s)  bin/nightshift_provenance.py
+          GAP FOUND: every fixture in the suite is an ordinary checkout where common_dir == gitdir, so the COMMON walk -- which on a linked worktree is where the object store lives -- was never exercised (124 tests, OK).
+          test: test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4q_the_common_dir_is_walked_when_it_differs_from_the_gitdir
+          -> ERROR: test_pg4q_the_common_dir_is_walked_when_it_differs_from_the_gitdir (test_pg4_independent_footprint.ProductionOracleGapsFoundByMutation.test_pg4q_the_common_dir_is_walked_when_it_differs_from_the_gitdir)
+
+9/9 cases behaved as recorded

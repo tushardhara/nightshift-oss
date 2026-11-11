@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+
+# Omnigent CodexExecutor runtime scratch (repository root only)
+/.codex-tmp/
+
+# omnigent agent worktrees
+.worktrees/
+.omni/transcripts/
+# control-plane runtime state (SQLite + WAL sidecars)
+.omni/control.db*
+.omni/control-state.json
+
+# narrative memory (#400): the design keeps memory.db under the ADR-0021
+# state_root, OUTSIDE every Git worktree, so it should never actually land
+# under .omni/ -- this is a belt-and-braces guard against a fallback path
+# or local dev mode ever placing it here by mistake, matching control.db's
+# own sidecar glob above (db, db-wal, db-shm, db-journal).
+.omni/memory.db*
+
+# agent worktrees created by the Claude Code Workflow tool (isolation:
+# worktree).  These are scratch checkouts of this same repo -- ~54 MB and
+# transient -- and must never be committed back into it.
+.claude/worktrees/
+
+.omni/reports/
+.omni/leases/
+.omni/sync/
+.omni/evidence/

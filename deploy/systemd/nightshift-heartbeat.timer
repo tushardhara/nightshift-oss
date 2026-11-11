@@ -1,0 +1,14 @@
+[Unit]
+Description=Write program heartbeat every 5 minutes to keep liveness fresh during long turns
+
+[Timer]
+# Start soon after boot to establish the heartbeat quickly
+OnBootSec=2min
+# Run every 5 minutes (300s), well under the 900s max_age threshold
+OnUnitActiveSec=5min
+# No Persistent= here on purpose: it only applies to OnCalendar timers. On a
+# monotonic OnBootSec/OnUnitActiveSec timer it does nothing, and stating it
+# implies a catch-up-after-downtime behaviour this timer does not have.
+
+[Install]
+WantedBy=timers.target

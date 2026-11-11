@@ -1,0 +1,23 @@
+test_rt12_rearms_after_recovery (tests.test_watchdog.RT12AlertRateLimitAndRearm.test_rt12_rearms_after_recovery) ... FAIL
+test_rt12_second_run_inside_the_window_is_silent (tests.test_watchdog.RT12AlertRateLimitAndRearm.test_rt12_second_run_inside_the_window_is_silent) ... FAIL
+
+======================================================================
+FAIL: test_rt12_rearms_after_recovery (tests.test_watchdog.RT12AlertRateLimitAndRearm.test_rt12_rearms_after_recovery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 354, in test_rt12_rearms_after_recovery
+    self.assertEqual(b.alert_count(), 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_rt12_second_run_inside_the_window_is_silent (tests.test_watchdog.RT12AlertRateLimitAndRearm.test_rt12_second_run_inside_the_window_is_silent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 347, in test_rt12_second_run_inside_the_window_is_silent
+    self.assertEqual(b.alert_count(), 1,
+AssertionError: 0 != 1 : the phone must not be spammed once per timer tick
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.068s
+
+FAILED (failures=2)

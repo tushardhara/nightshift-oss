@@ -1,0 +1,6 @@
+{
+  "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+  "command": "python3 -m unittest -v tests.test_go_toolchain.RT03MissingGoIsANormalState",
+  "exit_code": 1,
+  "output_path": "docs/audit/baseline/RT-03.txt"
+}

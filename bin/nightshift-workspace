@@ -1,0 +1,923 @@
+#!/usr/bin/env python3
+"""nightshift-workspace — isolated per-agent git workspaces.
+
+Issue #102 §3: "A system that can silently revert or lose already-integrated
+work cannot be trusted on business repositories. Fix this structurally, not by
+adding more reminders to prompts."
+
+Three live defects are one mechanism -- the single shared checkout at
+/srv/project that every agent writes into:
+
+  #89/#98  advancing the branch ref from another worktree leaves the shared
+           checkout armed with staged deletions. Twice this silently reverted
+           merged work; once it destroyed ~880 lines.
+  #101     sandboxed seats cannot fetch in the shared checkout, because
+           .git/FETCH_HEAD is read-only to them -- so every freshness guard
+           that fetches-then-compares is silently vacuous for exactly the
+           agents that need it most.
+  #65      a crew left the shared checkout on its own PR branch and the next
+           Program commit landed on that branch.
+
+R-63 ruled: eliminate the shared writer, give each agent its own workspace.
+R-64 AMENDED R-63 on evidence: per-agent LINKED WORKTREES DO NOT WORK. A
+linked worktree does not own its git directory --
+
+    git -C .worktrees/program rev-parse --git-dir
+    -> /srv/project/.git/worktrees/program
+
+so its FETCH_HEAD lives back inside the .git that sandboxed seats cannot
+write. That option is empirically closed; do not reintroduce it.
+
+What IS verified to work, by execution rather than by man page (WA-012):
+
+    git clone --reference /srv/project <url> <dest>
+
+yields a clone with a PRIVATE writable git-dir and an alternates entry
+pointing at the shared object store -- cheap on disk, and it fetches.
+
+This tool is deliberately ADDITIVE. Nothing adopts it here. Adoption is gated
+behind ADR-0009's preconditions, of which item 1 -- a ratified
+filesystem/sandbox/credential boundary owned jointly by `platform` and
+`security` -- is not done. Creating a workspace is the easy half; `verify` is
+the load-bearing half, because it is what turns "wider or staler than declared
+intent" into a deterministic refusal instead of a silent revert.
+
+WHAT A SUCCESSFUL `verify` DOES AND DOES NOT MEAN (finding 3, cross-vendor
+review at 3c5e85e). A verdict is a SNAPSHOT, not a lock. `verify` reads branch,
+index and HEAD through separate git processes and exits; the commit or push it
+is meant to protect happens later, in another process. Another writer can arm
+the index in between. That is the SAME check-races-the-action shape `architect`
+rejected in ADR-0009, and it is not honest to ship it here having refused it
+there.
+
+This PR does NOT close that window, and does not pretend to. It narrows it:
+`verify` emits a `fingerprint` over the state it just judged, and `recheck`
+re-evaluates that fingerprint at the action boundary, so a caller can DETECT a
+mutation between verdict and action instead of committing blind. Detection is
+not exclusion -- a writer can still land inside the smaller window between
+`recheck` and the action itself.
+
+    A successful verdict is NOT authorization to write.
+
+Closing it properly requires the guarded mutation to carry the verdict -- the
+tool performing the commit itself and revalidating at the commit boundary, or
+an enforceable single-writer lease. Both are adoption-time decisions gated
+behind ADR-0009, and neither belongs in an additive PR that nothing uses yet.
+Every payload carries `verdict_is_not_authorization: true` so a caller cannot
+acquire the belief by accident.
+
+Conventions follow bin/nightshift-ctl:
+
+    Exit codes: 0 ok · 3 denied/refused · 2 usage · 1 error.
+    Output is a single JSON object on stdout, keys sorted.
+
+DELIBERATELY NOT IN SCOPE: push credentials. Per-seat push credentials are
+UNVERIFIED and are precondition #4 in ADR-0009. This tool never configures,
+reads, or asserts anything about them. See the module note in `create` about
+what a workspace does NOT give you.
+"""
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shlex
+import shutil
+import stat
+import subprocess
+import sys
+import types
+from pathlib import Path
+
+# Mirrors bin/nightshift-ctl: 0 granted/ok, 3 denied, 2 usage, 1 error.
+EXIT_OK = 0
+EXIT_ERROR = 1
+EXIT_USAGE = 2
+EXIT_DENIED = 3
+
+
+def _load_attested_controller():
+    """Load the sibling controller's stable, regular, non-symlink bytes."""
+    path = Path(__file__).resolve().with_name("nightshift-ctl")
+    if not hasattr(os, "O_CLOEXEC") or not hasattr(os, "O_NOFOLLOW"):
+        raise ImportError("platform cannot safely open the admission controller")
+    flags = os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW
+    try:
+        fd = os.open(path, flags)
+    except OSError as exc:
+        raise ImportError("cannot open admission controller: %s" % path) from exc
+    try:
+        before = os.fstat(fd)
+        if not stat.S_ISREG(before.st_mode):
+            raise ImportError("admission controller is not a regular file: %s" % path)
+        chunks = []
+        while True:
+            chunk = os.read(fd, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        source = b"".join(chunks)
+        after = os.fstat(fd)
+        stable = (
+            before.st_dev == after.st_dev
+            and before.st_ino == after.st_ino
+            and before.st_size == after.st_size == len(source)
+            and before.st_mtime_ns == after.st_mtime_ns
+            and before.st_ctime_ns == after.st_ctime_ns
+        )
+        if not stable:
+            raise ImportError("admission controller changed while being read")
+    finally:
+        os.close(fd)
+
+    canonical_path = str(path)
+    module = types.ModuleType("_nightshift_admission_controller")
+    module.__file__ = canonical_path
+    code = compile(source, canonical_path, "exec", dont_inherit=True)
+    exec(code, module.__dict__)
+    return module
+
+
+def out(obj, code=EXIT_OK):
+    """Single JSON object, sorted keys, then exit. Same shape as ctl's out()."""
+    print(json.dumps(obj, sort_keys=True))
+    sys.exit(code)
+
+
+# A seat writes its workspace, `<gitlink>/.git/config` included, and git
+# recurses into a populated submodule to judge dirtiness -- running that
+# config's `core.fsmonitor` here, outside the sandbox. Every git call below
+# runs with no global/system config, no inherited GIT_*, fsmonitor and hooks
+# off, and gh as the only credential helper (the global one went with the
+# global config). The overrides travel as GIT_CONFIG_COUNT, the environment
+# twin of `-c`: same command-line scope, it reaches submodule children too,
+# and argv stays the plain `git <verb> ...`.
+_GIT_CONFIG = (
+    ("core.fsmonitor", "false"),
+    ("core.hooksPath", "/dev/null"),
+    ("credential.helper", ""),
+    ("credential.helper", "!%s auth git-credential" % shlex.quote(
+        os.environ.get("NIGHTSHIFT_CTL_GH", "gh"))),
+)
+
+
+def git_env():
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1",
+               GIT_TERMINAL_PROMPT="0", GIT_CONFIG_COUNT=str(len(_GIT_CONFIG)))
+    for i, (key, value) in enumerate(_GIT_CONFIG):
+        env["GIT_CONFIG_KEY_%d" % i] = key
+        env["GIT_CONFIG_VALUE_%d" % i] = value
+    return env
+
+
+def git(args, cwd=None, check=True):
+    """Run git and return stdout stripped.
+
+    Identity is fail-closed on this box (#75), so every invocation that could
+    write carries an explicit identity rather than relying on ambient config.
+    """
+    cmd = ["git"]
+    if cwd:
+        cmd += ["-C", cwd]
+    cmd += args
+    p = subprocess.run(cmd, capture_output=True, text=True, env=git_env())
+    if check and p.returncode != 0:
+        raise GitError(" ".join(cmd), p.returncode, p.stderr.strip())
+    return p.stdout.strip()
+
+
+def git_at(dir_fd, args):
+    """Run git with its working directory set to the inode `dir_fd` holds.
+
+    Every git invocation in `create` goes through here rather than through
+    `-C <path>` or `cwd=<path>`. A pathname is a lookup performed at use time,
+    so it can be re-pointed between when we create a directory and when git
+    writes into it (the escape `architect` reproduced at 9aef482). A descriptor
+    names the OBJECT. `fchdir` in the child sets its working directory to that
+    object before exec, so swapping the directory entry afterwards cannot
+    redirect the clone -- there is no longer a name in the path for it to
+    redirect.
+    """
+    p = subprocess.run(
+        ["git"] + args, capture_output=True, text=True, env=git_env(),
+        preexec_fn=lambda: os.fchdir(dir_fd),
+    )
+    if p.returncode != 0:
+        raise GitError("git " + " ".join(args), p.returncode, p.stderr.strip())
+    return p.stdout.strip()
+
+
+def same_object(dir_fd, path):
+    """Is `path` still the very object `dir_fd` holds?
+
+    Identity, not spelling: st_dev/st_ino, with the path side resolved WITHOUT
+    following symlinks so a swapped-in link is compared as itself.
+    """
+    try:
+        a = os.fstat(dir_fd)
+        b = os.stat(path, follow_symlinks=False)
+    except OSError:
+        return False
+    return (a.st_dev, a.st_ino) == (b.st_dev, b.st_ino)
+
+
+class GitError(Exception):
+    def __init__(self, cmd, code, stderr):
+        super().__init__("%s -> %d: %s" % (cmd, code, stderr))
+        self.cmd = cmd
+        self.code = code
+        self.stderr = stderr
+
+
+def is_git_worktree(path):
+    try:
+        return git(["rev-parse", "--is-inside-work-tree"], cwd=path) == "true"
+    except (GitError, FileNotFoundError):
+        return False
+
+
+def absolute_git_dir(path):
+    return git(["rev-parse", "--absolute-git-dir"], cwd=path)
+
+
+def within(child, parent):
+    """True if `child` is `parent` or lives underneath it.
+
+    Both sides are realpath'd first: /srv/project is reachable by more than one
+    path on this box, and a check that compares strings would call a shared
+    git-dir private the moment a symlink was involved.
+    """
+    child = os.path.realpath(child)
+    parent = os.path.realpath(parent)
+    return child == parent or child.startswith(parent.rstrip(os.sep) + os.sep)
+
+
+PROBE_NAME = ".nightshift-write-probe"
+
+
+def probe_writable(path):
+    """Can we ACTUALLY write here? Attempt it; do not ask os.access.
+
+    WA-012: a capability is not available until something has executed it.
+    os.access() answers from the permission bits, which is the same class of
+    evidence as reading the man page -- and it is wrong under exactly the
+    conditions that matter here (read-only mounts, which is how a sandboxed
+    seat sees /srv/project/.git). So we open a file for writing and find out.
+
+    This is the form `verify` uses: it is handed a path by its caller and its
+    whole job is to inspect whatever that path names. `create` must NOT use it
+    -- see probe_writable_at.
+    """
+    probe = os.path.join(path, PROBE_NAME)
+    try:
+        with open(probe, "w") as fh:
+            fh.write("probe")
+        os.unlink(probe)
+        return True
+    except OSError:
+        return False
+
+
+def fetch_head_writable(git_dir):
+    """Whether this workspace could record a fetch -- the #101 predicate.
+
+    FETCH_HEAD normally does not exist until the first fetch, so its absence is
+    not a failure; what matters is whether the git-dir that would hold it takes
+    a write. If it does exist, it must itself be writable, because that is the
+    file git actually opens and the one that produced #101's failure.
+    """
+    if not os.path.isdir(git_dir):
+        return False
+    fetch_head = os.path.join(git_dir, "FETCH_HEAD")
+    if os.path.exists(fetch_head):
+        try:
+            with open(fetch_head, "a"):
+                pass
+        except OSError:
+            return False
+    return probe_writable(git_dir)
+
+
+def probe_writable_at(dir_fd):
+    """probe_writable, performed on the OBJECT a descriptor holds.
+
+    `create` probes after it has already claimed a directory by descriptor, and
+    a probe addressed by pathname throws that away: the name is resolved again
+    at probe time, so swapping a directory entry re-points it. The probe is not
+    a harmless read, either -- it CREATES, WRITES and then UNLINKS -- so a
+    redirected probe destroys a file outside --root. Addressing the object
+    keeps the answer about the workspace we built.
+
+    O_EXCL, unlike the pathname form's "w", refuses to clobber: a probe must
+    never truncate a file it did not create. An existing entry answers "no".
+    """
+    try:
+        fd = os.open(PROBE_NAME,
+                     os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                     0o600, dir_fd=dir_fd)
+    except OSError:
+        return False
+    writable = True
+    try:
+        os.write(fd, b"probe")
+    except OSError:
+        writable = False
+    finally:
+        os.close(fd)
+    try:
+        os.unlink(PROBE_NAME, dir_fd=dir_fd)
+    except OSError:
+        pass
+    return writable
+
+
+def fetch_head_writable_at(git_fd):
+    """fetch_head_writable against a held git-dir descriptor -- the #101
+    predicate answered for the git dir we created rather than for whatever the
+    git dir's pathname happens to name by the time we get round to asking."""
+    try:
+        fd = os.open("FETCH_HEAD", os.O_WRONLY | os.O_APPEND | os.O_NOFOLLOW,
+                     dir_fd=git_fd)
+    except FileNotFoundError:
+        pass            # absent until the first fetch; not a failure
+    except OSError:
+        return False    # present and unopenable IS #101's failure
+    else:
+        os.close(fd)
+    return probe_writable_at(git_fd)
+
+
+def read_alternates_at(git_fd):
+    """The borrowed object stores, read through the git-dir descriptor.
+
+    Reported to the caller, so it must describe the git dir we hold; read by
+    pathname it would describe whatever that name resolves to now.
+    """
+    try:
+        fd = os.open(os.path.join("objects", "info", "alternates"),
+                     os.O_RDONLY | os.O_NOFOLLOW, dir_fd=git_fd)
+    except OSError:
+        return []
+    try:
+        with os.fdopen(fd) as fh:
+            return fh.read().split()
+    except OSError:
+        return []
+
+
+def head_sha(path):
+    return git(["rev-parse", "HEAD"], cwd=path)
+
+
+def head_branch(path):
+    """Current branch name, or None when HEAD is detached."""
+    name = git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=path)
+    return None if name == "HEAD" else name
+
+
+def porcelain_status(path):
+    """Working tree + index status.
+
+    --porcelain reports staged and unstaged alike, which is the point: #89's
+    failure mode is an index armed with deletions nobody asked for, and a check
+    that only looked at unstaged changes would have called that clean.
+    """
+    raw = git(["status", "--porcelain", "--untracked-files=normal",
+               "--ignore-submodules=all"], cwd=path)
+    dirty = [ln for ln in raw.splitlines() if ln.strip()]
+    # Status no longer descends into submodules, so a populated one is never
+    # PROVEN clean: it is reported as dirt, and so lands in the fingerprint.
+    staged = git(["ls-files", "--stage", "-z"], cwd=path)
+    for record in staged.split("\0"):
+        meta, _, name = record.partition("\t")
+        if meta.split()[:1] == ["160000"] and os.path.lexists(
+                os.path.join(path, name, ".git")):
+            dirty.append("populated-submodule " + name)
+    return dirty
+
+
+
+# Marker written into the git-dir at create time. It lives in the git-dir and
+# NOT in the working tree, so it can never show up in `git status` and can
+# never be committed by accident.
+MARKER_NAME = "nightshift-workspace.json"
+MARKER_VERSION = 1
+
+# An agent name becomes a directory under --root, so it must be ONE ordinary
+# path component. Anything else is how `--agent ../escape` writes outside the
+# root it declared (finding 4).
+AGENT_RE = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9._-]*\Z")
+
+
+def marker_path(git_dir):
+    return os.path.join(git_dir, MARKER_NAME)
+
+
+def read_marker(git_dir):
+    try:
+        with open(marker_path(git_dir)) as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
+def write_marker(git_dir, agent, root, path, base_sha):
+    payload = {
+        "version": MARKER_VERSION,
+        "agent": agent,
+        "root": os.path.realpath(root),
+        "path": os.path.realpath(path),
+        "base_sha": base_sha,
+        "tool": "nightshift-workspace",
+    }
+    with open(marker_path(git_dir), "w") as fh:
+        json.dump(payload, fh, sort_keys=True)
+    return payload
+
+
+def write_marker_at(git_fd, agent, root, path, base_sha):
+    """Write the marker relative to a held GIT-DIR descriptor.
+
+    The marker is as security-relevant as the clone: at 9aef482 it landed
+    outside the root alongside .git, and `verify` would then have accepted the
+    escaped directory as a genuine workspace. So it is written through a held
+    descriptor, never through the destination pathname.
+
+    The descriptor is the git dir's, not the workspace's. Opening ".git/<name>"
+    relative to the workspace still resolves ".git" by name at write time, so
+    re-pointing that one component was enough to redirect the marker even
+    though its final component was descriptor-addressed.
+    """
+    payload = {
+        "version": MARKER_VERSION,
+        "agent": agent,
+        "root": os.path.realpath(root),
+        "path": path,
+        "base_sha": base_sha,
+        "tool": "nightshift-workspace",
+    }
+    blob = json.dumps(payload, sort_keys=True).encode("utf-8")
+    fd = os.open(MARKER_NAME, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644,
+                 dir_fd=git_fd)
+    try:
+        os.write(fd, blob)
+    finally:
+        os.close(fd)
+    return payload
+
+
+def fingerprint(git_dir, sha, branch, dirty):
+    """A digest of exactly the state `verify` just judged.
+
+    Presented back to `recheck` at the action boundary so a caller can tell
+    that the ground moved under a verdict it is about to act on. This NARROWS
+    the race in finding 3; it does not remove it. See the module docstring.
+    """
+    h = hashlib.sha256()
+    for part in [os.path.realpath(git_dir), sha, branch or "", str(len(dirty))]:
+        h.update(part.encode("utf-8") + b"\0")
+    for line in sorted(dirty):
+        h.update(line.encode("utf-8") + b"\0")
+    return h.hexdigest()
+
+
+def resolve_destination(root, agent):
+    """Where this agent's workspace goes, or a refusal reason.
+
+    Returns (dest, reason). The containment assertion is made on the RESOLVED
+    paths, not on the name alone: rejecting "../" by pattern and then joining
+    blindly would still be defeated by a symlinked root.
+    """
+    if not AGENT_RE.match(agent or ""):
+        return None, "invalid-agent-name"
+    root_real = os.path.realpath(os.path.abspath(root))
+    dest = os.path.abspath(os.path.join(root, agent))
+
+    # A clean NAME does not make a clean PATH. `<root>/<agent>` can already
+    # exist on disk as a symlink pointing outside the root: no "..", no "/",
+    # nothing for lexical normalisation to catch, and git follows it and writes
+    # .git outside the declared boundary (reproduced by `architect` at d0f1f0a,
+    # exit 0). Refused outright rather than followed safely -- a workspace path
+    # that is already a symlink has no legitimate use here, and "does this link
+    # land somewhere acceptable" is a question with a much larger wrong-answer
+    # surface than "is it a link at all".
+    if os.path.islink(dest):
+        return None, "workspace-path-is-symlink"
+
+    # The property that has to hold: the directory git ACTUALLY writes into
+    # resolves inside --root, whatever already exists at that path. Resolved as
+    # it exists now, not assumed from the name. When nothing exists yet,
+    # realpath resolves the parent components, which is what catches a
+    # symlinked root or a link anywhere above the workspace.
+    if os.path.dirname(os.path.realpath(dest)) != root_real:
+        return None, "workspace-escapes-root"
+    return dest, None
+
+
+# ---------------------------------------------------------------- create
+
+
+def cmd_create(args):
+    controller = _load_attested_controller()
+    trusted_seats = (set(controller.COUNTED_AGENTS) |
+                     set(controller.EXEMPT_AGENTS) |
+                     set(controller.ONCALL_AGENTS))
+    if args.seat not in trusted_seats:
+        out({"ok": False, "reason": "unmapped-seat-identity",
+             "agent": args.agent, "seat": args.seat}, EXIT_DENIED)
+    user_name, user_email = controller.seat_identity(args.seat)
+
+    root = args.root or os.environ.get(
+        "NIGHTSHIFT_WORKSPACE_ROOT", os.path.expanduser("~/.nightshift/workspaces")
+    )
+    os.makedirs(root, exist_ok=True)
+
+    # Finding 4: refuse before creating ANYTHING. A traversal that is caught
+    # after the clone has already written outside the root has not been caught.
+    dest, bad = resolve_destination(root, args.agent)
+    if bad:
+        out({"ok": False, "reason": bad, "agent": args.agent,
+             "root": os.path.realpath(root)}, EXIT_DENIED)
+
+    # Claim the path with the SAME syscall that creates it. Checking the path
+    # and then cloning into it is the check/action race documented for verify
+    # -- a symlink planted in that window would be followed by git. os.mkdir
+    # fails EEXIST against anything already at the name, symlink included, so
+    # the decision and the creation cannot be separated.
+    try:
+        os.mkdir(dest)
+    except FileExistsError:
+        reason = "workspace-path-is-symlink" if os.path.islink(dest) else "workspace-exists"
+        out({"ok": False, "reason": reason, "path": dest}, EXIT_DENIED)
+    except OSError as exc:
+        out({"ok": False, "reason": "workspace-path-unusable", "path": dest,
+             "detail": exc.strerror}, EXIT_ERROR)
+
+    # Pin the directory we just created BY IDENTITY. From here on the workspace
+    # is addressed through this descriptor, never through `dest`. mkdir is
+    # atomic, but that only covers the instant of creation: the directory entry
+    # stays replaceable, so a later pathname-based `git clone` could still be
+    # redirected by swapping the entry for a symlink after mkdir returned
+    # (reproduced by `architect` at 9aef482 -- exit 0, .git and marker written
+    # outside --root). O_NOFOLLOW so we cannot be handed a link here either.
+    try:
+        dir_fd = os.open(dest, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    except OSError as exc:
+        out({"ok": False, "reason": "workspace-path-unusable", "path": dest,
+             "detail": exc.strerror}, EXIT_ERROR)
+
+    def abandon(reason, code=EXIT_ERROR, **extra):
+        """Leave nothing half-built behind.
+
+        Removal goes through the descriptor too: if the pathname has been
+        swapped, deleting what `dest` now names would delete somebody else's
+        directory rather than ours.
+        """
+        swapped = not same_object(dir_fd, dest)
+        try:
+            if not swapped:
+                shutil.rmtree(dest, ignore_errors=True)
+        except OSError:
+            pass
+        # A git failure whose real cause is the entry being swapped underneath
+        # us is a REFUSAL, not an operational error: the caller asked for a
+        # workspace at a path that someone else re-pointed. Reporting it as
+        # `clone-failed` would send them to retry a broken clone instead of
+        # looking at who is writing into their workspace root.
+        if swapped:
+            reason, code = "workspace-path-swapped", EXIT_DENIED
+            extra = {"detail": "the workspace path stopped naming the directory "
+                               "created for it while the clone was running"}
+        payload = {"ok": False, "reason": reason, "path": dest,
+                   "agent": args.agent}
+        payload.update(extra)
+        out(payload, code)
+
+    # --reference borrows the shared object store instead of copying it, which
+    # is what keeps a per-agent clone cheap. It is only offered to git when the
+    # candidate really is a repo; a stale or missing reference would otherwise
+    # fail the clone for a reason that has nothing to do with the caller.
+    reference = args.reference
+    if reference is None:
+        for candidate in ("/srv/project",):
+            if os.path.isdir(os.path.join(candidate, ".git")):
+                reference = candidate
+                break
+    reference_used = False
+    cmd = ["clone", "--no-checkout"]
+    if reference and os.path.isdir(reference):
+        try:
+            git(["rev-parse", "--git-dir"], cwd=reference)
+            cmd += ["--reference-if-able", os.path.abspath(reference)]
+            if args.dissociate:
+                cmd += ["--dissociate"]
+            reference_used = True
+        except (GitError, FileNotFoundError):
+            reference_used = False
+    # Absolute repo path: the child's working directory is the workspace, so a
+    # relative source would resolve against the wrong place.
+    source = args.repo
+    if os.path.isdir(source):
+        source = os.path.abspath(source)
+    cmd += [source, "."]
+
+    # Clone into "." with the child's working directory set to the pinned
+    # inode. There is no pathname left for a swap to redirect.
+    try:
+        git_at(dir_fd, cmd)
+    except GitError as exc:
+        abandon("clone-failed", git_stderr=exc.stderr)
+
+    # Claim the git dir the same way we claimed the workspace, at the first
+    # instant it exists. Every remaining write and read in this function goes
+    # through this descriptor: the marker, the FETCH_HEAD writability probe,
+    # the alternates. Holding the workspace alone was not enough -- ".git" was
+    # still a name, resolved afresh on each use, so re-pointing that single
+    # component redirected the marker and let the probe truncate and unlink a
+    # file outside --root. O_NOFOLLOW: a .git that is a link is not ours.
+    try:
+        git_fd = os.open(".git", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                         dir_fd=dir_fd)
+    except OSError as exc:
+        abandon("git-dir-not-private", code=EXIT_DENIED,
+                detail="the clone did not leave a private .git directory "
+                       "inside the workspace: " + (exc.strerror or ""))
+
+    # Identity is part of creation, not a follow-up action. Address the clone
+    # through the held descriptor so a path swap cannot redirect either write.
+    try:
+        git_at(dir_fd, ["config", "--local", "user.name", user_name])
+        git_at(dir_fd, ["config", "--local", "user.email", user_email])
+    except GitError as exc:
+        abandon("identity-configuration-failed", seat=args.seat,
+                git_stderr=exc.stderr)
+
+    # Detached checkout of an EXPLICIT sha, never a ref. FETCH_HEAD is not safe
+    # on this box -- concurrent agents mutate it -- and a ref resolved at
+    # checkout time is exactly the "staler or wider than declared intent" that
+    # #102 3 asks to be refused rather than tolerated.
+    try:
+        git_at(dir_fd, ["checkout", "--detach", args.base_sha])
+    except GitError as exc:
+        abandon("base-sha-checkout-failed", base_sha=args.base_sha,
+                git_stderr=exc.stderr)
+
+    git_dir = git_at(dir_fd, ["rev-parse", "--absolute-git-dir"])
+    sha = git_at(dir_fd, ["rev-parse", "HEAD"])
+    marker = write_marker_at(git_fd, args.agent, root, git_dir[:-len("/.git")]
+                             if git_dir.endswith("/.git") else os.path.dirname(git_dir),
+                             sha)
+
+    # The last two writes/reads of the success path, both through the git-dir
+    # descriptor. They come BEFORE the identity assertion below and while both
+    # descriptors are still open, so the assertion covers every write rather
+    # than stopping one short of the last one.
+    fetch_usable = fetch_head_writable_at(git_fd)
+    alternates = read_alternates_at(git_fd)
+
+    # Final identity assertion. Everything above wrote into the objects we
+    # hold; this asks whether the DECLARED PATHS still name those objects --
+    # the workspace, and the git dir we are about to report. If either does
+    # not, the workspace is intact but unreachable by the name the caller was
+    # given, and handing back a path that resolves elsewhere is exactly how the
+    # marker ended up validating an escaped directory. Refuse instead.
+    if not same_object(dir_fd, dest):
+        swapped = "the workspace path"
+    elif not same_object(git_fd, git_dir):
+        swapped = git_dir
+    else:
+        swapped = None
+    os.close(git_fd)
+    os.close(dir_fd)
+    if swapped:
+        out({"ok": False, "reason": "workspace-path-swapped", "path": dest,
+             "detail": "%s no longer names the directory that was created for "
+                       "it" % swapped}, EXIT_DENIED)
+
+    out({
+        "ok": True,
+        "agent": args.agent,
+        "path": dest,
+        "root": marker["root"],
+        "git_dir": git_dir,
+        "git_dir_private": within(git_dir, dest),
+        "head_sha": sha,
+        "fetch_usable": fetch_usable,
+        "reference_used": reference_used,
+        "reference": reference if reference_used else None,
+        # Borrowing an object store means a gc in the REFERENCE repo can prune
+        # objects this clone still points at. Reported rather than hidden so a
+        # caller that cannot accept the coupling can pass --dissociate.
+        "reference_gc_coupled": reference_used and not args.dissociate,
+        "alternates": alternates,
+        "marker": marker,
+    }, EXIT_OK)
+
+
+# ---------------------------------------------------------------- verify
+
+
+def inspect(path):
+    """Gather the facts `verify` and `recheck` both judge. No policy here."""
+    git_dir = absolute_git_dir(path)
+    branch = head_branch(path)
+    dirty = porcelain_status(path)
+    sha = head_sha(path)
+    return git_dir, branch, dirty, sha
+
+
+def cmd_verify(args):
+    path = os.path.abspath(args.path)
+    reasons = []
+
+    if not os.path.isdir(path) or not is_git_worktree(path):
+        out({"ok": False, "reason": "not-a-git-worktree",
+             "reasons": ["not-a-git-worktree"], "path": path,
+             "verdict_is_not_authorization": True}, EXIT_DENIED)
+
+    git_dir, branch, dirty, sha = inspect(path)
+
+    # Rejects a linked worktree, whose git-dir resolves back under the shared
+    # /srv/project/.git (R-64). NOT sufficient on its own -- see the marker
+    # check below, which is the finding-1 fix.
+    git_dir_private = within(git_dir, path)
+    if not git_dir_private:
+        reasons.append("git-dir-not-private")
+
+    # FINDING 1. Owning a private .git makes something a clone, not an isolated
+    # per-agent workspace: /srv/project is itself a clone with a private .git,
+    # and it is the exact shared-writer arrangement this tool exists to refuse.
+    # Passing the object it was built to reject is worse than no guard, because
+    # it will be trusted. So isolation must be a POSITIVE claim, established
+    # when the workspace is created, that a generic shared checkout cannot
+    # satisfy merely by existing.
+    #
+    # This is a mistake-guard, not an adversarial control: anyone able to write
+    # the git-dir can forge the marker. It stops a shared checkout from being
+    # mistaken for a workspace; it does not stop a determined forger.
+    marker = read_marker(git_dir)
+    if marker is None:
+        reasons.append("not-a-nightshift-workspace")
+    else:
+        # A marker that travelled -- a copied or moved workspace -- describes a
+        # boundary that is no longer where it says it is, so it is not evidence
+        # of anything.
+        if os.path.realpath(marker.get("path", "")) != os.path.realpath(path):
+            reasons.append("workspace-marker-path-mismatch")
+        if marker.get("version") != MARKER_VERSION:
+            reasons.append("workspace-marker-unsupported-version")
+
+    if not fetch_head_writable(git_dir):
+        fetch_ok = False
+        reasons.append("fetch-head-not-writable")
+    else:
+        fetch_ok = True
+
+    if args.require_branch is not None:
+        if branch is None:
+            reasons.append("head-detached")
+        elif args.require_branch and branch != args.require_branch:
+            reasons.append("branch-mismatch")
+
+    if dirty:
+        reasons.append("worktree-dirty")
+
+    # FINDING 2: --expect-sha is REQUIRED by the parser. A safety check that is
+    # off unless asked for is off, and #102 3 names explicit expected SHAs as
+    # a design requirement. Nothing adopts this tool yet, so there is no
+    # back-compat reason to keep the weaker default.
+    if sha != args.expect_sha:
+        reasons.append("sha-mismatch")
+
+    payload = {
+        "ok": not reasons,
+        "path": path,
+        "git_dir": git_dir,
+        "git_dir_private": git_dir_private,
+        "is_nightshift_workspace": marker is not None,
+        "marker": marker,
+        "fetch_usable": fetch_ok,
+        "head_sha": sha,
+        "head_branch": branch,
+        "dirty_entries": dirty,
+        "expect_sha": args.expect_sha,
+        "reasons": reasons,
+        # FINDING 3, stated in the payload itself so no caller acquires the
+        # belief by accident. See the module docstring.
+        "verdict_is_not_authorization": True,
+        "fingerprint": fingerprint(git_dir, sha, branch, dirty),
+    }
+    if reasons:
+        # `reason` is the first failure so a caller can branch on one string;
+        # `reasons` is the full set so a caller can report all of them at once.
+        payload["reason"] = reasons[0]
+        out(payload, EXIT_DENIED)
+    out(payload, EXIT_OK)
+
+
+# ---------------------------------------------------------------- recheck
+
+
+def cmd_recheck(args):
+    """Re-evaluate a fingerprint at the action boundary (finding 3).
+
+    Narrows the check/action race by letting a caller DETECT that the state
+    moved after the verdict it is about to act on. It does not close the race:
+    a writer can still land between this call and the action. Documented as a
+    limitation rather than dressed up as atomicity.
+    """
+    path = os.path.abspath(args.path)
+    if not os.path.isdir(path) or not is_git_worktree(path):
+        out({"ok": False, "reason": "not-a-git-worktree", "path": path,
+             "verdict_is_not_authorization": True}, EXIT_DENIED)
+
+    git_dir, branch, dirty, sha = inspect(path)
+    current = fingerprint(git_dir, sha, branch, dirty)
+    changed = current != args.fingerprint
+    payload = {
+        "ok": not changed,
+        "path": path,
+        "head_sha": sha,
+        "head_branch": branch,
+        "dirty_entries": dirty,
+        "fingerprint": current,
+        "expected_fingerprint": args.fingerprint,
+        "verdict_is_not_authorization": True,
+    }
+    if changed:
+        payload["reason"] = "fingerprint-changed"
+        payload["reasons"] = ["fingerprint-changed"]
+        out(payload, EXIT_DENIED)
+    payload["reasons"] = []
+    out(payload, EXIT_OK)
+
+
+# ---------------------------------------------------------------- cli
+
+
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="nightshift-workspace",
+        description="Create and verify isolated per-agent git workspaces "
+                    "(exit 0 ok, 3 denied, 2 usage, 1 error). A successful "
+                    "verify is NOT authorization to write; see recheck.",
+    )
+    sub = p.add_subparsers(dest="cmd")
+
+    c = sub.add_parser("create", help="clone an isolated workspace at an explicit SHA")
+    c.add_argument("--agent", required=True,
+                   help="agent name; must be ONE path component, becomes the "
+                        "directory under --root")
+    c.add_argument("--seat", required=True,
+                   help="trusted roster seat used for repo-local git identity")
+    c.add_argument("--repo", required=True, help="clone source: URL or local path")
+    c.add_argument("--base-sha", required=True, help="explicit SHA to check out; never a ref")
+    c.add_argument("--root", help="workspace root (default $NIGHTSHIFT_WORKSPACE_ROOT "
+                                  "or ~/.nightshift/workspaces)")
+    c.add_argument("--reference", help="local repo to borrow objects from "
+                                       "(default /srv/project when it is a repo)")
+    c.add_argument("--dissociate", action="store_true",
+                   help="copy borrowed objects so the clone does not depend on "
+                        "the reference surviving gc")
+    c.set_defaults(func=cmd_create)
+
+    v = sub.add_parser("verify", help="refuse deterministically unless the workspace is "
+                                      "an isolated nightshift workspace, clean, and at "
+                                      "the declared SHA")
+    v.add_argument("--path", required=True)
+    v.add_argument("--expect-sha", required=True,
+                   help="REQUIRED. HEAD must equal this SHA; a stale-state check "
+                        "that is optional is a check that is off")
+    v.add_argument("--require-branch", nargs="?", const="", default=None,
+                   help="HEAD must be on a branch; pass a name to require that branch")
+    v.set_defaults(func=cmd_verify)
+
+    r = sub.add_parser("recheck", help="re-evaluate a verify fingerprint at the "
+                                       "action boundary; narrows but does not close "
+                                       "the check/action race")
+    r.add_argument("--path", required=True)
+    r.add_argument("--fingerprint", required=True,
+                   help="the fingerprint from the verify verdict you are acting on")
+    r.set_defaults(func=cmd_recheck)
+    return p
+
+
+def main(argv=None):
+    p = build_parser()
+    args = p.parse_args(argv)
+    if not getattr(args, "func", None):
+        p.print_usage(sys.stderr)
+        return EXIT_USAGE
+    try:
+        args.func(args)
+    except GitError as exc:
+        out({"ok": False, "reason": "git-error", "detail": str(exc)}, EXIT_ERROR)
+    except FileNotFoundError:
+        out({"ok": False, "reason": "git-not-found"}, EXIT_ERROR)
+    return EXIT_OK
+
+
+if __name__ == "__main__":
+    sys.exit(main())

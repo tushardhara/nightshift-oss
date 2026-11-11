@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "fast_allowlist": [
+    "docs/**"
+  ],
+  "ownership_rules": [
+    {
+      "owner": "crew_alpha",
+      "globs": [
+        "bin/nightshift-ctl",
+        "bin/nightshift_review_plan.py",
+        "deploy/policies/**",
+        "docs/CONTROL-PLANE.md",
+        "docs/design/SYSTEM.md",
+        "tests/test_shadow_risk_plan.py"
+      ]
+    },
+    {
+      "owner": "crew_beta",
+      "globs": ["deploy/**", "tests/linux/**", "docs/TRUST-BOUNDARY.md"]
+    },
+    {
+      "owner": "platform",
+      "globs": [".github/workflows/**", "program/**", "tests/**"]
+    },
+    {
+      "owner": "program",
+      "globs": [".omni/**", "docs/**"]
+    },
+    {
+      "owner": "product",
+      "globs": ["docs/prd/**"]
+    }
+  ],
+  "ownership_exempt_globs": ["tests/test_*.py"],
+  "high_risk_globs": {
+    "constitution": ["AGENTS.md", "program/**", "docs/owners.md", "docs/decisions/**", "docs/reviews/**"],
+    "control_plane": ["bin/nightshift-ctl", "bin/nightshift_review_plan.py", "deploy/policies/**"],
+    "workflow": [".github/workflows/**"],
+    "schema_migration": ["migrations/**", "**/migrations/**", "db/migrations/**", "*schema*", "**/*schema*"],
+    "dependency": ["package-lock.json", "uv.lock", "poetry.lock", "requirements*.txt", "pyproject.toml", "package.json", "go.mod", "go.sum", "**/package-lock.json", "**/uv.lock", "**/poetry.lock", "**/requirements*.txt", "**/pyproject.toml", "**/package.json", "**/go.mod", "**/go.sum"],
+    "public_contract": ["api/**", "events/**", "schemas/**", "contracts/**", "**/api/**", "**/events/**", "**/schemas/**", "**/contracts/**"],
+    "security_path": ["auth/**", "authorization/**", "sessions/**", "tokens/**", "secrets/**", "pii/**", "crypto/**", "sql/**", "subprocess/**", "external_input/**", "**/auth/**", "**/authorization/**", "**/sessions/**", "**/tokens/**", "**/secrets/**", "**/pii/**", "**/crypto/**", "**/sql/**", "**/subprocess/**", "**/external_input/**"]
+  },
+  "conditional_globs": {
+    "qa": ["*.py", "*.sh", "*.go", "*.js", "*.ts", "*.tsx", "**/*.py", "**/*.sh", "**/*.go", "**/*.js", "**/*.ts", "**/*.tsx", "tests/**", "bin/**", "deploy/**", "program/**", ".github/workflows/**"],
+    "ux": ["ui/**", "web/**", "frontend/**", "templates/**", "**/ui/**", "**/web/**", "**/frontend/**", "**/templates/**", "docs/HUMAN-COMMUNICATION.md", ".github/ISSUE_TEMPLATE/**", ".github/pull_request_template.md"]
+  },
+  "content_scan_globs": ["*.py", "*.sh", "*.go", "*.js", "*.ts", "*.tsx", "**/*.py", "**/*.sh", "**/*.go", "**/*.js", "**/*.ts", "**/*.tsx", "bin/**", "deploy/**", "program/**"],
+  "sensitive_terms": ["auth", "authorization", "cookie", "crypto", "decrypt", "encrypt", "eval(", "exec(", "os.system", "password", "pii", "popen", "secret", "session", "subprocess", "token"],
+  "limits": {
+    "fast_max_files": 3,
+    "fast_max_changed_lines": 120,
+    "standard_max_files": 12,
+    "standard_max_changed_lines": 800,
+    "max_files": 4096,
+    "max_blob_bytes": 1048576
+  }
+}

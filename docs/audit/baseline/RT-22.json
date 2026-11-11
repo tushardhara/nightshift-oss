@@ -1,0 +1,6 @@
+{
+  "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+  "command": "cd tests && python3 -m unittest -v test_slots.GlobalSemaphore.test_heartbeat_requires_the_holder_to_prove_identity test_slots.GlobalSemaphore.test_heartbeat_without_a_holder_is_refused test_slots.GlobalSemaphore.test_heartbeat_keeps_slot_alive",
+  "exit_code": 1,
+  "output_path": "docs/audit/baseline/RT-22.txt"
+}

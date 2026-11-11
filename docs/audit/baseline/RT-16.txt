@@ -1,0 +1,55 @@
+test_session_create_is_not_an_authorized_dispatch_form (test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_session_create_is_not_an_authorized_dispatch_form) ... FAIL
+test_opaque_session_id_cannot_prove_the_target (test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_opaque_session_id_cannot_prove_the_target) ... FAIL
+test_live_bound_slot_allows_once_and_records_dispatch (test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch) ... FAIL
+test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches (test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches)
+ADR-0074 (#607): the derivation SELECT's `dispatched_at IS NULL` ... FAIL
+
+======================================================================
+FAIL: test_session_create_is_not_an_authorized_dispatch_form (test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_session_create_is_not_an_authorized_dispatch_form)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/r2anc/tests/test_admission_derivation.py", line 65, in test_session_create_is_not_an_authorized_dispatch_form
+    self.assertEqual(result["result"], "DENY", result)
+AssertionError: 'ALLOW' != 'DENY'
+- ALLOW
++ DENY
+ : {'result': 'ALLOW', 'reason': ''}
+
+======================================================================
+FAIL: test_opaque_session_id_cannot_prove_the_target (test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_opaque_session_id_cannot_prove_the_target)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/r2anc/tests/test_admission_derivation.py", line 77, in test_opaque_session_id_cannot_prove_the_target
+    self.assertEqual(result["result"], "DENY", result)
+AssertionError: 'ALLOW' != 'DENY'
+- ALLOW
++ DENY
+ : {'result': 'ALLOW', 'reason': ''}
+
+======================================================================
+FAIL: test_live_bound_slot_allows_once_and_records_dispatch (test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/r2anc/tests/test_admission_derivation.py", line 338, in test_live_bound_slot_allows_once_and_records_dispatch
+    self.assertEqual(first["result"], "ALLOW", first)
+AssertionError: 'DENY' != 'ALLOW'
+- DENY
++ ALLOW
+ : {'result': 'DENY', 'reason': "dispatch to 'eng_claude' without args.slot_id. Acquire a worker slot first: `omni-ctl slot acquire --holder <pod>/eng_claude --pod <pod> --task <task-id>` and pass the granted id as args.slot_id. Exit 3 means the global budget is full: queue the dispatch, do not retry in a loop."}
+
+======================================================================
+FAIL: test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches (test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches)
+ADR-0074 (#607): the derivation SELECT's `dispatched_at IS NULL`
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/r2anc/tests/test_admission_derivation.py", line 376, in test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches
+    self.assertEqual(first["result"], "ALLOW", first)
+AssertionError: 'DENY' != 'ALLOW'
+- DENY
++ ALLOW
+ : {'result': 'DENY', 'reason': "dispatch to 'eng_claude' without args.slot_id. Acquire a worker slot first: `omni-ctl slot acquire --holder <pod>/eng_claude --pod <pod> --task <task-id>` and pass the granted id as args.slot_id. Exit 3 means the global budget is full: queue the dispatch, do not retry in a loop."}
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.231s
+
+FAILED (failures=4)

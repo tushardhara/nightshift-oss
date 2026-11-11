@@ -1,0 +1,9 @@
+{
+  "name": "dogfood-b-java-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cypress e2e suite for the dogfood_b_java fixture (#443). Deliberately not the repo-root package.json -- see tests/test_contract_dogfood_b.py for why. No npm scripts here on purpose: cypress.config.ts is already the single, unambiguous e2e-command source (source_kind config_file). A duplicate npm-script command bucketed into the same 'e2e' category would manufacture a status:conflict this deliberately boring fixture is not meant to exercise.",
+  "devDependencies": {
+    "cypress": "^13.9.0"
+  }
+}

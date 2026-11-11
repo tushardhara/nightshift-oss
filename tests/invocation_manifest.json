@@ -1,0 +1,48 @@
+{
+  "_comment": "Issue #729 / ADR-0093, epic #716 change 4. Every test-shaped artefact under tests/ that run_suite.py's discovery does NOT reach. Each one must say what does run it (`invoked`, naming a file under .github/workflows/, deploy/ or bin/ that mentions it or its directory -- verified, not taken on trust), or record that nothing does (`debt`, with an owning issue, and it must only go down). A fixed item must be DELETED from this file: a stale entry fails the audit, because a file listing every problem the project ever had is a file nobody reads.",
+  "issue": 729,
+  "entries": [
+    {
+      "path": "tests/linux/docker-bind-smoke.sh",
+      "category": "invoked",
+      "invoked_by": ".github/workflows/linux-smoke.yml",
+      "reason": "Verified passing before scheduling: a real dockerd in docker:dind, an unqualified -p 4566:80 landing on 127.0.0.1.",
+      "issue": null
+    },
+    {
+      "path": "tests/linux/install-rehearsal.sh",
+      "category": "invoked",
+      "invoked_by": ".github/workflows/linux-smoke.yml",
+      "reason": "Clean-source install rehearsal, DoD condition 11. Needs a real git checkout -- a linked worktree's .git is a file pointing outside the container, which is why it must run from the CI checkout rather than a copied worktree.",
+      "issue": null
+    },
+    {
+      "path": "tests/linux/test-beat-producer.sh",
+      "category": "invoked",
+      "invoked_by": ".github/workflows/linux-smoke.yml",
+      "reason": "Needs no Docker at all -- only the repo and a temporary control plane. It was reachable by CI the whole time and simply never wired up. Verified passing.",
+      "issue": null
+    },
+    {
+      "path": "tests/linux/toolchain-smoke.sh",
+      "category": "invoked",
+      "invoked_by": ".github/workflows/linux-smoke.yml",
+      "reason": "Verified passing before scheduling: Go and Rust install and build under the systemd unit PATH, floci resolves, daemon.json merges.",
+      "issue": null
+    },
+    {
+      "path": "tests/live/test_pr_head_live.py",
+      "category": "invoked",
+      "invoked_by": ".github/workflows/live-api-smoke.yml",
+      "reason": "Deliberately outside discovery -- tests/live/ has no __init__.py so the gated suite cannot reach it, which its own docstring calls load-bearing because it makes live GitHub API calls. Wired to a daily non-gating workflow instead.",
+      "issue": null
+    },
+    {
+      "path": "tests/run.sh",
+      "category": "invoked",
+      "invoked_by": ".github/workflows/tests.yml",
+      "reason": "The suite runner itself. Discovery cannot reach it because discovery IS it.",
+      "issue": null
+    }
+  ]
+}

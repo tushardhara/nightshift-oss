@@ -1,0 +1,24 @@
+test_concurrent_acquires_converge_on_one_normal_worker_ceiling (test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling) ... ok
+test_oncall_reserve_rejects_missing_and_wrong_authority_token (test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token) ... FAIL
+test_denied_for_a_fenced_out_generation (test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation) ... FAIL
+
+======================================================================
+FAIL: test_oncall_reserve_rejects_missing_and_wrong_authority_token (test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/m17-authority-mutant/tests/test_slots.py", line 86, in test_oncall_reserve_rejects_missing_and_wrong_authority_token
+    self.assertEqual(code, 3, body)
+AssertionError: 0 != 3 : {'active_after': 1, 'claim_id': None, 'continuation_kind': None, 'expires_at': 1788387299.2418435, 'generation': 0, 'granted': True, 'kind': 'oncall', 'max_concurrent_workers': 4, 'phase': None, 'reused': False, 'run_id': None, 'slot_id': 1}
+
+======================================================================
+FAIL: test_denied_for_a_fenced_out_generation (test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/m17-authority-mutant/tests/test_authority_fence.py", line 172, in test_denied_for_a_fenced_out_generation
+    self.assertEqual(code, 3)
+AssertionError: 0 != 3
+
+----------------------------------------------------------------------
+Ran 3 tests in 5.971s
+
+FAILED (failures=2)

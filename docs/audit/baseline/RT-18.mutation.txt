@@ -1,0 +1,14 @@
+test_second_claimant_denied_first_claim_untouched (test_claims.RT18DispatchDeniedForForeignActiveClaim.test_second_claimant_denied_first_claim_untouched) ... FAIL
+
+======================================================================
+FAIL: test_second_claimant_denied_first_claim_untouched (test_claims.RT18DispatchDeniedForForeignActiveClaim.test_second_claimant_denied_first_claim_untouched)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/508-claimant-identity/tests/test_claims.py", line 312, in test_second_claimant_denied_first_claim_untouched
+    self.assertEqual(code, 3, body)
+AssertionError: 1 != 3
+
+----------------------------------------------------------------------
+Ran 1 test in 0.745s
+
+FAILED (failures=1)

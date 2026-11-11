@@ -1,0 +1,15 @@
+test_lease_release_wrong_holder_denied_no_duplicate_grant (test_slots.RT32UnauthenticatedReleaseCannotDuplicateDispatch.test_lease_release_wrong_holder_denied_no_duplicate_grant) ... ok
+test_slot_release_wrong_holder_denied_no_duplicate_row (test_slots.RT32UnauthenticatedReleaseCannotDuplicateDispatch.test_slot_release_wrong_holder_denied_no_duplicate_row) ... FAIL
+
+======================================================================
+FAIL: test_slot_release_wrong_holder_denied_no_duplicate_row (test_slots.RT32UnauthenticatedReleaseCannotDuplicateDispatch.test_slot_release_wrong_holder_denied_no_duplicate_row)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_slots.py", line 450, in test_slot_release_wrong_holder_denied_no_duplicate_row
+    self.assertEqual(code, 3, body)
+AssertionError: 0 != 3 : {'ok': True, 'released': 1}
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.312s
+
+FAILED (failures=1)

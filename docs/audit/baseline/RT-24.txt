@@ -1,0 +1,48 @@
+test_a_readable_but_empty_control_plane_still_reads_missing (test_beat.ControlPlaneUnreadableTest.test_a_readable_but_empty_control_plane_still_reads_missing)
+The fix must not swallow the ordinary case. ... ok
+test_absent_control_plane_dir_is_a_verdict_not_a_crash (test_beat.ControlPlaneUnreadableTest.test_absent_control_plane_dir_is_a_verdict_not_a_crash)
+The control plane is absent and cannot even be created. ... FAIL
+test_corrupt_control_plane_is_a_verdict_not_a_crash (test_beat.ControlPlaneUnreadableTest.test_corrupt_control_plane_is_a_verdict_not_a_crash)
+A control.db that is not a SQLite database at all. ... FAIL
+test_other_subcommands_do_not_fake_a_verdict (test_beat.ControlPlaneUnreadableTest.test_other_subcommands_do_not_fake_a_verdict)
+Deliberate scope: this verdict belongs to `beat show` ALONE. ... ok
+test_unreadable_control_plane_file_is_a_verdict_not_a_crash (test_beat.ControlPlaneUnreadableTest.test_unreadable_control_plane_file_is_a_verdict_not_a_crash)
+The database exists but this process may not open it. ... FAIL
+
+======================================================================
+FAIL: test_absent_control_plane_dir_is_a_verdict_not_a_crash (test_beat.ControlPlaneUnreadableTest.test_absent_control_plane_dir_is_a_verdict_not_a_crash)
+The control plane is absent and cannot even be created.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_beat.py", line 315, in test_absent_control_plane_dir_is_a_verdict_not_a_crash
+    self._assert_verdict(self._show(os.path.join(parent, "gone", "control.db")))
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_beat.py", line 278, in _assert_verdict
+    self.assertNotIn("Traceback", p.stderr,
+AssertionError: 'Traceback' unexpectedly found in 'Traceback (most recent call last):\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 1376, in <module>\n    main()\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 1367, in main\n    cx = connect(args.db)\n         ^^^^^^^^^^^^^^^^\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 135, in connect\n    os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)\n  File "<frozen os>", line 225, in makedirs\nPermissionError: [Errno 13] Permission denied: \'/tmp/nightshift-ctl-unreadable-008jo4pc/gone\'\n' : an unreadable control plane must not crash
+
+======================================================================
+FAIL: test_corrupt_control_plane_is_a_verdict_not_a_crash (test_beat.ControlPlaneUnreadableTest.test_corrupt_control_plane_is_a_verdict_not_a_crash)
+A control.db that is not a SQLite database at all.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_beat.py", line 296, in test_corrupt_control_plane_is_a_verdict_not_a_crash
+    self._assert_verdict(self._show(db))
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_beat.py", line 278, in _assert_verdict
+    self.assertNotIn("Traceback", p.stderr,
+AssertionError: 'Traceback' unexpectedly found in 'Traceback (most recent call last):\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 1376, in <module>\n    main()\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 1369, in main\n    ensure_schema(cx)\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 188, in ensure_schema\n    cx.executescript(SCHEMA)\nsqlite3.DatabaseError: file is not a database\n' : an unreadable control plane must not crash
+
+======================================================================
+FAIL: test_unreadable_control_plane_file_is_a_verdict_not_a_crash (test_beat.ControlPlaneUnreadableTest.test_unreadable_control_plane_file_is_a_verdict_not_a_crash)
+The database exists but this process may not open it.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_beat.py", line 306, in test_unreadable_control_plane_file_is_a_verdict_not_a_crash
+    self._assert_verdict(self._show(db))
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_beat.py", line 278, in _assert_verdict
+    self.assertNotIn("Traceback", p.stderr,
+AssertionError: 'Traceback' unexpectedly found in 'Traceback (most recent call last):\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 1376, in <module>\n    main()\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 1367, in main\n    cx = connect(args.db)\n         ^^^^^^^^^^^^^^^^\n  File "/srv/project/.worktrees/alpha-11-liveness/bin/nightshift-ctl", line 136, in connect\n    cx = sqlite3.connect(db_path, timeout=30, isolation_level=None)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlite3.OperationalError: unable to open database file\n' : an unreadable control plane must not crash
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.552s
+
+FAILED (failures=3)

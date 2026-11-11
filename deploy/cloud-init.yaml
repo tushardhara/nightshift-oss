@@ -1,0 +1,29 @@
+#cloud-config
+# DEPRECATED LOCATION — kept so existing launch tooling using
+# `--user-data file://deploy/cloud-init.yaml` does not break.
+# Canonical file: deploy/providers/aws/cloud-init.yaml (same behavior).
+# This shim will be removed in a future release; repoint your tooling.
+#
+# Behavior (mirrors the canonical thin AWS layer): update packages, install
+# just enough to receive the bundle, then hand off to the provider-neutral
+# deploy/provision-ubuntu.sh.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - git
+  - curl
+  - ca-certificates
+
+final_message: |
+  NOTE: you launched with deploy/cloud-init.yaml, a deprecated compat shim.
+  Repoint your tooling at deploy/providers/aws/cloud-init.yaml.
+  Next steps are identical:
+    1. copy the bundle:   rsync -a ~/.nightshift/ ubuntu@<ip>:/tmp/nightshift/
+    2. provision:         sudo NIGHTSHIFT_USER=nightshift /tmp/nightshift/deploy/provision-ubuntu.sh
+    3. move the bundle:   sudo rsync -a --chown=root:root /tmp/nightshift/ /srv/nightshift/
+    4. join the tailnet:  sudo tailscale up --ssh
+    5. UI:                loopback only (ssh -L 6767:127.0.0.1:6767); tailnet serve is
+                          opt-in with an ACL: deploy/README.md "Control API"
+    6. continue as the runtime user per deploy/README.md

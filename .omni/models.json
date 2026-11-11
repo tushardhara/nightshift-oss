@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-08-22",
+  "source": "sys_list_models (static curated aliases; subscription logins expose no listing API)",
+  "vendors": {
+    "claude": {
+      "seats": ["product", "staff", "ux", "platform", "security", "oncall", "crew_alpha", "crew_beta", "self"],
+      "reasoning": "claude-fable-5",
+      "strong": "claude-opus-5",
+      "strong_alt": "claude-opus-4-8",
+      "mid": "claude-sonnet-5",
+      "mid_alt": "claude-sonnet-4-6",
+      "small": "claude-haiku-4-5"
+    },
+    "codex": {
+      "seats": ["architect", "release"],
+      "aliases": ["gpt-5.6-sol", "gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.5"],
+      "note": "relative strength ordering is not exposed; prefer omitting args.model (harness default) unless a specific alias is known-good"
+    }
+  },
+  "routing_policy": {
+    "explore_search_read": "small (claude-haiku-4-5)",
+    "test_plans_reviews_synthesis_normal_impl": "mid (claude-sonnet-5)",
+    "hard_impl_migrations_architecture": "strong (claude-opus-5) / codex default",
+    "reasoning_tier": "claude-fable-5 — product seat only, plus staff's one-time blind discovery draft. Never workers, never security, never recurring reviews.",
+    "review_independence": "review always crosses vendors"
+  }
+}

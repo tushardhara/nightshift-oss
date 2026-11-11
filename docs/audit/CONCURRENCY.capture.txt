@@ -1,0 +1,364 @@
+=== $ cd tests && python3 -m unittest -v test_leases ===
+test_break_frees_stale_serialize_holder (test_leases.Leases.test_break_frees_stale_serialize_holder) ... ok
+test_concurrent_lease_one_winner (test_leases.Leases.test_concurrent_lease_one_winner) ... ok
+test_edit_lease_releases_on_pr_open (test_leases.Leases.test_edit_lease_releases_on_pr_open) ... ok
+test_sequence_atomic_and_lease_gated (test_leases.Leases.test_sequence_atomic_and_lease_gated) ... ok
+test_serialize_lifecycle (test_leases.Leases.test_serialize_lifecycle) ... ok
+test_wrong_holder_cannot_release (test_leases.Leases.test_wrong_holder_cannot_release) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 8.195s
+
+OK
+
+=== $ cd tests && python3 -m unittest -v test_claims ===
+test_concurrent_claims_one_winner (test_claims.ClaimRaces.test_concurrent_claims_one_winner) ... ok
+test_release_then_reclaim (test_claims.ClaimRaces.test_release_then_reclaim) ... ok
+test_renew_extends (test_claims.ClaimRaces.test_renew_extends) ... ok
+test_ttl_expiry_frees_claim (test_claims.ClaimRaces.test_ttl_expiry_frees_claim) ... ok
+test_renew_rejects_inf_ttl (test_claims.ClaimRenewRejectsGarbageTTL.test_renew_rejects_inf_ttl) ... ok
+test_renew_rejects_nan_ttl (test_claims.ClaimRenewRejectsGarbageTTL.test_renew_rejects_nan_ttl) ... ok
+test_renew_rejects_neg_inf_ttl (test_claims.ClaimRenewRejectsGarbageTTL.test_renew_rejects_neg_inf_ttl) ... ok
+test_renew_rejects_negative_ttl (test_claims.ClaimRenewRejectsGarbageTTL.test_renew_rejects_negative_ttl) ... ok
+test_renew_rejects_zero_ttl (test_claims.ClaimRenewRejectsGarbageTTL.test_renew_rejects_zero_ttl) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 19.331s
+
+OK
+
+=== $ cd tests && python3 -m unittest -v test_recovery ===
+test_dead_worker_reaped_slot_claim_run (test_recovery.Recovery.test_dead_worker_reaped_slot_claim_run) ... ok
+test_restart_reconstructs_state_no_duplicates (test_recovery.Recovery.test_restart_reconstructs_state_no_duplicates) ... ok
+test_rt26_explicit_reap_is_immune_to_setup_scheduling (test_recovery.Recovery.test_rt26_explicit_reap_is_immune_to_setup_scheduling)
+RT-26 — the flake in #32, made deterministic (ADR-0005 D4). ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 10.829s
+
+OK
+=== $ cd tests && python3 -m unittest -v test_slots ===
+test_already_invalid_continuation_keeps_its_specific_denial_even_if_budget_expired (test_slots.ContinuationBudgetGate.test_already_invalid_continuation_keeps_its_specific_denial_even_if_budget_expired) ... ok
+test_continuation_denied_when_budget_expired_implementer (test_slots.ContinuationBudgetGate.test_continuation_denied_when_budget_expired_implementer) ... ok
+test_continuation_denied_when_budget_expired_qa (test_slots.ContinuationBudgetGate.test_continuation_denied_when_budget_expired_qa) ... ok
+test_continuation_denied_when_budget_expired_review (test_slots.ContinuationBudgetGate.test_continuation_denied_when_budget_expired_review) ... ok
+test_continuation_unaffected_when_budget_seconds_is_null (test_slots.ContinuationBudgetGate.test_continuation_unaffected_when_budget_seconds_is_null) ... ok
+test_missing_task_at_slot_acquire_fails_closed_via_existing_handling (test_slots.ContinuationBudgetGate.test_missing_task_at_slot_acquire_fails_closed_via_existing_handling) ... ok
+test_ordinary_non_expired_continuation_unaffected_implementer (test_slots.ContinuationBudgetGate.test_ordinary_non_expired_continuation_unaffected_implementer) ... ok
+test_ordinary_non_expired_continuation_unaffected_qa (test_slots.ContinuationBudgetGate.test_ordinary_non_expired_continuation_unaffected_qa) ... ok
+test_ordinary_non_expired_continuation_unaffected_review (test_slots.ContinuationBudgetGate.test_ordinary_non_expired_continuation_unaffected_review) ... ok
+test_concurrent_acquires_respect_budget_and_reserve (test_slots.GlobalSemaphore.test_concurrent_acquires_respect_budget_and_reserve) ... ok
+test_concurrent_consume_one_winner (test_slots.GlobalSemaphore.test_concurrent_consume_one_winner) ... ok
+test_consume_binding_and_reuse (test_slots.GlobalSemaphore.test_consume_binding_and_reuse) ... ok
+test_dead_worker_slot_recovered_by_ttl (test_slots.GlobalSemaphore.test_dead_worker_slot_recovered_by_ttl) ... ok
+test_heartbeat_keeps_slot_alive (test_slots.GlobalSemaphore.test_heartbeat_keeps_slot_alive)
+CHANGED by ADR-0002 §4a. This test previously renewed a slot with ... ok
+test_heartbeat_requires_the_holder_to_prove_identity (test_slots.GlobalSemaphore.test_heartbeat_requires_the_holder_to_prove_identity)
+ADR-0002 §4a. Renewal is a capability of the HOLDER, not of ... ok
+test_heartbeat_without_a_holder_is_refused (test_slots.GlobalSemaphore.test_heartbeat_without_a_holder_is_refused)
+The defect verbatim: `slot heartbeat --slot <n>` with no identity. ... ok
+test_oncall_reserve_usable_only_by_oncall (test_slots.GlobalSemaphore.test_oncall_reserve_usable_only_by_oncall) ... ok
+test_release_returns_capacity (test_slots.GlobalSemaphore.test_release_returns_capacity) ... ok
+test_renew_active_respects_max_age (test_slots.GlobalSemaphore.test_renew_active_respects_max_age) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 47.353s
+
+OK
+
+=== $ cd tests && python3 -m unittest -v test_fencing ===
+test_classified_slot_generation_and_run_are_durable (test_fencing.FencingMigrationTest.test_classified_slot_generation_and_run_are_durable)
+ADR-0033 turns the old placeholder columns into exact binding. ... ok
+test_fresh_database_has_the_fencing_columns (test_fencing.FencingMigrationTest.test_fresh_database_has_the_fencing_columns) ... ok
+test_migration_is_additive_on_a_pre_existing_database (test_fencing.FencingMigrationTest.test_migration_is_additive_on_a_pre_existing_database)
+The dispatched_at pattern (bin/nightshift-ctl ensure_schema): an ... ok
+test_a_genuinely_different_schema_error_still_propagates (test_fencing.MigrationConcurrencyTest.test_a_genuinely_different_schema_error_still_propagates)
+Swallowing every OperationalError would turn this fix into a much ... ok
+test_losing_the_add_column_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_add_column_race_is_not_an_error)
+The loser's PRAGMA snapshot said the column was missing; by the time ... ok
+test_losing_the_rename_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_rename_race_is_not_an_error)
+The pod -> crew RENAME loop is the same race in the same function. ... ok
+test_parallel_invocations_against_a_pre_migration_db_never_crash (test_fencing.MigrationConcurrencyTest.test_parallel_invocations_against_a_pre_migration_db_never_crash)
+Integration guard, PROBABILISTIC by nature: whether the losers ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 4.649s
+
+OK
+=== $ cd tests && python3 -m unittest -v test_policy.WorkerSemaphorePolicy ===
+test_dispatch_with_live_slot_allowed_and_consumed (test_policy.WorkerSemaphorePolicy.test_dispatch_with_live_slot_allowed_and_consumed) ... ok
+test_dispatch_without_slot_denied (test_policy.WorkerSemaphorePolicy.test_dispatch_without_slot_denied) ... ok
+test_explicit_operator_escape_hatch (test_policy.WorkerSemaphorePolicy.test_explicit_operator_escape_hatch) ... ok
+test_fails_closed_without_database (test_policy.WorkerSemaphorePolicy.test_fails_closed_without_database) ... ok
+test_pm_exempt_and_non_dispatch_ignored (test_policy.WorkerSemaphorePolicy.test_pm_exempt_and_non_dispatch_ignored) ... ok
+test_released_or_invented_slot_denied (test_policy.WorkerSemaphorePolicy.test_released_or_invented_slot_denied) ... ok
+test_slot_bound_to_its_agent (test_policy.WorkerSemaphorePolicy.test_slot_bound_to_its_agent) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 4.113s
+
+OK
+
+=== $ cd tests && python3 -m unittest -v test_admission_gate.RootDispatchPolicy.test_named_alpha_and_beta_dispatches_are_exactly_one_use test_admission_gate.RootDispatchPolicy.test_stale_generation_and_expired_slot_deny_without_consumption ===
+test_named_alpha_and_beta_dispatches_are_exactly_one_use (test_admission_gate.RootDispatchPolicy.test_named_alpha_and_beta_dispatches_are_exactly_one_use) ... ok
+test_stale_generation_and_expired_slot_deny_without_consumption (test_admission_gate.RootDispatchPolicy.test_stale_generation_and_expired_slot_deny_without_consumption) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.844s
+
+OK
+
+=== $ cd tests && python3 -m unittest -v test_admission_gate.NewReservationLifecycle ===
+
+----------------------------------------------------------------------
+Ran 46 tests in 39.856s
+
+OK
+=== $ cd tests && python3 -m unittest -v test_stress ===
+test_concurrent_pods_with_crashes (test_stress.Stress.test_concurrent_pods_with_crashes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 7.896s
+
+OK
+
+=== $ python3 /tmp/rt36/probe.py  (Q5: worker_semaphore's sqlite3.Error branch, distinct from the missing-file branch test_fails_closed_without_database already covers) ===
+import os, sys, tempfile, subprocess, json, sqlite3
+REPO = "/srv/project"
+CTL = os.path.join(REPO, "bin", "nightshift-ctl")
+sys.path.insert(0, os.path.join(REPO, "deploy", "policies"))
+import omnipods_policies as P
+
+d = tempfile.mkdtemp(prefix="rt36-")
+omni = os.path.join(d, ".omni")
+os.makedirs(omni)
+db = os.path.join(omni, "control.db")
+with open(os.path.join(omni, "capacity.json"), "w") as f:
+    json.dump({"max_concurrent_workers": 4, "reserve_for_oncall": 1}, f)
+
+def run(*args):
+    r = subprocess.run([CTL, "--db", db] + list(args), capture_output=True, text=True)
+    return r.returncode, (json.loads(r.stdout) if r.stdout.strip() else {}), r.stderr
+
+code, _, err = run("init")
+print("init:", code, err[:200])
+
+# Acquire a live slot normally so we have a real event shape
+code, g, err = run("slot", "acquire", "--holder", "crew_alpha/eng_claude",
+                    "--crew", "crew_alpha", "--task", "T1", "--agent", "eng_claude",
+                    "--title", "t", "--purpose", "implement")
+print("slot acquire (before corruption):", code, g, err[:200])
+code, _, err = run("task", "upsert", "--id", "T1", "--crew", "crew_alpha",
+                    "--agent", "eng_claude", "--title", "t", "--state", "pending")
+print("task upsert:", code, err[:200])
+
+ev = P.worker_semaphore(db=db)
+event = {"type": "tool_call", "data": {"name": "sys_session_send",
+         "arguments": {"agent": "eng_claude", "title": "t",
+                       "args": {"slot_id": g.get("slot_id", 1), "task_id": "T1",
+                                "purpose": "implement", "generation": g.get("generation", 1)}}}}
+
+# Corrupt the db file: truncate + overwrite with garbage, non-sqlite bytes.
+with open(db, "r+b") as f:
+    f.seek(0)
+    f.write(b"NOT A SQLITE FILE" * 50)
+    f.truncate()
+
+r = ev(event)
+print("worker_semaphore against corrupted db:", json.dumps(r))
+assert r["result"] == "DENY", "FAIL: corrupted DB did not deny"
+print("PASS: sqlite3.Error path (corrupted db) fails closed")
+--- output ---
+init: 0 
+slot acquire (before corruption): 3 {'granted': False, 'reason': 'unknown task', 'task': 'T1'} 
+task upsert: 0 
+worker_semaphore against corrupted db: {"result": "DENY", "reason": "control plane unavailable (DatabaseError) \u2014 denying rather than dispatching unbudgeted; retry after `nightshift-ctl selftest` passes."}
+PASS: sqlite3.Error path (corrupted db) fails closed
+=== $ python3 /tmp/rt37/probe.py  (Q1: unauthenticated 'claim release', control run) ===
+import os, sys, tempfile, subprocess, json, sqlite3, contextlib, time
+REPO = "/srv/project"
+CTL = os.path.join(REPO, "bin", "nightshift-ctl")
+
+d = tempfile.mkdtemp(prefix="rt37-")
+omni = os.path.join(d, ".omni")
+os.makedirs(omni)
+db = os.path.join(omni, "control.db")
+with open(os.path.join(omni, "capacity.json"), "w") as f:
+    json.dump({"max_concurrent_workers": 4, "reserve_for_oncall": 1}, f)
+
+def run(*args):
+    r = subprocess.run([CTL, "--db", db] + list(args), capture_output=True, text=True)
+    out = json.loads(r.stdout) if r.stdout.strip() else {}
+    print("$", " ".join(args), "->", r.returncode, json.dumps(out))
+    return r.returncode, out
+
+run("init")
+run("run", "current", "--set", "run-rt37")
+run("task", "upsert", "--id", "T1", "--crew", "crew_alpha", "--agent", "eng_claude",
+    "--title", "t", "--state", "pending")
+
+# Seed a genuine admission the way the real root policy would after a NEW dispatch,
+# same shape ctlutil.py's own seed_admission fixture uses.
+with contextlib.closing(sqlite3.connect(db)) as cx, cx:
+    cx.execute(
+        "INSERT INTO task_admissions(task_id,new_slot_id,crew,agent,title,admitted_at) "
+        "VALUES(?,?,?,?,?,?)", ("T1", 1, "crew_alpha", "eng_claude", "t", time.time()))
+    cx.execute("UPDATE tasks SET state='building' WHERE id='T1'")
+
+print("\n-- eng_claude legitimately claims T1 (a real 3600s hold) --")
+code, claim = run("claim", "acquire", "--task", "T1", "--claimant", "crew_alpha/lead",
+                   "--agent", "eng_claude", "--title", "t", "--ttl", "3600")
+assert code == 0, claim
+
+print("\n-- an UNRELATED third party, proving no identity whatsoever, releases eng_claude's live claim --")
+print("   (`claim release` accepts only --task; the parser has no --claimant/--agent/--holder field at all)")
+code, rel = run("claim", "release", "--task", "T1")
+assert code == 0 and rel["released"] == 1, "expected the unauthenticated release to succeed"
+
+print("\n-- a SECOND, different claimant now wins the same task while eng_claude's TTL (3600s) has not lapsed --")
+code, claim2 = run("claim", "acquire", "--task", "T1", "--claimant", "crew_beta/lead",
+                    "--agent", "beta_eng_codex", "--title", "t", "--ttl", "3600")
+print("RESULT:", "GRANTED to a different claimant with no TTL expiry and no authorized recovery event"
+      if code == 0 else "denied")
+assert code == 0, claim2
+
+print("\n-- control: eng_claude's ORIGINAL slot heartbeat DOES require identity (ADR-0002 S4a), for contrast --")
+_, g = run("slot", "acquire", "--holder", "crew_alpha/eng_claude", "--crew", "crew_alpha",
+           "--task", "T1", "--agent", "eng_claude", "--title", "t", "--purpose", "implement")
+code, hb = run("slot", "heartbeat", "--slot", str(g.get("slot_id")), "--holder", "someone_else")
+print("heartbeat with wrong holder ->", code, hb)
+assert code == 3, "control failed: heartbeat should refuse a non-holder"
+
+print("\nCONFIRMED: claim release --task <id> (and, per the identical `if args.holder:` optional-check "
+      "shape, `lease release --resource <r>` with --holder omitted, and `slot release --slot <id>` with "
+      "neither --holder nor --task) performs a live-hold-freeing state transition with NO identity check "
+      "at all -- unlike `slot heartbeat`, which ADR-0002 S4a made --holder REQUIRED for specifically "
+      "because 'an optional identity argument is a check that defaults to off.' A second worker can be "
+      "admitted onto a task whose original holder's TTL has not lapsed and who issued no release itself.")
+--- output ---
+$ init -> 0 {"db": "/tmp/rt37-p6vrlt3r/.omni/control.db", "ok": true}
+$ run current --set run-rt37 -> 0 {"created": false, "ok": true, "run_id": "run-rt37"}
+$ task upsert --id T1 --crew crew_alpha --agent eng_claude --title t --state pending -> 0 {"ok": true, "task": {"agent": "eng_claude", "base_sha": null, "branch": null, "budget_seconds": null, "created_at": 1788286120.289877, "crew": "crew_alpha", "extended_at": null, "extension_reason": null, "extension_seconds": null, "id": "T1", "integrated_at": null, "issue": null, "pr_opened_at": null, "pr_url": null, "ready_at": null, "size": null, "spec_ref": null, "started_at": null, "state": "pending", "title": "t", "updated_at": 1788286120.289877, "worktree": null}}
+
+-- eng_claude legitimately claims T1 (a real 3600s hold) --
+$ claim acquire --task T1 --claimant crew_alpha/lead --agent eng_claude --title t --ttl 3600 -> 0 {"claim_id": 1, "expires_at": 1788289720.4868407, "generation": 1, "granted": true, "run_id": "run-rt37", "task": "T1"}
+
+-- an UNRELATED third party, proving no identity whatsoever, releases eng_claude's live claim --
+   (`claim release` accepts only --task; the parser has no --claimant/--agent/--holder field at all)
+$ claim release --task T1 -> 0 {"ok": true, "released": 1}
+
+-- a SECOND, different claimant now wins the same task while eng_claude's TTL (3600s) has not lapsed --
+$ claim acquire --task T1 --claimant crew_beta/lead --agent beta_eng_codex --title t --ttl 3600 -> 3 {"granted": false, "reason": "claim must match the original admitted engineer/title"}
+RESULT: denied
+Traceback (most recent call last):
+  File "/tmp/rt37/probe.py", line 46, in <module>
+    assert code == 0, claim2
+           ^^^^^^^^^
+AssertionError: {'granted': False, 'reason': 'claim must match the original admitted engineer/title'}
+
+=== $ python3 /tmp/rt37/probe2.py  (Q1/Q3 F-1: two live dispatches for the identical task/agent/title, plus slot-release control) ===
+import os, sys, tempfile, subprocess, json, sqlite3, contextlib, time
+REPO = "/srv/project"
+CTL = os.path.join(REPO, "bin", "nightshift-ctl")
+sys.path.insert(0, os.path.join(REPO, "deploy", "policies"))
+import omnipods_policies as P
+
+d = tempfile.mkdtemp(prefix="rt37b-")
+omni = os.path.join(d, ".omni")
+os.makedirs(omni)
+db = os.path.join(omni, "control.db")
+with open(os.path.join(omni, "capacity.json"), "w") as f:
+    json.dump({"max_concurrent_workers": 4, "reserve_for_oncall": 1}, f)
+
+def run(*args):
+    r = subprocess.run([CTL, "--db", db] + list(args), capture_output=True, text=True)
+    out = json.loads(r.stdout) if r.stdout.strip() else {}
+    print("$", " ".join(args), "->", r.returncode, json.dumps(out))
+    return r.returncode, out
+
+ev = P.worker_semaphore(db=db)
+def dispatch(slot_id, generation, claim_id, claim_gen, claim_run):
+    event = {"type": "tool_call", "data": {"name": "sys_session_send",
+             "arguments": {"agent": "eng_claude", "title": "t",
+                           "args": {"slot_id": slot_id, "task_id": "T1",
+                                    "purpose": "implement", "generation": generation,
+                                    "claim_id": claim_id, "claim_generation": claim_gen,
+                                    "claim_run_id": claim_run}}}}
+    r = ev(event)
+    print("dispatch(slot=%s,gen=%s,claim=%s) ->" % (slot_id, generation, claim_id), r)
+    return r
+
+run("init")
+run("run", "current", "--set", "run-rt37b")
+run("task", "upsert", "--id", "T1", "--crew", "crew_alpha", "--agent", "eng_claude",
+    "--title", "t", "--state", "pending")
+with contextlib.closing(sqlite3.connect(db)) as cx, cx:
+    cx.execute("INSERT INTO task_admissions(task_id,new_slot_id,crew,agent,title,admitted_at) "
+               "VALUES('T1',1,'crew_alpha','eng_claude','t',?)", (time.time(),))
+    cx.execute("UPDATE tasks SET state='building' WHERE id='T1'")
+
+print("\n== SESSION 1 (the real worker): claim -> continuation slot -> dispatch (goes live) ==")
+_, claim1 = run("claim", "acquire", "--task", "T1", "--claimant", "crew_alpha/lead",
+                "--agent", "eng_claude", "--title", "t", "--ttl", "3600")
+_, slot1 = run("slot", "acquire", "--holder", "crew_alpha/eng_claude", "--crew", "crew_alpha",
+               "--task", "T1", "--agent", "eng_claude", "--title", "t", "--purpose", "implement",
+               "--claim-id", str(claim1["claim_id"]), "--claim-generation", str(claim1["generation"]),
+               "--claim-run-id", claim1["run_id"])
+r1 = dispatch(slot1["slot_id"], slot1["generation"], claim1["claim_id"], claim1["generation"], claim1["run_id"])
+assert r1["result"] == "ALLOW"
+print("Session 1 is now LIVE and dispatched_at is set -- nothing tells it to stop.")
+
+print("\n== An unrelated caller wipes the 'someone is recovering this' signal, no identity proof ==")
+run("claim", "release", "--task", "T1")
+
+print("\n== SESSION 2 (a duplicate, believing session 1 is dead): re-claim, new continuation slot, dispatch ==")
+_, claim2 = run("claim", "acquire", "--task", "T1", "--claimant", "crew_alpha/lead-2",
+                "--agent", "eng_claude", "--title", "t", "--ttl", "3600")
+_, slot2 = run("slot", "acquire", "--holder", "crew_alpha/eng_claude", "--crew", "crew_alpha",
+               "--task", "T1", "--agent", "eng_claude", "--title", "t", "--purpose", "implement",
+               "--claim-id", str(claim2["claim_id"]), "--claim-generation", str(claim2["generation"]),
+               "--claim-run-id", claim2["run_id"])
+r2 = dispatch(slot2["slot_id"], slot2["generation"], claim2["claim_id"], claim2["generation"], claim2["run_id"])
+assert r2["result"] == "ALLOW"
+
+with contextlib.closing(sqlite3.connect(db)) as cx:
+    cx.row_factory = sqlite3.Row
+    rows = cx.execute("SELECT id,dispatched_at,generation FROM worker_slots "
+                       "WHERE task_id='T1' AND dispatched_at IS NOT NULL").fetchall()
+print("\nworker_slots rows with dispatched_at set for task T1:", [dict(r) for r in rows])
+assert len(rows) == 2, "expected BOTH sessions to hold a live, authorized dispatch simultaneously"
+print("\nCONFIRMED-BUG: two separate, fully-authorized dispatches for the identical "
+      "(task, agent, title) coexist -- neither slot was released, neither claim's TTL lapsed, "
+      "and worker_semaphore ALLOWed both because nothing it checks can tell that session 1 is "
+      "still alive once the unauthenticated `claim release` erased the recovery signal.")
+
+print("\n== Same shape, `slot release --slot <id>` with no --holder at all: frees ANY caller's slot ==")
+code, rel = run("slot", "release", "--slot", str(slot1["slot_id"]))
+print("released session 1's already-dispatched slot with zero identity ->", code, rel)
+assert code == 0 and rel["released"] == 1
+--- output ---
+$ init -> 0 {"db": "/tmp/rt37b-vadarge8/.omni/control.db", "ok": true}
+$ run current --set run-rt37b -> 0 {"created": false, "ok": true, "run_id": "run-rt37b"}
+$ task upsert --id T1 --crew crew_alpha --agent eng_claude --title t --state pending -> 0 {"ok": true, "task": {"agent": "eng_claude", "base_sha": null, "branch": null, "budget_seconds": null, "created_at": 1788286121.268937, "crew": "crew_alpha", "extended_at": null, "extension_reason": null, "extension_seconds": null, "id": "T1", "integrated_at": null, "issue": null, "pr_opened_at": null, "pr_url": null, "ready_at": null, "size": null, "spec_ref": null, "started_at": null, "state": "pending", "title": "t", "updated_at": 1788286121.268937, "worktree": null}}
+
+== SESSION 1 (the real worker): claim -> continuation slot -> dispatch (goes live) ==
+$ claim acquire --task T1 --claimant crew_alpha/lead --agent eng_claude --title t --ttl 3600 -> 0 {"claim_id": 1, "expires_at": 1788289721.389795, "generation": 1, "granted": true, "run_id": "run-rt37b", "task": "T1"}
+$ slot acquire --holder crew_alpha/eng_claude --crew crew_alpha --task T1 --agent eng_claude --title t --purpose implement --claim-id 1 --claim-generation 1 --claim-run-id run-rt37b -> 0 {"active_after": 1, "claim_id": 1, "continuation_kind": "implementer", "expires_at": 1788300521.5134053, "generation": 1, "granted": true, "kind": "normal", "max_concurrent_workers": 4, "phase": "continuation", "reused": false, "run_id": "run-rt37b", "slot_id": 1}
+dispatch(slot=1,gen=1,claim=1) -> {'result': 'ALLOW', 'reason': ''}
+Session 1 is now LIVE and dispatched_at is set -- nothing tells it to stop.
+
+== An unrelated caller wipes the 'someone is recovering this' signal, no identity proof ==
+$ claim release --task T1 -> 0 {"ok": true, "released": 1}
+
+== SESSION 2 (a duplicate, believing session 1 is dead): re-claim, new continuation slot, dispatch ==
+$ claim acquire --task T1 --claimant crew_alpha/lead-2 --agent eng_claude --title t --ttl 3600 -> 0 {"claim_id": 2, "expires_at": 1788289721.8563595, "generation": 2, "granted": true, "run_id": "run-rt37b", "task": "T1"}
+$ slot acquire --holder crew_alpha/eng_claude --crew crew_alpha --task T1 --agent eng_claude --title t --purpose implement --claim-id 2 --claim-generation 2 --claim-run-id run-rt37b -> 0 {"active_after": 2, "claim_id": 2, "continuation_kind": "implementer", "expires_at": 1788300521.9750855, "generation": 2, "granted": true, "kind": "normal", "max_concurrent_workers": 4, "phase": "continuation", "reused": false, "run_id": "run-rt37b", "slot_id": 2}
+dispatch(slot=2,gen=2,claim=2) -> {'result': 'ALLOW', 'reason': ''}
+
+worker_slots rows with dispatched_at set for task T1: [{'id': 1, 'dispatched_at': 1788286121.5299401, 'generation': 1}, {'id': 2, 'dispatched_at': 1788286121.9883795, 'generation': 2}]
+
+CONFIRMED-BUG: two separate, fully-authorized dispatches for the identical (task, agent, title) coexist -- neither slot was released, neither claim's TTL lapsed, and worker_semaphore ALLOWed both because nothing it checks can tell that session 1 is still alive once the unauthenticated `claim release` erased the recovery signal.
+
+== Same shape, `slot release --slot <id>` with no --holder at all: frees ANY caller's slot ==
+$ slot release --slot 1 -> 0 {"ok": true, "released": 1}
+released session 1's already-dispatched slot with zero identity -> 0 {'ok': True, 'released': 1}

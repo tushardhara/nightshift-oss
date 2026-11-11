@@ -1,0 +1,19 @@
+{
+  "_comment": "ADR-0041 / issue #245. Every test id here is ProjectTrustedAncestry -- the only class asserting real host UID ancestry. Audited by run_suite.py: under a uid-remapping sandbox, each of these must skip with the host_uid_ancestry.HOST_UID_REMAP_SKIP_REASON marker, and no test outside this list may skip with that marker. Regenerate by running tests/test_project_bind.py under `bwrap --unshare-user --ro-bind / / --bind /tmp /tmp` and listing the class's test ids -- do not hand-edit without re-deriving.",
+  "adr": "docs/decisions/ADR-0041-split-release-gate-by-capability.md",
+  "reason_marker": "issue #245",
+  "tests": [
+    "test_project_bind.ProjectTrustedAncestry.test_ancestry_schema_corruption_is_never_adopted_or_repaired",
+    "test_project_bind.ProjectTrustedAncestry.test_full_chain_fixture_records_root_home_parent_and_home_trust",
+    "test_project_bind.ProjectTrustedAncestry.test_fully_trusted_default_and_strict_replay_are_identical",
+    "test_project_bind.ProjectTrustedAncestry.test_linux_literal_tmp_acceptance_evidence",
+    "test_project_bind.ProjectTrustedAncestry.test_marker_at_deepest_untrusted_boundary_is_not_classified",
+    "test_project_bind.ProjectTrustedAncestry.test_non_enoent_marker_stat_failure_is_ambiguous",
+    "test_project_bind.ProjectTrustedAncestry.test_portable_temp_default_and_strict_match_opened_chain",
+    "test_project_bind.ProjectTrustedAncestry.test_rejected_quiescence_option_is_absent",
+    "test_project_bind.ProjectTrustedAncestry.test_replay_reports_live_drift_but_preserves_recorded_bytes",
+    "test_project_bind.ProjectTrustedAncestry.test_trusted_directory_predicate_table_and_deepest_boundary",
+    "test_project_bind.ProjectTrustedAncestry.test_trusted_marker_mutation_has_only_bounded_contract_outcomes",
+    "test_project_bind.ProjectTrustedAncestry.test_trusted_marker_types_fail_closed_without_following_symlink"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "nightshift-harness-clis",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The harness CLIs deploy/bootstrap.sh installs, at exact versions, verified against the integrity hashes in the committed lockfile.",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.311",
+    "@openai/codex": "0.166.0"
+  }
+}

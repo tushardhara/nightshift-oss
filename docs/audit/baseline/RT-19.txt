@@ -1,0 +1,71 @@
+test_release_no_active_claim_reason_distinct_from_wrong_claimant (test_claims.ClaimReleaseRenewRequireRealClaimant.test_release_no_active_claim_reason_distinct_from_wrong_claimant) ... FAIL
+test_release_real_claimant_succeeds (test_claims.ClaimReleaseRenewRequireRealClaimant.test_release_real_claimant_succeeds) ... FAIL
+test_release_wrong_claimant_denied_row_untouched (test_claims.ClaimReleaseRenewRequireRealClaimant.test_release_wrong_claimant_denied_row_untouched) ... FAIL
+test_renew_bad_ttl_and_wrong_claimant_neither_applies (test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_bad_ttl_and_wrong_claimant_neither_applies)
+AC3: a request with BOTH a bad ttl and a wrong claimant must not ... ERROR
+test_renew_no_active_claim_reason_distinct_from_wrong_claimant (test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_no_active_claim_reason_distinct_from_wrong_claimant) ... FAIL
+test_renew_real_claimant_succeeds (test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_real_claimant_succeeds) ... FAIL
+test_renew_wrong_claimant_denied_expiry_untouched (test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_wrong_claimant_denied_expiry_untouched) ... FAIL
+
+======================================================================
+ERROR: test_renew_bad_ttl_and_wrong_claimant_neither_applies (test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_bad_ttl_and_wrong_claimant_neither_applies)
+AC3: a request with BOTH a bad ttl and a wrong claimant must not
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_claims.py", line 266, in test_renew_bad_ttl_and_wrong_claimant_neither_applies
+    self.assertFalse(body["ok"])
+                     ~~~~^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+======================================================================
+FAIL: test_release_no_active_claim_reason_distinct_from_wrong_claimant (test_claims.ClaimReleaseRenewRequireRealClaimant.test_release_no_active_claim_reason_distinct_from_wrong_claimant)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_claims.py", line 275, in test_release_no_active_claim_reason_distinct_from_wrong_claimant
+    self.assertEqual(code, 3, body)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_release_real_claimant_succeeds (test_claims.ClaimReleaseRenewRequireRealClaimant.test_release_real_claimant_succeeds)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_claims.py", line 226, in test_release_real_claimant_succeeds
+    self.assertEqual(code, 0, body)
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_release_wrong_claimant_denied_row_untouched (test_claims.ClaimReleaseRenewRequireRealClaimant.test_release_wrong_claimant_denied_row_untouched)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_claims.py", line 211, in test_release_wrong_claimant_denied_row_untouched
+    self.assertEqual(code, 3, body)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_renew_no_active_claim_reason_distinct_from_wrong_claimant (test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_no_active_claim_reason_distinct_from_wrong_claimant)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_claims.py", line 283, in test_renew_no_active_claim_reason_distinct_from_wrong_claimant
+    self.assertEqual(code, 3, body)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_renew_real_claimant_succeeds (test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_real_claimant_succeeds)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_claims.py", line 251, in test_renew_real_claimant_succeeds
+    self.assertEqual(code, 0, body)
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_renew_wrong_claimant_denied_expiry_untouched (test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_wrong_claimant_denied_expiry_untouched)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_claims.py", line 237, in test_renew_wrong_claimant_denied_expiry_untouched
+    self.assertEqual(code, 3, body)
+AssertionError: 2 != 3
+
+----------------------------------------------------------------------
+Ran 7 tests in 4.287s
+
+FAILED (failures=6, errors=1)

@@ -1,0 +1,149 @@
+test_beat_show_reads_back_the_same_record (test_beat.BeatRecordTest.test_beat_show_reads_back_the_same_record) ... FAIL
+test_beat_write_stores_the_full_record (test_beat.BeatRecordTest.test_beat_write_stores_the_full_record) ... FAIL
+test_signals_are_namespaced_per_owner (test_beat.BeatRecordTest.test_signals_are_namespaced_per_owner)
+§1: no signal may stand in for another. A backup beat must not ... FAIL
+test_future_timestamp_is_not_alive (test_beat.BeatValidationTest.test_future_timestamp_is_not_alive) ... FAIL
+test_malformed_record_is_not_alive_and_does_not_crash (test_beat.BeatValidationTest.test_malformed_record_is_not_alive_and_does_not_crash)
+A corrupt row must read as NOT ALIVE (exit 3), never as an ... FAIL
+test_new_boot_resets_the_sequence_and_says_so (test_beat.BeatValidationTest.test_new_boot_resets_the_sequence_and_says_so)
+A reboot legitimately restarts the loop counter. It must be ... FAIL
+test_no_expected_run_fails_closed (test_beat.BeatValidationTest.test_no_expected_run_fails_closed)
+With no expected run resolvable the check cannot be performed, so ... FAIL
+test_non_increasing_sequence_is_refused_at_write (test_beat.BeatValidationTest.test_non_increasing_sequence_is_refused_at_write) ... FAIL
+test_not_alive_is_exit_3_never_exit_1 (test_beat.BeatValidationTest.test_not_alive_is_exit_3_never_exit_1)
+Exit-code contract published to crew_beta: 3 is a VERDICT ... FAIL
+test_previous_boot_is_not_alive_BY_DEFAULT (test_beat.BeatValidationTest.test_previous_boot_is_not_alive_BY_DEFAULT)
+The record survived a reboot; the Program did not. No flag is ... FAIL
+test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT (test_beat.BeatValidationTest.test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT)
+SECURITY B2. --run was optional, and the handoff's own §5 recipe ... FAIL
+test_stale_record_is_not_alive (test_beat.BeatValidationTest.test_stale_record_is_not_alive) ... FAIL
+test_unknown_schema_version_is_not_alive (test_beat.BeatValidationTest.test_unknown_schema_version_is_not_alive)
+SECURITY B1. `read_beat` checked that schema_version was PRESENT and ... ERROR
+test_wrong_run_is_not_alive (test_beat.BeatValidationTest.test_wrong_run_is_not_alive) ... FAIL
+
+======================================================================
+ERROR: test_unknown_schema_version_is_not_alive (test_beat.BeatValidationTest.test_unknown_schema_version_is_not_alive)
+SECURITY B1. `read_beat` checked that schema_version was PRESENT and
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 170, in test_unknown_schema_version_is_not_alive
+    rec = json.loads(cx.execute(
+                     ^^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+======================================================================
+FAIL: test_beat_show_reads_back_the_same_record (test_beat.BeatRecordTest.test_beat_show_reads_back_the_same_record)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 54, in test_beat_show_reads_back_the_same_record
+    self.assertEqual(code, 0)
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_beat_write_stores_the_full_record (test_beat.BeatRecordTest.test_beat_write_stores_the_full_record)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 36, in test_beat_write_stores_the_full_record
+    self.assertEqual(code, 0)
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_signals_are_namespaced_per_owner (test_beat.BeatRecordTest.test_signals_are_namespaced_per_owner)
+§1: no signal may stand in for another. A backup beat must not
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 65, in test_signals_are_namespaced_per_owner
+    self.assertEqual(code, 3)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_future_timestamp_is_not_alive (test_beat.BeatValidationTest.test_future_timestamp_is_not_alive)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 139, in test_future_timestamp_is_not_alive
+    self.assertEqual(code, 3)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_malformed_record_is_not_alive_and_does_not_crash (test_beat.BeatValidationTest.test_malformed_record_is_not_alive_and_does_not_crash)
+A corrupt row must read as NOT ALIVE (exit 3), never as an
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 154, in test_malformed_record_is_not_alive_and_does_not_crash
+    self.assertEqual(code, 3)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_new_boot_resets_the_sequence_and_says_so (test_beat.BeatValidationTest.test_new_boot_resets_the_sequence_and_says_so)
+A reboot legitimately restarts the loop counter. It must be
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 100, in test_new_boot_resets_the_sequence_and_says_so
+    self.assertEqual(code, 0)
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_no_expected_run_fails_closed (test_beat.BeatValidationTest.test_no_expected_run_fails_closed)
+With no expected run resolvable the check cannot be performed, so
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 208, in test_no_expected_run_fails_closed
+    self.assertEqual(code, 3)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_non_increasing_sequence_is_refused_at_write (test_beat.BeatValidationTest.test_non_increasing_sequence_is_refused_at_write)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 85, in test_non_increasing_sequence_is_refused_at_write
+    self.assertEqual(code, 3)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_not_alive_is_exit_3_never_exit_1 (test_beat.BeatValidationTest.test_not_alive_is_exit_3_never_exit_1)
+Exit-code contract published to crew_beta: 3 is a VERDICT
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 224, in test_not_alive_is_exit_3_never_exit_1
+    self.assertEqual(code, 3, argv)
+AssertionError: 2 != 3 : ('beat', 'show', '--who', 'program')
+
+======================================================================
+FAIL: test_previous_boot_is_not_alive_BY_DEFAULT (test_beat.BeatValidationTest.test_previous_boot_is_not_alive_BY_DEFAULT)
+The record survived a reboot; the Program did not. No flag is
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 120, in test_previous_boot_is_not_alive_BY_DEFAULT
+    self.assertEqual(code, 3)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT (test_beat.BeatValidationTest.test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT)
+SECURITY B2. --run was optional, and the handoff's own §5 recipe
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 192, in test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT
+    self.assertEqual(code, 0)          # this run: alive
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_stale_record_is_not_alive (test_beat.BeatValidationTest.test_stale_record_is_not_alive)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 108, in test_stale_record_is_not_alive
+    self.assertEqual(code, 3)
+AssertionError: 2 != 3
+
+======================================================================
+FAIL: test_wrong_run_is_not_alive (test_beat.BeatValidationTest.test_wrong_run_is_not_alive)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_beat.py", line 131, in test_wrong_run_is_not_alive
+    self.assertEqual(code, 3)
+AssertionError: 2 != 3
+
+----------------------------------------------------------------------
+Ran 14 tests in 3.396s
+
+FAILED (failures=13, errors=1)

@@ -1,0 +1,10 @@
+[Unit]
+Description=Omnigent state snapshot (.omni + docs -> omni/state branch)
+# The repo and gh credentials must exist; failures are retried by the timer.
+
+[Service]
+Type=oneshot
+WorkingDirectory=__PROJECT_DIR__
+Environment=PATH=__HOME__/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=HOME=__HOME__
+ExecStart=__TEAMS_DIR__/deploy/nightshift-state-backup.sh __PROJECT_DIR__ __STATE_ROOT__

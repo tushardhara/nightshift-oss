@@ -1,0 +1,16 @@
+test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT (test_beat.BeatValidationTest.test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT)
+SECURITY B2. --run was optional, and the handoff's own §5 recipe ... FAIL
+
+======================================================================
+FAIL: test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT (test_beat.BeatValidationTest.test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT)
+SECURITY B2. --run was optional, and the handoff's own §5 recipe
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_beat.py", line 197, in test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT
+    self.assertEqual(code, 3, "a dead run's fresh heartbeat must not read alive")
+AssertionError: 0 != 3 : a dead run's fresh heartbeat must not read alive
+
+----------------------------------------------------------------------
+Ran 1 test in 0.403s
+
+FAILED (failures=1)

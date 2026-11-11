@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+"""Run the exact-SHA release tool from this same checkout."""
+
+from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
+MODULE = ROOT / "deploy" / "exact_sha_release.py"
+spec = importlib.util.spec_from_file_location("nightshift_exact_sha_release", MODULE)
+if spec is None or spec.loader is None:
+    raise SystemExit(f"cannot load release implementation: {MODULE}")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+raise SystemExit(module.main())

@@ -1,0 +1,12 @@
+diff --git a/deploy/provision-ubuntu.sh b/deploy/provision-ubuntu.sh
+index fcbc2c7..8cdfefc 100755
+--- a/deploy/provision-ubuntu.sh
++++ b/deploy/provision-ubuntu.sh
+@@ -234,6 +234,7 @@ say "go toolchain"
+ # below could print. nightshift_go_want_version fetches to a temp file, parses
+ # locally, and owns the loud failure message itself.
+ go_want=""
++go_want_regression="$(curl -fsSL 'https://go.dev/VERSION?m=text' | head -1)"
+ if ! go_want="$(nightshift_go_want_version curl "${NIGHTSHIFT_GO_VERSION:-}")"; then
+   exit 1
+ fi

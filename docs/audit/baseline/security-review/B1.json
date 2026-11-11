@@ -1,0 +1,9 @@
+{
+  "baseline_sha": "7bf66bc57d1a4da211c675592b0b1a634235b181",
+  "command": "cd tests && python3 -m unittest -v test_beat.BeatValidationTest.test_unknown_schema_version_is_not_alive",
+  "exit_code": 1,
+  "finding": "B1",
+  "note": "pre-fix state of THIS branch, the commit security reviewed \u2014 not the wave checkpoint",
+  "output_path": "docs/audit/baseline/security-review/B1.txt",
+  "reviewed_sha": "7bf66bc57d1a4da211c675592b0b1a634235b181"
+}

@@ -1,0 +1,16 @@
+[Unit]
+Description=Omnigent program heartbeat writer (durable producer independent of Program control flow)
+# Writes a beat on the Program's behalf to ensure the liveness record stays fresh
+# even during long turns. This is the solution to #68: a long turn no longer outlives
+# its own beat, because the beat producer's cadence does not depend on turn length.
+
+[Service]
+Type=oneshot
+WorkingDirectory=__PROJECT_DIR__
+Environment=PATH=__HOME__/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=HOME=__HOME__
+# Resolve the control binary ABSOLUTELY. ~/.local/bin/nightshift-ctl on a deployed
+# box is a symlink to the frozen /srv/nightshift copy, which has no `beat`
+# subcommand (#42) -- resolving this by PATH made the producer a silent no-op.
+Environment=NIGHTSHIFT_CTL=__PROJECT_DIR__/bin/nightshift-ctl
+ExecStart=__TEAMS_DIR__/deploy/nightshift-heartbeat.sh __PROJECT_DIR__

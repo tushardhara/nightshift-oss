@@ -1,0 +1,6 @@
+{
+  "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+  "command": "cd tests && python3 -m unittest -v test_fencing",
+  "exit_code": 1,
+  "output_path": "docs/audit/baseline/RT-20.txt"
+}

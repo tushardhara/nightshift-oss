@@ -1,0 +1,201 @@
+RT-30 + F2 BASELINE — the state dir is inside a sandbox-writable root
+=====================================================================
+Captured by: crew_beta lead, under control-plane slot 1 (task beta-w2-r22-f1f2).
+Tree:    beta/34-watchdog-first-boot, deploy/ IDENTICAL to 86efd26.
+Proof:   `git diff --name-only 86efd26 -- deploy/` -> EMPTY, verified at capture.
+Command: python3 -m unittest -v \
+           test_watchdog.RT28TheAttestationLivesWhereTheSANDBOXCannotReachIt \
+           test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot \
+           test_watchdog.RT28BootstrapWritesTheAttestation
+         run from tests/. Result (re-measured on the shipped tree, deploy/
+         restored to 86efd26): **Ran 14 tests, FAILED (failures=11).**
+         The verbatim block at the end of this file is the ORIGINAL capture
+         and ends `Ran 12 ... FAILED (failures=9)`; the suite grew between
+         that capture and the shipped tree, so the header states what the
+         documented command reproduces TODAY. The archive is left as taken.
+
+READ THIS BEFORE TRUSTING THE NUMBER — THREE DISCLOSURES
+--------------------------------------------------------
+1. SUBTEST INFLATION. The 11 failures are NOT 11 independent findings: they are
+   8 distinct test METHODS, because
+   `test_rt30_the_check_itself_detects_a_root_that_DOES_cover` contributes 4
+   subTest failures (one per candidate root: `~`, `~/.config`,
+   `~/.config/omnigent`, and the absolute form) and every other failing method
+   contributes exactly 1. 4 + 7 = 11. Counted honestly the evidence is 8
+   methods, not 11, and "Ran 14" is 14 methods since subTests do not increment
+   that total.
+
+2. THE HARNESS MOVED, SO SOME FAILURES ARE THE HARNESS, NOT THE DEFECT.
+   `Box` now resolves state from `$HOME/.config/omnigent` and sets
+   `XDG_STATE_HOME` to a DECOY. Against the unmodified script — which still
+   reads `${XDG_STATE_HOME:-$HOME/.local/state}` — the attestation is written
+   somewhere the script does not look. That is a true statement of the defect
+   (producer and consumer resolve differently), but it means these failures
+   would NOT all be reproduced by the new tests alone on the old harness. Said
+   plainly so nobody counts them as independent evidence.
+
+3. **RT-30's HEADLINE ASSERTION DOES NOT FAIL AT BASELINE, AND I AM NOT
+   CLAIMING IT DOES.** `test_rt30_the_attestation_is_under_no_configured_
+   writable_root` PASSES here, for two independent and equally uninteresting
+   reasons: `nightshift_sandbox_grants_path` does not exist yet, so the helper
+   returns "not granted" for everything; and the assertion is written against
+   the POST-MOVE path, which the old roots would not cover anyway. A passing
+   security assertion that passes because the checker is blind is worth
+   nothing, and this is exactly the "206 OK" laundering I refused elsewhere.
+   What DOES fail is its vacuity guard,
+   `test_rt30_the_check_itself_detects_a_root_that_DOES_cover` (4/4 subTests),
+   which is in the file precisely so that a blind checker cannot be mistaken
+   for a secure one. RT-30's real pre-change evidence is the MEASUREMENT in
+   `security`'s re-review (200 ticks, agent refreshes both stamps, 200/200
+   silent) plus the pinning test added with the fix, which asserts the checker
+   reports GRANTED for the pre-move arrangement (`~/.local/state` + the old
+   path). Read RT-30 as "invariant now enforced and the enforcer is proven
+   able to say no", not as "a red test turned green".
+
+WHAT THE HONEST PRE-CHANGE FAILURES SHOW
+----------------------------------------
+ - the_watchdog_resolves_the_state_dir_from_HOME_ALONE: a fresh box ALERTS
+   (1 != 0) — the consumer cannot see the producer's attestation.
+ - nothing_is_ever_written_under_XDG_STATE_HOME: the script writes its stamps
+   into the decoy — the seam is real, not hypothetical.
+ - an_attestation_at_the_OLD_path_is_NOT_honoured: **PASSES at baseline, and
+   that pass is worthless** — a fourth disclosure. With XDG pointed at the
+   decoy the old script cannot see ANY attestation, so it alerts for a reason
+   that has nothing to do with the migration being fail-closed. It earns its
+   keep only after the fix, where the script genuinely resolves
+   $HOME/.config/omnigent and must still refuse the old location. Counted as a
+   post-fix guard, not as pre-change evidence.
+ - the_producer_hardcodes_the_same_path_as_the_consumer: `$HOME/.config/
+   omnigent` absent from BOTH scripts; `XDG_STATE_HOME` present in both.
+ - an_existing_codex_config_gets_the_INVERSE_upgrade_hint: the existing-config
+   branch checks only `.rustup`/`.floci` and never asks whether the config
+   already on disk grants a root covering the attestation — so the live box,
+   where the vulnerability was MEASURED, would be left exactly as found.
+ - the_check_itself_detects_a_root_that_DOES_cover (4 subTests): no checker.
+
+--- verbatim run output follows ---
+test_an_attestation_at_the_OLD_path_is_NOT_honoured (test_watchdog.RT28TheAttestationLivesWhereTheSANDBOXCannotReachIt.test_an_attestation_at_the_OLD_path_is_NOT_honoured)
+Migration direction is fail-CLOSED. A box that upgrades the scripts ... ok
+test_nothing_is_ever_written_under_XDG_STATE_HOME (test_watchdog.RT28TheAttestationLivesWhereTheSANDBOXCannotReachIt.test_nothing_is_ever_written_under_XDG_STATE_HOME)
+The producer/consumer seam, enforced rather than asserted. If the ... FAIL
+test_the_alert_throttle_moved_too (test_watchdog.RT28TheAttestationLivesWhereTheSANDBOXCannotReachIt.test_the_alert_throttle_moved_too)
+The whole directory moves, not just the attestation. Leaving ... FAIL
+test_the_watchdog_resolves_the_state_dir_from_HOME_ALONE (test_watchdog.RT28TheAttestationLivesWhereTheSANDBOXCannotReachIt.test_the_watchdog_resolves_the_state_dir_from_HOME_ALONE)
+The grace still works when XDG_STATE_HOME points somewhere else ... FAIL
+test_rt30_a_sibling_with_a_shared_PREFIX_does_not_count (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_a_sibling_with_a_shared_PREFIX_does_not_count)
+`~/.configuration` is not `~/.config`. A naive string-prefix test ... ok
+test_rt30_every_stamp_in_the_state_dir_is_outside_too (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_every_stamp_in_the_state_dir_is_outside_too)
+Not just the attestation: the unarmed stamp starts the grace clock ... ok
+test_rt30_the_attestation_is_under_no_configured_writable_root (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_attestation_is_under_no_configured_writable_root)
+The invariant itself, against the shipping config. ... ok
+test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover)
+The negative above is only worth anything if the checker can say ... 
+  test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover) (root='~/.config')
+The negative above is only worth anything if the checker can say ... FAIL
+  test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover) (root='~')
+The negative above is only worth anything if the checker can say ... FAIL
+  test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover) (root='~/.config/omnigent')
+The negative above is only worth anything if the checker can say ... FAIL
+  test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover) (root='/home/nightshift/.config')
+The negative above is only worth anything if the checker can say ... FAIL
+test_rt28_an_existing_codex_config_gets_the_INVERSE_upgrade_hint (test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_an_existing_codex_config_gets_the_INVERSE_upgrade_hint)
+bootstrap only writes the codex config `if [ ! -f ]`, so narrowing ... FAIL
+test_rt28_bootstrap_writes_the_attestation (test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_bootstrap_writes_the_attestation) ... ok
+test_rt28_it_is_written_BEFORE_the_units_are_enabled (test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_it_is_written_BEFORE_the_units_are_enabled)
+Ordering is the whole point: a timer armed while the attestation is ... ok
+test_rt28_the_producer_hardcodes_the_same_path_as_the_consumer (test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_the_producer_hardcodes_the_same_path_as_the_consumer)
+Producer and consumer must not merely agree - they must be unable to ... FAIL
+
+======================================================================
+FAIL: test_nothing_is_ever_written_under_XDG_STATE_HOME (test_watchdog.RT28TheAttestationLivesWhereTheSANDBOXCannotReachIt.test_nothing_is_ever_written_under_XDG_STATE_HOME)
+The producer/consumer seam, enforced rather than asserted. If the
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1224, in test_nothing_is_ever_written_under_XDG_STATE_HOME
+    self.assertEqual(
+AssertionError: Lists differ: ['/tmp/tmpw394vhw0/xdg-decoy/omnigent/watc[74 chars]nce'] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+'/tmp/tmpw394vhw0/xdg-decoy/omnigent/watchdog-last-alert'
+
++ []
+- ['/tmp/tmpw394vhw0/xdg-decoy/omnigent/watchdog-last-alert',
+-  '/tmp/tmpw394vhw0/xdg-decoy/omnigent/watchdog-unarmed-since'] : the watchdog wrote state under XDG_STATE_HOME; the systemd unit does not export that variable, so the producer and the consumer would resolve the attestation to different directories
+
+======================================================================
+FAIL: test_the_alert_throttle_moved_too (test_watchdog.RT28TheAttestationLivesWhereTheSANDBOXCannotReachIt.test_the_alert_throttle_moved_too)
+The whole directory moves, not just the attestation. Leaving
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1237, in test_the_alert_throttle_moved_too
+    self.assertTrue(
+AssertionError: False is not true : the alert marker is not under $HOME/.config/omnigent - if it stayed in the sandbox-writable tree, a worker could hold the throttle open and silence every re-alert
+
+======================================================================
+FAIL: test_the_watchdog_resolves_the_state_dir_from_HOME_ALONE (test_watchdog.RT28TheAttestationLivesWhereTheSANDBOXCannotReachIt.test_the_watchdog_resolves_the_state_dir_from_HOME_ALONE)
+The grace still works when XDG_STATE_HOME points somewhere else
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1206, in test_the_watchdog_resolves_the_state_dir_from_HOME_ALONE
+    self.assertEqual(
+AssertionError: 1 != 0 : a freshly bootstrapped box went noisy: the watchdog did not find the attestation at $HOME/.config/omnigent, which means it is still resolving the state dir through XDG_STATE_HOME
+
+======================================================================
+FAIL: test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover) (root='~/.config')
+The negative above is only worth anything if the checker can say
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1352, in test_rt30_the_check_itself_detects_a_root_that_DOES_cover
+    self.assertTrue(
+AssertionError: False is not true : '~/.config' covers the attestation and the checker missed it
+
+======================================================================
+FAIL: test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover) (root='~')
+The negative above is only worth anything if the checker can say
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1352, in test_rt30_the_check_itself_detects_a_root_that_DOES_cover
+    self.assertTrue(
+AssertionError: False is not true : '~' covers the attestation and the checker missed it
+
+======================================================================
+FAIL: test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover) (root='~/.config/omnigent')
+The negative above is only worth anything if the checker can say
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1352, in test_rt30_the_check_itself_detects_a_root_that_DOES_cover
+    self.assertTrue(
+AssertionError: False is not true : '~/.config/omnigent' covers the attestation and the checker missed it
+
+======================================================================
+FAIL: test_rt30_the_check_itself_detects_a_root_that_DOES_cover (test_watchdog.RT30AttestationIsOutsideEverySandboxWritableRoot.test_rt30_the_check_itself_detects_a_root_that_DOES_cover) (root='/home/nightshift/.config')
+The negative above is only worth anything if the checker can say
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1352, in test_rt30_the_check_itself_detects_a_root_that_DOES_cover
+    self.assertTrue(
+AssertionError: False is not true : '/home/nightshift/.config' covers the attestation and the checker missed it
+
+======================================================================
+FAIL: test_rt28_an_existing_codex_config_gets_the_INVERSE_upgrade_hint (test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_an_existing_codex_config_gets_the_INVERSE_upgrade_hint)
+bootstrap only writes the codex config `if [ ! -f ]`, so narrowing
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1416, in test_rt28_an_existing_codex_config_gets_the_INVERSE_upgrade_hint
+    self.assertIn(
+AssertionError: 'nightshift_sandbox_grants_path' not found in 'leaving it alone"\n  \n  \n  for root in .rustup .floci; do\n    grep -q "~/$root" "$HOME/.codex/config.toml" \\\n      || echo "  WARN: writable_roots is missing ~/$root — add it, or Codex workers cannot write there"\n  done\nfi\n\n\nsay "starting Postgres (session history must survive restarts)"\nmkdir -p "$HOME/omnigent-db"\n\n\ninstall -m 0644 "$TEAMS_DIR/deploy/docker-compose.postgres.yml" "$HOME/omnigent-db/docker-compose.yml"\nif [ ! -f "$HOME/omnigent-db/.env" ]; then\n  printf \'POSTGRES_PASSWORD=%s\\n\' "$(openssl rand -hex 24)" > "$HOME/omnigent-db/.env"\n  chmod 600 "$HOME/omnigent-db/.env"\nfi\n( cd "$HOME/omnigent-db" && docker compose up -d )\n\nPGPASS=$(grep POSTGRES_PASSWORD "$HOME/omnigent-db/.env" | cut -d= -f2)\nDB_URI="postgresql://omnigent:${PGPASS}@127.0.0.1:5433/omnigent"\n\n\nsay "writing systemd environment"\nmkdir -p "$HOME/.config/omnigent"\nENVFILE="$HOME/.config/omnigent/server.env"\nif [ ! -f "$ENVFILE" ]; then\n  cat > "$ENVFILE" <<EOF\n\nOMNIGENT_DATABASE_URI=${DB_URI}\n\nOMNIGENT_ANALYTICS=0\n\n\nEOF\n  chmod 600 "$ENVFILE"\nfi\n\n\n\nif ! grep -q \'^PYTHONPATH=\' "$ENVFILE"; then\n  printf \'PYTHONPATH=%s/deploy/policies\\n\' "$TEAMS_DIR" >> "$ENVFILE"\n  echo "  PYTHONPATH -> $TEAMS_DIR/deploy/policies (custom policies)"\nfi\n\n\nsay "installing systemd units"\n\n\n\ntotal_gb=$(nightshift_mem_total_gb)\nread -r mem_high_gb mem_max_gb <<<"$(nightshift_memory_limits "$total_gb")"\nMEMORY_HIGH="${NIGHTSHIFT_MEMORY_HIGH:-${mem_high_gb}G}"\nMEMORY_MAX="${NIGHTSHIFT_MEMORY_MAX:-${mem_max_gb}G}"\necho "  ${total_gb}G RAM detected -> omnigent-host MemoryHigh=$MEMORY_HIGH MemoryMax=$MEMORY_MAX"\n\nmkdir -p "$HOME/.config/systemd/user"\nfor unit in omnigent-server.service omnigent-host.service \\\n            nightshift-state-backup.service nightshift-state-backup.timer \\\n            nightshift-watchdog.service nightshift-watchdog.timer; do\n  install -m 0644 "$TEAMS_DIR/deploy/systemd/$unit" "$HOME/.config/systemd/user/$unit"\ndone\nsed -i "s\n        s\n  "$HOME/.config/systemd/user/"omnigent-*.service \\\n  "$HOME/.config/systemd/user/"nightshift-*.service "$HOME/.config/systemd/user/"nightshift-*.timer\n\n\n\n\n\n\nif ! loginctl show-user "$USER" 2>/dev/null | grep -q \'Linger=yes\'; then\n  loginctl enable-linger "$USER" 2>/dev/null \\\n    || echo "WARN: linger is off — as root run: loginctl enable-linger $USER (preflight will FAIL until then)" >&2\nfi\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNIGHTSHIFT_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omnigent"\nmkdir -p "$NIGHTSHIFT_STATE_DIR"\ndate +%s > "$NIGHTSHIFT_STATE_DIR/bootstrapped-at"\necho "  installer attestation -> $NIGHTSHIFT_STATE_DIR/bootstrapped-at"\n\n\n\nif ! nightshift_install_user_units "$(id -u)" "$USER"; then\n  exit 1\nfi\n\nsay "next steps (interactive, once)"\ncat <<\'EOF\'\n  1. claude setup-token          \n  2. codex login                 \n  3. gh auth login               \n  4. gh auth refresh -s project  \n  5. git -C /srv/project clone … \n  6. /srv/nightshift/bin/nightshift-init.sh /srv/project\n  7. /srv/nightshift/bin/nightshift-tracker-init.sh /srv/project   \n  8. $EDITOR /srv/project/.omni/brief.md   \n  9. confirm the UI proxy exists — root set it during provisioning with\n     \'tailscale serve --bg 6767\' (persists across reboots). If preflight\n     warns it is missing, run that command FROM A ROOT SHELL — this user\n     deliberately cannot manage tailscale. Never \'tailscale funnel\'.\n 10. /srv/nightshift/deploy/preflight.sh    \n 11. systemctl --user start omnigent-server omnigent-host\n 12. launch the program agent (see deploy/README.md "Starting the run")\nEOF' : the existing-config branch does not check whether the config already on disk grants a writable root covering the attestation - so the box where the vulnerability was actually measured would be left exactly as it was found
+
+======================================================================
+FAIL: test_rt28_the_producer_hardcodes_the_same_path_as_the_consumer (test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_the_producer_hardcodes_the_same_path_as_the_consumer)
+Producer and consumer must not merely agree - they must be unable to
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1391, in test_rt28_the_producer_hardcodes_the_same_path_as_the_consumer
+    self.assertIn("$HOME/.config/omnigent", watch)
+AssertionError: '$HOME/.config/omnigent' not found in '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nset -u\nPROJECT_DIR="${1:-/srv/project}"\nSTALE_HOURS="${NIGHTSHIFT_WATCHDOG_STALE_HOURS:-3}"     \nREALERT_HOURS="${NIGHTSHIFT_WATCHDOG_REALERT_HOURS:-6}" \n\n\nUNARMED_GRACE_HOURS="${NIGHTSHIFT_WATCHDOG_UNARMED_GRACE_HOURS:-24}"\nCTL="${NIGHTSHIFT_CTL:-nightshift-ctl}"\nSTATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omnigent"\nMARKER="$STATE_DIR/watchdog-last-alert"\n\n\n\n\nUNARMED_STAMP="$STATE_DIR/watchdog-unarmed-since"\n\n\nBOOTSTRAP_STAMP="$STATE_DIR/bootstrapped-at"\nmkdir -p "$STATE_DIR" 2>/dev/null || true\n\n\n[ -d "$PROJECT_DIR/.omni" ] || exit 0\n\nnow=$(date +%s)\nmax_age=$(( STALE_HOURS * 3600 ))\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nPLANE="$PROJECT_DIR/.omni/control.db"\nverdict=""\nalive=0\nnever_started_why=""\nif verdict=$(cd "$PROJECT_DIR" && "$CTL" --db "$PLANE" beat show --who program --max-age "$max_age" 2>/dev/null); then\n  alive=1\nfi\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nreason_code=""\nage_s=""\nif [ -n "$verdict" ]; then\n  parsed=$(printf \'%s\' "$verdict" | python3 -c \'\nimport json, sys\ntry:\n    d = json.load(sys.stdin)\nexcept Exception:\n    sys.exit(0)\nif isinstance(d, dict):\n    print(d.get("reason_code", "") or "")\n    print(d.get("age", "") if d.get("age") is not None else "")\n\' 2>/dev/null || true)\n  reason_code=$(printf \'%s\\n\' "$parsed" | sed -n \'1p\')\n  age_s=$(printf \'%s\\n\' "$parsed" | sed -n \'2p\')\nfi\n\nif [ "$alive" -eq 1 ]; then\n  rm -f "$MARKER"   \n  \n  \n  \n  exit 0\nfi\n\n[ -n "$reason_code" ] || reason_code="unavailable"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nif [ "$reason_code" = "missing" ]; then\n  run_rc=0\n  (cd "$PROJECT_DIR" && "$CTL" --db "$PLANE" run current >/dev/null 2>&1) || run_rc=$?\n  if [ "$run_rc" -eq 3 ]; then\n    unarmed_since=""\n    if [ -f "$UNARMED_STAMP" ]; then\n      unarmed_since=$(cat "$UNARMED_STAMP" 2>/dev/null || echo "")\n      \n      \n      case "$unarmed_since" in (\'\'|*[!0-9]*) unarmed_since=0 ;; esac\n    else\n      \n      \n      \n      if echo "$now" > "$UNARMED_STAMP" 2>/dev/null; then\n        unarmed_since="$now"\n      else\n        unarmed_since=0\n      fi\n    fi\n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    \n    installer_at=0\n    if [ -f "$BOOTSTRAP_STAMP" ]; then\n      installer_at=$(cat "$BOOTSTRAP_STAMP" 2>/dev/null || echo 0)\n      case "$installer_at" in (\'\'|*[!0-9]*) installer_at=0 ;; esac\n    fi\n    grace_window=$(( UNARMED_GRACE_HOURS * 3600 ))\n    if [ "$installer_at" -gt 0 ] \\\n       && [ $(( now - installer_at )) -lt "$grace_window" ] \\\n       && [ $(( now - unarmed_since )) -lt "$grace_window" ]; then\n      echo "watchdog: not armed — no run recorded and no heartbeat ever written," \\\n           "and this box was bootstrapped $(( (now - installer_at) / 60 ))m ago;" \\\n           "the org has not started yet (within the ${UNARMED_GRACE_HOURS}h" \\\n           "grace), so there is nothing to watch"\n      exit 0\n    fi\n    \n    if [ "$installer_at" -eq 0 ]; then\n      never_started_why="there is NO installer attestation on this box at all (\\`$BOOTSTRAP_STAMP\\` is missing or unreadable), so this is not a fresh install — the control plane was most likely RESTORED or replaced under a running install, or the state directory was wiped"\n    elif [ $(( now - installer_at )) -ge "$grace_window" ]; then\n      never_started_why="this box was bootstrapped $(( (now - installer_at) / 3600 ))h ago, so it is NOT installing — an empty control plane on an established box means the plane was restored, replaced or truncated (\\`nightshift-ctl dump\\` does not export \\`meta\\`, so every restore looks like this)"\n    else\n      never_started_why="it has been un-armable for over ${UNARMED_GRACE_HOURS}h"\n    fi\n    reason_code="never_started"\n  fi\nfi\n\n\nif [ -f "$MARKER" ]; then\n  last=$(cat "$MARKER" 2>/dev/null || echo 0)\n  case "$last" in (\'\'|*[!0-9]*) last=0 ;; esac\n  if [ $(( (now - last) / 3600 )) -lt "$REALERT_HOURS" ]; then\n    exit 0\n  fi\nfi\n\n\n\nserver_state=$(systemctl --user is-active omnigent-server 2>/dev/null || echo unknown)\nhost_state=$(systemctl --user is-active omnigent-host 2>/dev/null || echo unknown)\n\nage_human="unknown"\nif [ -n "$age_s" ]; then\n  case "$age_s" in\n    (*[!0-9.-]*) : ;;\n    (*) age_human="$(( ${age_s%%.*} / 3600 ))h" ;;\n  esac\nfi\n\n\ncase "$reason_code" in\n  missing)     story="a run IS recorded in the control plane, but the Program has never written a heartbeat for it — it has not completed a single loop iteration, or its record was lost. (A box where no run has been recorded at all is \'not started yet\' and is handled silently above, issue \n  never_started) story="NO Program heartbeat and NO recorded run — and ${never_started_why:-the grace expired}. Either the Program never started on this box, or the control plane being consulted is not the one it writes to." ;;\n  malformed)   story="the Program heartbeat record is unparseable." ;;\n  wrong_run)   story="the stored heartbeat belongs to a DIFFERENT run." ;;\n  wrong_boot)  story="the heartbeat was written BEFORE the last reboot — the record survived, the Program did not." ;;\n  future)      story="the heartbeat timestamp is materially in the future (clock skew)." ;;\n  stale)       story="the Program heartbeat has not advanced within the threshold." ;;\n  unavailable) story="the control plane could not be read at all (missing, corrupt or unreadable control.db)." ;;\n  *)           story="the Program heartbeat is not valid (reason: ${reason_code})." ;;\nesac\n\nbody="🚨 **Watchdog: the Program is not alive** (reason \\`${reason_code}\\`, threshold ${STALE_HOURS}h).\n\n${story}\n\nThis verdict is read from the Program\'s own heartbeat record BY CONTENT — not from file timestamps under \\`.omni/\\`, and not from \\`STATUS.md\\`. Backup writes, timer output and this watchdog\'s own marker cannot make it look healthy (ADR-0002, issue \n\n**If this run has FINISHED, this alert is EXPECTED and can be ignored.** Terminal project state is not yet readable from the control plane (issue \n\nServices (read-only check): omnigent-server \\`${server_state}\\`, omnigent-host \\`${host_state}\\`.\n\nRecovery (one command on the box): start a session on the program agent with:\n\\`Resume from files: read .omni/goal.md, .omni/STATUS.md and the registries, reconcile against open PRs, continue the current wave. Re-create the hourly heartbeat task and confirm it with sys_scheduled_task_list.\\`"\n\nissue=$(cd "$PROJECT_DIR" && gh issue list --search "Program status in:title" --state open \\\n  --json number --jq \'.[0].number\' 2>/dev/null || true)\nif [ -n "${issue:-}" ] && [ "$issue" != "null" ]; then\n  (cd "$PROJECT_DIR" && gh issue comment "$issue" --body "$body") >/dev/null 2>&1 \\\n    && echo "$now" > "$MARKER" \\\n    && echo "watchdog: NOT ALIVE (${reason_code}) — alerted on issue \nelse\n  \n  \n  echo "watchdog: NOT ALIVE (${reason_code}) — no Program status issue found" >&2\n  echo "$now" > "$MARKER"\nfi\nexit 0'
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.322s
+
+FAILED (failures=9)

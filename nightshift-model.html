@@ -1,0 +1,1338 @@
+<title>N Crews, One Repo</title>
+<style>
+  /* ============================================================
+     MISSION CONTROL — a signalling schematic for an agent org.
+     Hue carries role identity, so colour is information:
+     violet = Claude, teal = Codex, amber = the orchestrator.
+     Light palette on bare :root; dark redefines TOKENS ONLY.
+     ============================================================ */
+  :root {
+    /* ground + structure — cool, blue-biased neutrals, chosen not inherited */
+    --bg: #eef1f7;
+    --surface: #ffffff;
+    --surface-2: #e3e8f2;
+    --surface-3: #d7deec;
+    --ink: #0d1220;
+    --muted: #495468;
+    --faint: #616d87;
+    --rule: #d2daea;
+    --rule-strong: #a5b0c8;
+
+    /* the signal lines */
+    --claude:   #6d28d9;
+    --codex:    #0f766e;
+    --program:  #a54b06;
+    --product:  #be185d;
+    --release:  #137334;
+    --security: #b91c1c;
+    --qa:       #1d4ed8;
+    --warn:     #925906;
+
+    /* mix strength for tinted panels — same hue as the label, low alpha */
+    --wash: 8%;
+
+    /* per-section line colour; each section overrides via [data-accent].
+       Defined here too so anything outside a section still resolves. */
+    --accent: var(--program);
+
+    --measure: 68ch;
+    --wide: 1180px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #080c15;
+      --surface: #111826;
+      --surface-2: #182133;
+      --surface-3: #202b41;
+      --ink: #e9eef8;
+      --muted: #98a5bd;
+      --faint: #7885a0;
+      --rule: #1f2939;
+      --rule-strong: #35415a;
+
+      --claude:   #a78bfa;
+      --codex:    #2dd4bf;
+      --program:  #fbbf24;
+      --product:  #f472b6;
+      --release:  #4ade80;
+      --security: #f87171;
+      --qa:       #60a5fa;
+      --warn:     #fcd34d;
+
+      --wash: 14%;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #080c15;
+    --surface: #111826;
+    --surface-2: #182133;
+    --surface-3: #202b41;
+    --ink: #e9eef8;
+    --muted: #98a5bd;
+    --faint: #7885a0;
+    --rule: #1f2939;
+    --rule-strong: #35415a;
+
+    --claude:   #a78bfa;
+    --codex:    #2dd4bf;
+    --program:  #fbbf24;
+    --product:  #f472b6;
+    --release:  #4ade80;
+    --security: #f87171;
+    --qa:       #60a5fa;
+    --warn:     #fcd34d;
+
+    --wash: 14%;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16.5px;
+    line-height: 1.65;
+    margin: 0;
+    padding: 0 24px 0;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---------------------------------------------------- masthead ---- */
+  header.masthead {
+    max-width: var(--wide);
+    margin: 0 auto;
+    padding: 64px 0 44px;
+    position: relative;
+  }
+
+  /* the signal strip: seven lines, the org's roles, as a transit key */
+  .lines {
+    display: flex;
+    gap: 3px;
+    height: 7px;
+    margin-bottom: 40px;
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .lines i { display: block; height: 100%; border-radius: 1px; }
+  .lines i:nth-child(1) { flex: 5; background: var(--program); }
+  .lines i:nth-child(2) { flex: 8; background: var(--claude); }
+  .lines i:nth-child(3) { flex: 8; background: var(--codex); }
+  .lines i:nth-child(4) { flex: 3; background: var(--product); }
+  .lines i:nth-child(5) { flex: 3; background: var(--qa); }
+  .lines i:nth-child(6) { flex: 2; background: var(--release); }
+  .lines i:nth-child(7) { flex: 2; background: var(--security); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 22px;
+  }
+  .eyebrow b { color: var(--program); font-weight: 600; }
+
+  h1 {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: clamp(38px, 7.2vw, 82px);
+    line-height: 0.96;
+    letter-spacing: -0.038em;
+    text-wrap: balance;
+    margin: 0 0 24px;
+  }
+  /* the one place a hue lands on the display type */
+  h1 em { font-style: normal; color: var(--program); }
+
+  .standfirst {
+    font-size: 20.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 60ch;
+    margin: 0;
+    font-weight: 400;
+  }
+  .standfirst b { color: var(--ink); font-weight: 600; }
+
+  /* stat tiles — instrument readouts, not a centred badge row */
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+    gap: 1px;
+    margin-top: 44px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .facts span {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 16px 18px;
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+  }
+  .facts b {
+    font-family: var(--sans);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .facts span:nth-child(1) b { color: var(--program); }
+  .facts span:nth-child(2) b { color: var(--claude); }
+  .facts span:nth-child(3) b { color: var(--codex); }
+  .facts span:nth-child(4) b { color: var(--release); }
+  .facts span:nth-child(5) b { color: var(--security); }
+
+  /* ---------------------------------------------------- sections ---- */
+  section {
+    max-width: var(--wide);
+    margin: 0 auto;
+    padding-top: 76px;
+  }
+  /* each section flies one line's colour, set by data-accent */
+  section { --accent: var(--program); }
+  section[data-accent="claude"]   { --accent: var(--claude); }
+  section[data-accent="codex"]    { --accent: var(--codex); }
+  section[data-accent="product"]  { --accent: var(--product); }
+  section[data-accent="qa"]       { --accent: var(--qa); }
+  section[data-accent="release"]  { --accent: var(--release); }
+  section[data-accent="security"] { --accent: var(--security); }
+
+  h2 {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: clamp(25px, 3.2vw, 34px);
+    letter-spacing: -0.026em;
+    line-height: 1.14;
+    text-wrap: balance;
+    margin: 0 auto 10px;
+    max-width: var(--measure);
+    position: relative;
+  }
+  /* a short colour tick above the heading — the section's line */
+  h2::before {
+    content: "";
+    display: block;
+    width: 46px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  h2 + .kicker {
+    max-width: var(--measure);
+    margin: 0 auto 26px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 19.5px;
+    letter-spacing: -0.012em;
+    margin: 44px auto 12px;
+    max-width: var(--measure);
+  }
+
+  p { max-width: var(--measure); margin: 0 auto 18px; }
+  ul, ol { max-width: var(--measure); margin: 0 auto 20px; padding-left: 24px; }
+  li { margin-bottom: 9px; }
+  li::marker { color: var(--accent); }
+  strong { font-weight: 650; color: var(--ink); }
+  em { color: var(--muted); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.845em;
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.1em 0.36em;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2.5px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  /* ---------------------------------------------------- figures ---- */
+  figure { margin: 34px auto 44px; max-width: var(--wide); }
+  .figframe {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 26px 22px 16px;
+  }
+  figure svg { display: block; width: 100%; min-width: 620px; height: auto; color: var(--muted); }
+  figcaption {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-top: 14px;
+    max-width: 84ch;
+  }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  figcaption code { font-size: 0.95em; }
+
+  /* legend swatches */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin: 0 auto 28px;
+    max-width: var(--measure);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .swatch { display: inline-flex; align-items: center; gap: 8px; }
+  .swatch i {
+    width: 22px; height: 5px; border-radius: 3px; display: inline-block;
+  }
+
+  /* ---------------------------------------------------- tables ---- */
+  .tablewrap {
+    overflow-x: auto;
+    margin: 28px auto 38px;
+    max-width: var(--wide);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--surface);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 14.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  caption {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 16px 18px 12px;
+  }
+  th, td {
+    text-align: left;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  thead th {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--faint);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  /* the first cell reads as the row's label, in the section's hue */
+  tbody td:first-child { color: var(--ink); }
+  tbody td:first-child strong { color: var(--accent); }
+  td code { white-space: nowrap; }
+  .tier { font-family: var(--mono); font-size: 12.5px; }
+
+  /* ---------------------------------------------------- notes ---- */
+  /* tinted wash + coloured label, rather than a heavy rail */
+  .note {
+    max-width: var(--measure);
+    margin: 0 auto 28px;
+    padding: 18px 20px;
+    /* plain fallback first, so a browser without color-mix still gets a panel */
+    background: var(--surface);
+    border: 1px solid var(--rule-strong);
+    background: color-mix(in srgb, var(--warn) var(--wash), var(--surface));
+    border-color: color-mix(in srgb, var(--warn) 32%, var(--rule));
+    border-radius: 4px;
+    font-size: 15.5px;
+  }
+  .note p { max-width: none; }
+  .note p:last-child { margin-bottom: 0; }
+  .note .lbl {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--warn);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .note.fix {
+    background: color-mix(in srgb, var(--codex) var(--wash), var(--surface));
+    border-color: color-mix(in srgb, var(--codex) 32%, var(--rule));
+  }
+  .note.fix .lbl { color: var(--codex); }
+
+  /* ---------------------------------------------------- code ---- */
+  pre {
+    max-width: var(--measure);
+    margin: 0 auto 28px;
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding: 17px 19px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+  }
+  pre code { background: none; border: 0; padding: 0; white-space: pre; font-size: 1em; }
+
+  /* ---------------------------------------------------- footer ---- */
+  footer {
+    max-width: var(--wide);
+    margin: 88px auto 0;
+    padding: 26px 0 40px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--faint);
+    letter-spacing: 0.02em;
+  }
+  footer code { font-size: 0.95em; }
+
+  @media (max-width: 640px) {
+    body { padding: 0 16px; font-size: 16px; }
+    header.masthead { padding: 40px 0 32px; }
+    section { padding-top: 56px; }
+    th, td { padding: 11px 13px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <p class="eyebrow">Omnigent · <b>autonomous delivery org</b></p>
+  <h1>N Crews,<br>One <em>Repo</em></h1>
+  <p class="standfirst">You write <b>one paragraph</b>. Claude and Codex derive the PRD,
+  the architecture and the definition of finished between them, then N crews build until
+  those conditions are met — and the org stops.</p>
+  <div class="facts">
+    <span><b>1</b>paragraph of human input</span>
+    <span><b>N</b>crews from one template</span>
+    <span><b>1</b>global worker budget</span>
+    <span><b>1</b>writer of the default branch</span>
+    <span><b>0</b>human approvals</span>
+  </div>
+</header>
+
+<section data-accent="product">
+  <h2>You write a paragraph. It derives the rest.</h2>
+  <p class="kicker">Brief → PRD → definition of finished → milestones</p>
+  <p><code>.omni/brief.md</code> is the only file a human authors: what should exist, who
+  for, what working looks like, hard constraints, and what is explicitly out this
+  time. There is no goal to write and no completion condition to phrase — producing
+  those is the org's first job, and it is the highest-leverage work it ever does,
+  because everything downstream optimises toward the definition it writes.</p>
+
+  <p>Nothing in discovery asks you a follow-up question. Ambiguity gets resolved in
+  the direction most likely to be right, and the assumption is written down where you
+  can see it — numbered, each with what breaks if it is wrong.</p>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 940 330" role="img" aria-label="Discovery: the owner's brief goes to product on Claude, architect on Codex and staff on Claude independently — three blind drafts; the program reconciles the two competing architectures into a PRD, a definition of done, milestones and a generated goal, then charters milestone one.">
+        <defs>
+          <marker id="h-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="h-prog" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--program)"/>
+          </marker>
+        </defs>
+
+        <rect x="16" y="118" width="150" height="76" rx="4" fill="var(--surface-2)" stroke="var(--program)" stroke-width="1.5"/>
+        <text x="91" y="144" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11.5" fill="var(--program)">.omni/brief.md</text>
+        <text x="91" y="162" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">a paragraph</text>
+        <text x="91" y="178" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">the only file you write</text>
+
+        <rect x="240" y="18" width="238" height="76" rx="4" fill="var(--surface)" stroke="var(--claude)"/>
+        <text x="256" y="40" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="var(--claude)">product · Claude</text>
+        <text x="256" y="58" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">PRD · the core loop · scope</text>
+        <text x="256" y="72" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">DEFINITION-OF-DONE, numbered</text>
+        <text x="256" y="86" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">milestones · assumptions, costed</text>
+
+        <rect x="240" y="110" width="238" height="76" rx="4" fill="var(--surface)" stroke="var(--codex)"/>
+        <text x="256" y="132" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="var(--codex)">architect · Codex</text>
+        <text x="256" y="150" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">shape · data model · stack</text>
+        <text x="256" y="164" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">THE SEAMS → how many crews</text>
+        <text x="256" y="178" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">hard parts · feasibility · cost</text>
+
+        <rect x="240" y="202" width="238" height="76" rx="4" fill="var(--surface)" stroke="var(--claude)"/>
+        <text x="256" y="224" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="var(--claude)">staff · Claude</text>
+        <text x="256" y="242" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">its OWN architecture, blind</text>
+        <text x="256" y="256" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">PROPOSAL-claude.md</text>
+        <text x="256" y="270" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">competing, not reviewing</text>
+
+        <text x="359" y="298" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--claude)">three blind drafts — nobody sees another's</text>
+
+        <g stroke="currentColor" fill="none">
+          <path d="M 166 140 L 234 58" marker-end="url(#h-arrow)"/>
+          <path d="M 166 156 L 234 148" marker-end="url(#h-arrow)"/>
+          <path d="M 166 172 L 234 238" marker-end="url(#h-arrow)"/>
+        </g>
+
+        <rect x="530" y="98" width="180" height="116" rx="4" fill="var(--surface-2)" stroke="var(--program)" stroke-width="1.4"/>
+        <text x="620" y="122" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="var(--program)">program reconciles</text>
+        <text x="546" y="144" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">agree → confidence</text>
+        <text x="546" y="160" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">scope clash → cut scope</text>
+        <text x="546" y="176" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">shape clash → ADR-0001</text>
+        <text x="546" y="196" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">contradiction → say it, cut</text>
+
+        <g stroke="currentColor" fill="none">
+          <path d="M 478 56 L 524 126" marker-end="url(#h-arrow)"/>
+          <path d="M 478 148 L 524 154" marker-end="url(#h-arrow)"/>
+          <path d="M 478 240 L 524 186" marker-end="url(#h-arrow)"/>
+        </g>
+
+        <rect x="762" y="76" width="162" height="72" rx="4" fill="var(--surface)" stroke="var(--program)"/>
+        <text x="843" y="98" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--program)">.omni/goal.md</text>
+        <text x="843" y="115" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">GENERATED, never</text>
+        <text x="843" y="129" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">hand-authored</text>
+        <text x="843" y="143" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">+ hourly heartbeat</text>
+
+        <rect x="762" y="164" width="162" height="72" rx="4" fill="var(--surface)" stroke="var(--rule-strong)"/>
+        <text x="843" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="currentColor">milestone 1</text>
+        <text x="843" y="203" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">chartered in the same</text>
+        <text x="843" y="217" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">turn — must be</text>
+        <text x="843" y="231" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--claude)">demonstrable</text>
+
+        <g stroke="var(--program)" fill="none">
+          <path d="M 710 138 L 756 116" marker-end="url(#h-prog)"/>
+          <path d="M 710 176 L 756 196" marker-end="url(#h-prog)"/>
+        </g>
+
+        <text x="470" y="312" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">one report to your phone: what it is · what finished means · what it assumed · what it cut · what is most likely wrong</text>
+      </svg>
+    </div>
+    <figcaption><b>Three blind drafts from one brief.</b> <code>product</code> writes the PRD while
+    two competing architects — <code>architect</code> on Codex and <code>staff</code> on Claude — each
+    design the system without seeing the other's draft. Where the architectures agree, that is
+    the cheapest confidence available. Where they clash, the program reconciles decision by
+    decision and records ADR-0001 — keeping both proposals in the repo unedited, so "did anyone
+    consider X?" stays answerable in six months.</figcaption>
+  </figure>
+
+  <div class="note fix">
+    <span class="lbl">The seam count sets the org, not the roster</span>
+    <p><code>architect</code> reports how many places work can proceed without collision. Two
+    seams means two crews run, whatever the roster holds — the rest get a grant of zero
+    and say so in the report. Crews queueing on the same files look busy and deliver
+    nothing.</p>
+  </div>
+
+  <h3>Then it finishes, and stops</h3>
+  <p><code>docs/prd/DEFINITION-OF-DONE.md</code> is the project's only fixed point — numbered
+  conditions, each observably true or false. Conditions are never quietly edited;
+  revising one takes a changelog line and evidence from delivery. Every milestone
+  closes by verifying its exit criteria <strong>against the default branch as it now
+  stands</strong>, not against what crews reported, and ends in something a person can
+  actually see working.</p>
+
+  <p>When every condition is met, the <code>finish</code> skill writes
+  <code>docs/HANDOVER.md</code> — verified by running the setup from a clean clone — posts the
+  final report, deletes its heartbeat task and stops dispatching. Three legitimate endings, each
+  named in the first line of <code>STATUS.md</code>: <strong>complete</strong>; <strong>complete with
+  exceptions</strong>, every dropped condition listed with its reason; or <strong>blocked</strong>,
+  naming exactly what is needed and what was finished around it. An org that keeps
+  polishing after done is spending your quota on work nobody asked for.</p>
+</section>
+
+<section data-accent="program">
+  <h2>What breaks when you add the third crew</h2>
+  <p class="kicker">Five bugs that only appear at N &gt; 2</p>
+  <p>A two-crew design hides its own scaling faults. Each of these was real, and each
+  fix is a mechanism rather than a rule anyone has to remember.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Bug → mechanism</caption>
+      <thead>
+        <tr><th>What breaks</th><th>Why it only shows at N</th><th>The fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Per-crew worker caps</strong></td>
+          <td>Crews doubled as units of parallelism, so crew 3 added 2 more concurrent workers against the same two subscriptions. At N=5 that's 10 workers and both vendors saturate at once.</td>
+          <td>One global budget in <code>capacity.json</code>, split into per-wave <strong>grants</strong>. Adding a crew adds queueing, never load.</td>
+        </tr>
+        <tr>
+          <td><strong>"Disjoint file scope"</strong></td>
+          <td>Hand-partitionable at N=2, impossible at N=5. Every crew eventually reaches for the lockfile, CI config, routes, migrations.</td>
+          <td><code>docs/owners.md</code>: one owner per path. Everything else needs a <strong>lease</strong>, one per glob at a time.</td>
+        </tr>
+        <tr>
+          <td><strong>All traffic relayed through the program</strong></td>
+          <td>Pairs grow O(N²) while the relay stays serial and single-context. The portfolio manager becomes a switchboard.</td>
+          <td>Handoff <strong>files</strong> are the channel. The program verifies and points; it never retells an interface in prose.</td>
+        </tr>
+        <tr>
+          <td><strong>Merge order was nobody's</strong></td>
+          <td>A candidate tested as a set, then merged in whatever order a human picked — verifying a combination that may never exist.</td>
+          <td>One <strong>integrator</strong> builds the real merge result, merges it, re-verifies, and reverts itself if the branch goes red.</td>
+        </tr>
+        <tr>
+          <td><strong>Crew names hardcoded</strong></td>
+          <td>Adding a crew meant editing the roster, the init script, the backlog, the boundary map, the registries.</td>
+          <td><code>nightshift-add-crew.sh</code> clones and registers; registries and backlog sections are discovered, not enumerated.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <span class="lbl">The honest ceiling</span>
+    <p>N crews work only if the repo has N reasonably independent seams. Adding a crew
+    to a codebase with two seams buys you three crews queueing on the same files.
+    Crews scale with the architecture, not with ambition — and when the architecture
+    is the limit, the report says so instead of quietly serialising everything.</p>
+  </div>
+</section>
+
+<section data-accent="claude">
+  <h2>The constraint everything is built around</h2>
+  <p class="kicker">A session can only message its own children</p>
+  <p>Omnigent lets a session dispatch work to its <em>direct children</em> and nowhere
+  else. There is no sibling channel: no crew can reach another crew, and none can reach
+  the shared functions. Everything crossing a boundary goes up to the program and
+  back, or it gets written to a file.</p>
+
+  <p>That removes the failure mode that kills parallel delivery — two crews holding
+  different beliefs about the same interface because they settled it in a conversation
+  nobody recorded. Here, a cross-crew agreement has nowhere to live except a file.</p>
+
+  <div class="legend">
+    <span class="swatch"><i style="background: var(--claude)"></i> Claude harness</span>
+    <span class="swatch"><i style="background: var(--codex)"></i> Codex harness</span>
+    <span class="swatch"><i style="background: var(--program)"></i> orchestrator (claude-sdk)</span>
+  </div>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 940 530" role="img" aria-label="Authority map: the program dispatches to six shared functions and to N crews; crews cannot message each other or the shared functions directly.">
+        <defs>
+          <marker id="a-solid" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="a-prog" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--program)"/>
+          </marker>
+        </defs>
+
+        <rect x="378" y="8" width="184" height="30" rx="3" fill="none" stroke="var(--rule-strong)" stroke-dasharray="3 3"/>
+        <text x="470" y="28" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="12" fill="currentColor">owner · reads reports</text>
+        <line x1="470" y1="38" x2="470" y2="62" stroke="var(--rule-strong)" stroke-dasharray="3 3"/>
+
+        <rect x="372" y="62" width="196" height="44" rx="4" fill="var(--surface-2)" stroke="var(--program)" stroke-width="1.5"/>
+        <text x="470" y="83" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="13" fill="var(--program)">program</text>
+        <text x="470" y="98" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="currentColor">slices · grants · leases · routes</text>
+
+        <g font-family="ui-monospace, Menlo, monospace" font-size="11">
+          <rect x="20" y="164" width="132" height="30" rx="3" fill="none" stroke="var(--rule-strong)"/>
+          <text x="86" y="183" text-anchor="middle" fill="currentColor">ux</text>
+          <rect x="164" y="164" width="132" height="30" rx="3" fill="none" stroke="var(--rule-strong)"/>
+          <text x="230" y="183" text-anchor="middle" fill="currentColor">staff</text>
+          <rect x="308" y="164" width="132" height="30" rx="3" fill="none" stroke="var(--rule-strong)"/>
+          <text x="374" y="183" text-anchor="middle" fill="currentColor">platform</text>
+          <rect x="452" y="164" width="132" height="30" rx="3" fill="none" stroke="var(--rule-strong)"/>
+          <text x="518" y="183" text-anchor="middle" fill="currentColor">security</text>
+          <rect x="596" y="164" width="132" height="30" rx="3" fill="none" stroke="var(--program)"/>
+          <text x="662" y="183" text-anchor="middle" fill="var(--program)">release</text>
+          <rect x="740" y="164" width="132" height="30" rx="3" fill="none" stroke="var(--rule-strong)"/>
+          <text x="806" y="183" text-anchor="middle" fill="currentColor">oncall</text>
+        </g>
+        <text x="880" y="152" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">shared · never duplicated per crew</text>
+        <text x="662" y="208" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--program)">the only writer of main</text>
+
+        <g stroke="currentColor" fill="none" opacity="0.55">
+          <path d="M 420 106 L 86 150 L 86 162" marker-end="url(#a-solid)"/>
+          <path d="M 435 106 L 230 150 L 230 162" marker-end="url(#a-solid)"/>
+          <path d="M 450 106 L 374 150 L 374 162" marker-end="url(#a-solid)"/>
+          <path d="M 490 106 L 518 150 L 518 162" marker-end="url(#a-solid)"/>
+          <path d="M 505 106 L 662 150 L 662 162" marker-end="url(#a-solid)"/>
+          <path d="M 520 106 L 806 150 L 806 162" marker-end="url(#a-solid)"/>
+        </g>
+
+        <!-- crew 1 -->
+        <rect x="20" y="272" width="300" height="222" rx="5" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+        <text x="36" y="296" font-family="ui-monospace, Menlo, monospace" font-size="13" fill="var(--program)">crew_alpha</text>
+        <text x="36" y="316" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">lead · claude-sdk · owns a slice</text>
+        <rect x="36" y="328" width="268" height="26" rx="3" fill="var(--surface)" stroke="var(--rule-strong)"/>
+        <text x="48" y="345" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="currentColor">pm · items, criteria, DoR, sign-off</text>
+        <rect x="36" y="360" width="130" height="26" rx="3" fill="var(--surface)" stroke="var(--claude)"/>
+        <text x="48" y="377" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--claude)">eng_claude</text>
+        <rect x="174" y="360" width="130" height="26" rx="3" fill="var(--surface)" stroke="var(--codex)"/>
+        <text x="186" y="377" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--codex)">eng_codex</text>
+        <rect x="36" y="392" width="268" height="26" rx="3" fill="var(--surface)" stroke="var(--codex)"/>
+        <text x="48" y="409" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--codex)">qa · plan, cases, integration, e2e</text>
+        <rect x="36" y="424" width="130" height="26" rx="3" fill="var(--surface)" stroke="var(--claude)"/>
+        <text x="48" y="441" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--claude)">reviewer_cl</text>
+        <rect x="174" y="424" width="130" height="26" rx="3" fill="var(--surface)" stroke="var(--codex)"/>
+        <text x="186" y="441" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--codex)">reviewer_cx</text>
+        <text x="36" y="472" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">read-only reviewers · reviews the other vendor</text>
+        <text x="36" y="486" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">grant this wave: 2 workers, 3 items</text>
+
+        <!-- crew 2 -->
+        <rect x="340" y="272" width="240" height="222" rx="5" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+        <text x="356" y="296" font-family="ui-monospace, Menlo, monospace" font-size="13" fill="var(--program)">crew_beta</text>
+        <text x="356" y="316" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">identical roster</text>
+        <text x="356" y="346" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="currentColor">pm · eng ×2 · qa · reviewer ×2</text>
+        <text x="356" y="378" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">own PM, so it never waits on</text>
+        <text x="356" y="392" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">another layer to read its own spec</text>
+        <text x="356" y="424" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">grant this wave: 2 workers, 2 items</text>
+        <text x="356" y="472" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">slice: disjoint paths</text>
+
+        <!-- crew N -->
+        <rect x="600" y="272" width="240" height="222" rx="5" fill="none" stroke="var(--rule-strong)" stroke-dasharray="5 4"/>
+        <text x="616" y="296" font-family="ui-monospace, Menlo, monospace" font-size="13" fill="var(--faint)">crew_n</text>
+        <text x="616" y="316" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">nightshift-add-crew.sh clones it</text>
+        <text x="616" y="352" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">same six members</text>
+        <text x="616" y="384" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--claude)">grant this wave: 0 workers</text>
+        <text x="616" y="400" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">"you are next, not now" —</text>
+        <text x="616" y="414" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">so it reviews other crews' PRs</text>
+        <text x="616" y="472" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">no new capacity, only queueing</text>
+
+        <path d="M 415 106 L 180 264" stroke="var(--program)" fill="none" marker-end="url(#a-prog)"/>
+        <text x="243" y="182" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--program)" transform="rotate(34 243 182)">charter + grant</text>
+        <path d="M 250 264 L 445 112" stroke="var(--program)" fill="none" stroke-dasharray="5 3" marker-end="url(#a-prog)"/>
+        <text x="356" y="222" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--program)" transform="rotate(-38 356 222)">inbox report</text>
+        <path d="M 500 106 L 460 264" stroke="var(--program)" fill="none" marker-end="url(#a-prog)"/>
+        <path d="M 540 106 L 700 264" stroke="var(--program)" fill="none" stroke-dasharray="2 4" opacity="0.7" marker-end="url(#a-prog)"/>
+
+        <line x1="320" y1="466" x2="340" y2="466" stroke="currentColor" stroke-dasharray="4 4"/>
+        <line x1="323" y1="458" x2="337" y2="474" stroke="var(--claude)" stroke-width="1.6"/>
+        <line x1="337" y1="458" x2="323" y2="474" stroke="var(--claude)" stroke-width="1.6"/>
+        <line x1="580" y1="466" x2="600" y2="466" stroke="currentColor" stroke-dasharray="4 4"/>
+        <line x1="583" y1="458" x2="597" y2="474" stroke="var(--claude)" stroke-width="1.6"/>
+        <line x1="597" y1="458" x2="583" y2="474" stroke="var(--claude)" stroke-width="1.6"/>
+        <text x="470" y="516" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--claude)">no sibling channel, at any N</text>
+
+        <path d="M 120 268 L 120 200" stroke="currentColor" fill="none" stroke-dasharray="4 4"/>
+        <line x1="113" y1="242" x2="127" y2="226" stroke="var(--claude)" stroke-width="1.6"/>
+        <line x1="127" y1="242" x2="113" y2="226" stroke="var(--claude)" stroke-width="1.6"/>
+        <text x="136" y="238" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--claude)">crews cannot reach shared functions</text>
+      </svg>
+    </div>
+    <figcaption><b>Every crossed boundary is a hop through the program.</b> Solid arrows are
+    dispatches (<code>sys_session_send</code>), dashed arrows back are inbox results. The crossed
+    paths have no mechanism at all — which is why product sits <em>inside</em> each crew, and
+    design, security, platform and the integrator sit outside as shared functions.</figcaption>
+  </figure>
+</section>
+
+<section data-accent="codex">
+  <h2>Capacity is a budget, not a per-crew cap</h2>
+  <p class="kicker">The fix that makes N safe</p>
+  <p>Every crew's workers come out of one number. The program hands out grants each
+  wave, and the grants must sum to the budget or less. Unequal grants are correct: the
+  crew on the critical path gets more, a crew waiting on a handoff gets one or none, and
+  a grant of zero is a real answer that means <em>you are next, not now</em>.</p>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 900 350" role="img" aria-label="One global worker budget of four is split into grants across three crews with one reserved for oncall; a lease queue serialises writes to shared paths; when both vendors are rate limited the program sets a timer and resumes.">
+        <defs>
+          <marker id="e-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <text x="16" y="26" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">.omni/capacity.json — ONE budget for every crew</text>
+
+        <rect x="16" y="40" width="330" height="86" rx="4" fill="var(--surface-2)" stroke="var(--program)" stroke-width="1.4"/>
+        <text x="32" y="64" font-family="ui-monospace, Menlo, monospace" font-size="12" fill="var(--program)">max_concurrent_workers: 4</text>
+        <g>
+          <rect x="32" y="78" width="66" height="30" rx="3" fill="var(--claude)" opacity="0.85"/>
+          <rect x="104" y="78" width="66" height="30" rx="3" fill="var(--codex)" opacity="0.85"/>
+          <rect x="176" y="78" width="66" height="30" rx="3" fill="var(--claude)" opacity="0.85"/>
+          <rect x="248" y="78" width="66" height="30" rx="3" fill="none" stroke="var(--rule-strong)" stroke-dasharray="3 3"/>
+          <text x="281" y="97" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">oncall</text>
+        </g>
+        <text x="32" y="120" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">one slot held back for incidents</text>
+
+        <g font-family="ui-monospace, Menlo, monospace" font-size="10.5">
+          <rect x="440" y="34" width="220" height="30" rx="3" fill="var(--surface)" stroke="var(--rule-strong)"/>
+          <text x="452" y="53" fill="currentColor">crew_alpha — grant 2</text>
+          <rect x="440" y="70" width="220" height="30" rx="3" fill="var(--surface)" stroke="var(--rule-strong)"/>
+          <text x="452" y="89" fill="currentColor">crew_beta — grant 1</text>
+          <rect x="440" y="106" width="220" height="30" rx="3" fill="none" stroke="var(--rule-strong)" stroke-dasharray="4 3"/>
+          <text x="452" y="125" fill="var(--faint)">crew_n — grant 0 · reviews</text>
+        </g>
+        <path d="M 346 83 L 434 49" stroke="currentColor" fill="none" marker-end="url(#e-arrow)"/>
+        <path d="M 346 85 L 434 85" stroke="currentColor" fill="none" marker-end="url(#e-arrow)"/>
+        <path d="M 346 87 L 434 121" stroke="currentColor" fill="none" marker-end="url(#e-arrow)" opacity="0.5"/>
+        <text x="390" y="146" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">grants ≤ budget, restated every wave</text>
+        <text x="700" y="70" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--program)">adding a crew</text>
+        <text x="700" y="86" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--program)">shrinks grants —</text>
+        <text x="700" y="102" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--program)">it never adds workers</text>
+
+        <line x1="16" y1="176" x2="884" y2="176" stroke="var(--rule)"/>
+
+        <text x="16" y="202" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">docs/owners.md + .omni/leases/ — one writer per shared path</text>
+
+        <rect x="16" y="216" width="200" height="52" rx="4" fill="var(--surface-2)" stroke="var(--claude)"/>
+        <text x="116" y="238" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--claude)">db/migrations/**</text>
+        <text x="116" y="256" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">owner: platform</text>
+
+        <rect x="286" y="216" width="188" height="52" rx="4" fill="var(--surface)" stroke="var(--program)"/>
+        <text x="380" y="238" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--program)">lease held: crew_beta</text>
+        <text x="380" y="256" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">+ sequence no. 0042</text>
+
+        <rect x="544" y="216" width="188" height="52" rx="4" fill="none" stroke="var(--rule-strong)" stroke-dasharray="4 3"/>
+        <text x="638" y="238" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">queued: crew_alpha</text>
+        <text x="638" y="256" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">works on something else</text>
+
+        <g stroke="currentColor" fill="none">
+          <line x1="216" y1="242" x2="280" y2="242" marker-end="url(#e-arrow)"/>
+          <line x1="474" y1="242" x2="538" y2="242" marker-end="url(#e-arrow)" opacity="0.6"/>
+        </g>
+        <text x="248" y="232" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">granted</text>
+        <text x="506" y="232" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">waits</text>
+        <text x="752" y="238" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">released when</text>
+        <text x="752" y="252" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--faint)">the PR opens</text>
+
+        <line x1="16" y1="292" x2="884" y2="292" stroke="var(--rule)"/>
+        <text x="16" y="316" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">and when the budget still hits a vendor wall:</text>
+        <text x="330" y="316" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--codex)">one limited → work moves to the other vendor</text>
+        <text x="330" y="334" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--claude)">both limited → sys_timer_set 30 min, doubling, 4 h cap → wakes and resumes · never a retry loop</text>
+      </svg>
+    </div>
+    <figcaption><b>Three serialising mechanisms, one purpose.</b> Grants bound how much runs at
+    once, leases bound who may write a shared path, and the timer handles the case where
+    both vendors are exhausted anyway. None of them requires a human, and none of them
+    gets easier by adding crews.</figcaption>
+  </figure>
+
+  <h3>Who runs on which model</h3>
+  <p>The reasoning tier, <code>fable</code>, costs roughly twice Opus per token — so it is
+  spent <strong>exactly once, at discovery</strong>. <code>product</code> is the only Fable
+  seat: discovery runs once, its output (the definition of done) is the fixed point every
+  wave optimises toward, and it is the one artifact with a single author and no
+  cross-vendor check behind it — architecture gets two competing drafts, the PRD does not.
+  <code>staff</code>'s one-time blind proposal gets Fable per-dispatch
+  (<code>args.model</code>); its recurring ADR reviews do not. The <code>program</code>
+  deliberately stays off it — a multi-day continuous session is the highest token volume
+  of any seat, the most expensive possible home for a 2× model. Workers never see it:
+  a worker gets more <em>effort</em> or a better-specified task, never a bigger model.
+  <code>security</code> never runs on it at all — that tier's bug-finding gains exclude
+  security analysis, and its safety classifiers decline most cybersecurity work, so the
+  program treats a refusal as a <em>reroute to a Claude or Codex seat</em>, never a retry.
+  The two discovery dispatches carry roughly double the usual <code>cost_budget</code>
+  (12–16 vs 8), buying the same thinking depth at the 2× price.</p>
+</section>
+
+<section data-accent="qa">
+  <h2>One item, from charter to merged</h2>
+  <p class="kicker">Two independent gates before anything lands</p>
+  <p>Inside the crew, two vendors propose independently before anything is built, and
+  the test plan is written from the criteria before the code exists. Then the PR leaves
+  the crew entirely: <strong>a different crew reviews it</strong>. In-crew cross-vendor review
+  catches defects; a reviewer from another crew catches a plan that only makes sense
+  from inside one crew.</p>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 940 470" role="img" aria-label="Pipeline: PM writes criteria, two vendors propose independently, an ADR is written, engineers implement in worktrees, in-crew review and QA run, a PR is opened, a different crew reviews it, then the integrator merges.">
+        <defs>
+          <marker id="b-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="b-claude" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--claude)"/>
+          </marker>
+          <marker id="b-codex" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--codex)"/>
+          </marker>
+          <marker id="b-prog2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--program)"/>
+          </marker>
+        </defs>
+
+        <text x="12" y="58" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">DECIDE</text>
+        <text x="12" y="208" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">BUILD</text>
+        <text x="12" y="330" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">PROVE</text>
+        <line x1="0" y1="146" x2="940" y2="146" stroke="var(--rule)"/>
+        <line x1="0" y1="272" x2="940" y2="272" stroke="var(--rule)"/>
+
+        <rect x="78" y="32" width="112" height="44" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+        <text x="134" y="51" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="currentColor">charter</text>
+        <text x="134" y="67" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">+ grant</text>
+
+        <rect x="224" y="32" width="132" height="44" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+        <text x="290" y="51" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="currentColor">pm · criteria</text>
+        <text x="290" y="67" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">Definition of Ready</text>
+
+        <rect x="400" y="18" width="146" height="32" rx="3" fill="var(--surface)" stroke="var(--claude)"/>
+        <text x="473" y="38" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--claude)">proposal A · claude</text>
+        <rect x="400" y="58" width="146" height="32" rx="3" fill="var(--surface)" stroke="var(--codex)"/>
+        <text x="473" y="78" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--codex)">proposal B · codex</text>
+        <text x="473" y="110" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">neither sees the other</text>
+
+        <rect x="590" y="32" width="112" height="44" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+        <text x="646" y="51" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="currentColor">reconcile</text>
+        <text x="646" y="67" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">lead</text>
+
+        <rect x="746" y="32" width="166" height="44" rx="3" fill="var(--surface)" stroke="var(--program)" stroke-width="1.3"/>
+        <text x="829" y="51" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="var(--program)">ADR → staff</text>
+        <text x="829" y="67" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">rejected options + why</text>
+
+        <g stroke="currentColor" fill="none">
+          <line x1="190" y1="54" x2="218" y2="54" marker-end="url(#b-arrow)"/>
+          <path d="M 356 48 L 394 34" marker-end="url(#b-arrow)"/>
+          <path d="M 356 60 L 394 74" marker-end="url(#b-arrow)"/>
+          <path d="M 546 34 L 584 48" marker-end="url(#b-arrow)"/>
+          <path d="M 546 74 L 584 60" marker-end="url(#b-arrow)"/>
+          <line x1="702" y1="54" x2="740" y2="54" marker-end="url(#b-arrow)"/>
+        </g>
+
+        <rect x="78" y="176" width="146" height="56" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+        <text x="151" y="197" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="currentColor">fanout</text>
+        <text x="151" y="213" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">worktree per task,</text>
+        <text x="151" y="226" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">within the grant</text>
+
+        <rect x="266" y="168" width="176" height="32" rx="3" fill="var(--surface)" stroke="var(--claude)"/>
+        <text x="354" y="188" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--claude)">implement · eng_claude</text>
+        <rect x="266" y="208" width="176" height="32" rx="3" fill="var(--surface)" stroke="var(--codex)"/>
+        <text x="354" y="228" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--codex)">implement · eng_codex</text>
+
+        <rect x="486" y="176" width="140" height="56" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+        <text x="556" y="197" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="currentColor">green gates</text>
+        <text x="556" y="213" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">tests · lint · types</text>
+        <text x="556" y="226" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">run by the lead</text>
+
+        <rect x="670" y="176" width="242" height="56" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+        <text x="791" y="197" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="currentColor">PR opened by the engineer</text>
+        <text x="791" y="213" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">body carries ADR, criteria, verification</text>
+        <text x="791" y="226" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">— it is what another crew will read</text>
+
+        <g stroke="currentColor" fill="none">
+          <line x1="224" y1="204" x2="260" y2="204" marker-end="url(#b-arrow)"/>
+          <path d="M 442 184 L 480 198" marker-end="url(#b-arrow)"/>
+          <path d="M 442 224 L 480 212" marker-end="url(#b-arrow)"/>
+          <line x1="626" y1="204" x2="664" y2="204" marker-end="url(#b-arrow)"/>
+        </g>
+        <path d="M 829 76 L 829 122 L 151 122 L 151 170" stroke="currentColor" fill="none" opacity="0.55" marker-end="url(#b-arrow)"/>
+        <text x="490" y="138" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">contract: ADR id · criteria · file scope · exact gates · lease if a shared path is touched</text>
+
+        <rect x="78" y="300" width="180" height="52" rx="3" fill="var(--surface)" stroke="var(--codex)"/>
+        <text x="168" y="320" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--codex)">qa · test plan</text>
+        <text x="168" y="336" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">from criteria, before code</text>
+
+        <rect x="286" y="300" width="180" height="52" rx="3" fill="var(--surface)" stroke="var(--codex)"/>
+        <text x="376" y="320" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--codex)">qa · execute + maintain</text>
+        <text x="376" y="336" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">e2e, seams, cases w/ ADR</text>
+
+        <rect x="494" y="300" width="150" height="52" rx="3" fill="var(--surface)" stroke="var(--claude)"/>
+        <text x="569" y="320" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="var(--claude)">in-crew review</text>
+        <text x="569" y="336" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">other vendor, read-only</text>
+
+        <rect x="672" y="292" width="240" height="68" rx="3" fill="var(--surface-2)" stroke="var(--program)" stroke-width="1.4"/>
+        <text x="792" y="313" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="var(--program)">CROSS-CREW REVIEW</text>
+        <text x="792" y="330" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="currentColor">a different crew, round-robin</text>
+        <text x="792" y="346" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">diff + criteria + ADR only</text>
+
+        <path d="M 290 76 L 290 250 L 168 250 L 168 294" stroke="var(--codex)" fill="none" stroke-dasharray="5 3" marker-end="url(#b-codex)"/>
+        <text x="232" y="266" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--codex)">criteria, not the diff</text>
+
+        <g stroke="currentColor" fill="none">
+          <line x1="258" y1="326" x2="280" y2="326" marker-end="url(#b-arrow)"/>
+          <line x1="466" y1="326" x2="488" y2="326" marker-end="url(#b-arrow)"/>
+          <line x1="644" y1="326" x2="666" y2="326" marker-end="url(#b-arrow)"/>
+        </g>
+
+        <path d="M 569 352 L 569 384 L 354 384 L 354 244" stroke="var(--claude)" fill="none" marker-end="url(#b-claude)"/>
+        <text x="462" y="400" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--claude)">blocking → same (agent, title) → same worktree, same PR · 3 loops then recorded and dropped</text>
+
+        <rect x="672" y="408" width="240" height="44" rx="3" fill="var(--surface)" stroke="var(--program)"/>
+        <text x="792" y="428" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--program)">release · integrator merges</text>
+        <text x="792" y="443" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">no human approval anywhere</text>
+        <path d="M 792 360 L 792 402" stroke="var(--program)" fill="none" marker-end="url(#b-prog2)"/>
+      </svg>
+    </div>
+    <figcaption><b>Four gates, none of them human:</b> the crew's own PM signs its criteria, an
+    opposite-vendor reviewer clears the code, QA proves the tests fail pre-change, and a
+    different crew reviews the PR. Reusing an <code>(agent, title)</code> pair returns to the same
+    worker with its worktree and memory, which is why fixes go back to the original
+    engineer rather than a stranger.</figcaption>
+  </figure>
+
+  <h3>Round-robin, fixed, no negotiation</h3>
+  <p>Crew <em>i</em>'s PR is reviewed by crew <em>i+1</em>, wrapping. Fixed rotation spreads load,
+  stays predictable, and — the real reason — makes reciprocity trading impossible: no
+  crew can soften a review in exchange for a soft one back. Two exceptions only: skip a
+  reviewer that would be reviewing its own interface, and use an idle crew anyway, since
+  reviewing is the most useful thing a crew with a zero grant can do.</p>
+
+  <div class="note fix">
+    <span class="lbl">Anti-rubber-stamp</span>
+    <p>A review reporting nothing must still say what it checked and what it
+    deliberately did not. "Looks good" is not a verdict. Every review is logged in
+    <code>.omni/reviews.md</code> with its blocking count and loops-to-clean, and the retro reads
+    that file to compute <strong>escaped defects</strong> — bugs found after a cross-crew review
+    passed. That number is the only honest measure of whether this gate is real.</p>
+  </div>
+</section>
+
+<section data-accent="release">
+  <h2>One writer of the default branch</h2>
+  <p class="kicker">Conditional, tested, reversible</p>
+  <p>With no human merging, the machine gates are all that stand between a bad diff
+  and <code>main</code>. So merging is narrow and reversible: a single integrator, a real merge
+  result tested before it lands, a tag before every attempt, and a self-revert if the
+  branch goes red.</p>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 940 260" role="img" aria-label="Integration procedure: tag the current tip, build a candidate by merging eligible PRs, run the full suite, drop any failing branch, merge the green subset, re-verify, and revert on failure.">
+        <defs>
+          <marker id="f-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="f-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--claude)"/>
+          </marker>
+        </defs>
+
+        <g font-family="ui-monospace, Menlo, monospace">
+          <rect x="14" y="60" width="120" height="52" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+          <text x="74" y="82" text-anchor="middle" font-size="10.5" fill="currentColor">tag pre</text>
+          <text x="74" y="98" text-anchor="middle" font-size="9.5" fill="var(--faint)">rollback point</text>
+
+          <rect x="164" y="60" width="150" height="52" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+          <text x="239" y="82" text-anchor="middle" font-size="10.5" fill="currentColor">build candidate</text>
+          <text x="239" y="98" text-anchor="middle" font-size="9.5" fill="var(--faint)">real merge of N PRs</text>
+
+          <rect x="344" y="60" width="150" height="52" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+          <text x="419" y="82" text-anchor="middle" font-size="10.5" fill="currentColor">full suite on it</text>
+          <text x="419" y="98" text-anchor="middle" font-size="9.5" fill="var(--faint)">not per-PR</text>
+
+          <rect x="524" y="60" width="150" height="52" rx="3" fill="var(--surface)" stroke="var(--program)" stroke-width="1.3"/>
+          <text x="599" y="82" text-anchor="middle" font-size="10.5" fill="var(--program)">merge green subset</text>
+          <text x="599" y="98" text-anchor="middle" font-size="9.5" fill="var(--faint)">merge commits, revertible</text>
+
+          <rect x="704" y="60" width="150" height="52" rx="3" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+          <text x="779" y="82" text-anchor="middle" font-size="10.5" fill="currentColor">re-verify main</text>
+          <text x="779" y="98" text-anchor="middle" font-size="9.5" fill="var(--faint)">tag release</text>
+        </g>
+
+        <g stroke="currentColor" fill="none">
+          <line x1="134" y1="86" x2="158" y2="86" marker-end="url(#f-arrow)"/>
+          <line x1="314" y1="86" x2="338" y2="86" marker-end="url(#f-arrow)"/>
+          <line x1="494" y1="86" x2="518" y2="86" marker-end="url(#f-arrow)"/>
+          <line x1="674" y1="86" x2="698" y2="86" marker-end="url(#f-arrow)"/>
+        </g>
+
+        <path d="M 419 112 L 419 156 L 239 156 L 239 118" stroke="var(--claude)" fill="none" marker-end="url(#f-warn)"/>
+        <text x="330" y="172" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--claude)">red → identify the branch, DROP it, re-run · ship the green subset</text>
+        <text x="330" y="188" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">the dropped PR becomes a fix task for its own crew, ahead of new work</text>
+
+        <path d="M 779 112 L 779 216 L 74 216 L 74 118" stroke="var(--claude)" fill="none" marker-end="url(#f-warn)"/>
+        <text x="430" y="232" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--claude)">main red after merge → revert own merge and report · a red main blocks every crew, so reverting fast beats fixing slowly</text>
+
+        <text x="874" y="80" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">never</text>
+        <text x="874" y="94" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">deploys</text>
+      </svg>
+    </div>
+    <figcaption><b>Merging code is inside the fence; changing the world is not.</b> The integrator
+    merges and tags. It does not deploy, run migrations against a real database, rotate
+    credentials, force-push, or rewrite published history — the policy layer denies that
+    set for every agent, and nothing in the org has authority over it.</figcaption>
+  </figure>
+
+  <div class="note">
+    <span class="lbl">Branch protection, inverted</span>
+    <p>Protection requiring <em>human approvals</em> deadlocks every merge, because the
+    integrator has no approver. Protection requiring <em>status checks</em> is ideal — it
+    blocks a red merge without needing a person. <code>preflight.sh</code> fails the run if it
+    finds the former and warns if it finds neither.</p>
+  </div>
+</section>
+
+<section data-accent="codex">
+  <h2>Where you watch it from your phone</h2>
+  <p class="kicker">GitHub is the tracker; the repo is the wiki</p>
+  <p>The org needs a Jira and a Confluence, and it already has both. <strong>Issues</strong>
+  are the backlog — the single source of truth, with <code>.omni/backlog.md</code> demoted to a
+  cached mirror for offline resume. A <strong>Projects v2 board</strong> is your glance view. And
+  the PRDs, ADRs, specs, test cases and release notes the crews already write to
+  <code>docs/</code> render as the wiki, on a phone, with no sync to maintain.</p>
+
+  <p>The deciding argument was not features: it is that the box is already
+  authenticated. Every alternative means another API token sitting on a machine that
+  holds your Claude and Codex subscription credentials.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Two apps, different jobs</caption>
+      <thead><tr><th>App</th><th>Shows</th></tr></thead>
+      <tbody>
+        <tr><td><strong>GitHub Mobile</strong></td><td>The board, issues, PRs and diffs — plus a push notification every time the program comments its report on the pinned <strong>Program status</strong> issue</td></tr>
+        <tr><td><strong>Omnigent mobile UI</strong> <span class="tier">(over Tailscale)</span></td><td>Agents working live: open a worker's terminal, read its conversation, take the keyboard</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <div class="figframe">
+      <svg viewBox="0 0 940 350" role="img" aria-label="Traceability loop: the crew PM creates an issue, the lead's contract carries its number, the engineer's PR closes it, a different crew reviews, the integrator merges and the issue closes, and the program comments the report on a pinned status issue which notifies the owner's phone.">
+        <defs>
+          <marker id="g-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="g-prog" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--program)"/>
+          </marker>
+        </defs>
+
+        <text x="16" y="20" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">ON GITHUB — what you can open on a phone</text>
+
+        <g font-family="ui-monospace, Menlo, monospace">
+          <rect x="16" y="30" width="212" height="62" rx="4" fill="var(--surface-2)" stroke="var(--program)"/>
+          <text x="30" y="50" font-size="11" fill="var(--program)">Issue #42</text>
+          <text x="30" y="66" font-size="9.5" fill="currentColor">crew_alpha · P1 · size:M</text>
+          <text x="30" y="80" font-size="9.5" fill="var(--faint)">DoR checklist → state:ready</text>
+
+          <rect x="252" y="30" width="196" height="62" rx="4" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+          <text x="266" y="50" font-size="11" fill="currentColor">Projects board</text>
+          <text x="266" y="66" font-size="9.5" fill="var(--faint)">Stage · Crew · Wave</text>
+          <text x="266" y="80" font-size="9.5" fill="var(--faint)">stages = the real pipeline</text>
+
+          <rect x="472" y="30" width="212" height="62" rx="4" fill="var(--surface-2)" stroke="var(--rule-strong)"/>
+          <text x="486" y="50" font-size="11" fill="currentColor">PR — "Closes #42"</text>
+          <text x="486" y="66" font-size="9.5" fill="var(--faint)">ADR link · criteria · verification</text>
+          <text x="486" y="80" font-size="9.5" fill="var(--faint)">pm signs off in a comment</text>
+
+          <rect x="708" y="30" width="216" height="62" rx="4" fill="var(--surface)" stroke="var(--codex)"/>
+          <text x="722" y="50" font-size="11" fill="var(--codex)">merged → #42 closes</text>
+          <text x="722" y="66" font-size="9.5" fill="var(--faint)">Stage: Done, no one maintains</text>
+          <text x="722" y="80" font-size="9.5" fill="var(--faint)">the link by hand</text>
+        </g>
+
+        <g stroke="currentColor" fill="none" opacity="0.6">
+          <line x1="228" y1="61" x2="246" y2="61" marker-end="url(#g-arrow)"/>
+          <line x1="448" y1="61" x2="466" y2="61" marker-end="url(#g-arrow)"/>
+          <line x1="684" y1="61" x2="702" y2="61" marker-end="url(#g-arrow)"/>
+        </g>
+
+        <line x1="0" y1="122" x2="940" y2="122" stroke="var(--rule)"/>
+        <text x="16" y="144" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="var(--faint)">IN THE ORG — who writes it</text>
+
+        <g font-family="ui-monospace, Menlo, monospace" font-size="10.5">
+          <rect x="16" y="156" width="150" height="34" rx="3" fill="var(--surface)" stroke="var(--rule-strong)"/>
+          <text x="91" y="177" text-anchor="middle" fill="currentColor">crew's pm</text>
+
+          <rect x="196" y="156" width="176" height="34" rx="3" fill="var(--surface)" stroke="var(--rule-strong)"/>
+          <text x="284" y="177" text-anchor="middle" fill="currentColor">lead's contract · #42</text>
+
+          <rect x="402" y="156" width="150" height="34" rx="3" fill="var(--surface)" stroke="var(--claude)"/>
+          <text x="477" y="177" text-anchor="middle" fill="var(--claude)">engineer</text>
+
+          <rect x="582" y="156" width="164" height="34" rx="3" fill="var(--surface)" stroke="var(--codex)"/>
+          <text x="664" y="177" text-anchor="middle" fill="var(--codex)">another crew reviews</text>
+
+          <rect x="776" y="156" width="148" height="34" rx="3" fill="var(--surface)" stroke="var(--program)"/>
+          <text x="850" y="177" text-anchor="middle" fill="var(--program)">integrator</text>
+        </g>
+
+        <g stroke="currentColor" fill="none">
+          <path d="M 91 154 L 91 96" marker-end="url(#g-arrow)"/>
+          <path d="M 284 154 L 320 96" marker-end="url(#g-arrow)"/>
+          <path d="M 477 154 L 520 96" marker-end="url(#g-arrow)"/>
+          <path d="M 664 154 L 620 96" marker-end="url(#g-arrow)" opacity="0.7"/>
+          <path d="M 850 154 L 820 96" marker-end="url(#g-arrow)"/>
+        </g>
+        <text x="120" y="140" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">creates</text>
+        <text x="330" y="140" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">moves stage</text>
+        <text x="530" y="140" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">opens</text>
+        <text x="600" y="140" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">comments</text>
+        <text x="800" y="140" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">merges</text>
+
+        <line x1="0" y1="216" x2="940" y2="216" stroke="var(--rule)"/>
+
+        <rect x="196" y="240" width="300" height="56" rx="4" fill="var(--surface-2)" stroke="var(--program)" stroke-width="1.3"/>
+        <text x="346" y="262" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="var(--program)">pinned issue: "Program status"</text>
+        <text x="346" y="280" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">program comments each wave + daily</text>
+
+        <rect x="560" y="240" width="248" height="56" rx="4" fill="var(--surface)" stroke="var(--rule-strong)"/>
+        <text x="684" y="262" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" fill="currentColor">your phone, pushed</text>
+        <text x="684" y="280" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">a comment notifies; a file does not</text>
+
+        <path d="M 100 190 L 100 268 L 190 268" stroke="var(--program)" fill="none" marker-end="url(#g-prog)"/>
+        <path d="M 496 268 L 554 268" stroke="var(--program)" fill="none" marker-end="url(#g-prog)"/>
+        <text x="346" y="318" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--claude)">anything needing you goes in line 1 and gets state:blocked on its issue</text>
+        <text x="684" y="318" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="var(--faint)">docs/ renders as the wiki: PRDs, ADRs, specs</text>
+      </svg>
+    </div>
+    <figcaption><b>Traceability nobody maintains by hand.</b> The issue number travels in the
+    dispatch contract, so the engineer's PR body closes the issue and moves the board on
+    merge. That is why the board can be trusted as a glance view — it is a side effect of
+    the work, not a second system someone has to remember to update.</figcaption>
+  </figure>
+
+  <p>One rule keeps the board honest: fix loops are <em>comments on the PR</em>, never new
+  issues. Splitting a fix into its own issue inflates the count and hides the loop —
+  and loops-per-task is exactly the number the retro uses to tell whether review is
+  working.</p>
+</section>
+
+<section data-accent="program">
+  <h2>What the owner does</h2>
+  <p class="kicker">Writes a paragraph. Reads the reports. Approves nothing.</p>
+  <p>Because nothing waits for approval, reporting <em>is</em> the interface. Four files,
+  written as the work happens, in descending order of how often you will want them.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>The owner's surface</caption>
+      <thead><tr><th>File</th><th>Answers</th><th>Cadence</th></tr></thead>
+      <tbody>
+        <tr><td><code>.omni/reports/&lt;date&gt;.md</code></td><td>What merged, what is in flight, what was decided and why, what got dropped, the retro metrics, vendor cooldowns, and the one thing most likely to go wrong next</td><td>daily and per wave</td></tr>
+        <tr><td><code>.omni/STATUS.md</code></td><td>One screen, always current</td><td>continuous</td></tr>
+        <tr><td><code>.omni/decisions.md</code></td><td>Every call made without asking: options rejected, reason, reversal trigger</td><td>per decision</td></tr>
+        <tr><td><code>.omni/blocked.md</code></td><td>The only file that ever actually needs you — a credential, a purchase, an environment that does not exist</td><td>rare</td></tr>
+        <tr><td>Pinned <strong>Program status</strong> issue</td><td>The same reports, as comments — this is the one that reaches your phone</td><td>daily and per wave</td></tr>
+        <tr><td>The <strong>board</strong></td><td>Where every item actually is, without reading anything</td><td>continuous</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Everything else is there when you want to dig: ADRs with their rejected options,
+  the cross-crew review log, the integration log with every candidate and revert, the
+  lease history, the incident notes, the working agreements the retro wrote.</p>
+
+  <h3>Decide, don't queue</h3>
+  <p>There is nobody to escalate to, so an escalation queue would just be a stall. Every
+  question gets decided, and the decision is recorded with what it rejected and what
+  would reverse it. Where a choice is expensive to undo, the org takes the reversible
+  variant and names what it gave up: ship behind a flag, add a column instead of
+  rewriting one, keep the old path alive one more wave.</p>
+
+  <pre><code>cd /path/to/repo
+~/.nightshift/bin/nightshift-init.sh    # capacity, owners, ADR template, docs/
+gh auth refresh -s project                   # gh auth login does NOT grant this
+~/.nightshift/bin/nightshift-tracker-init.sh .  # labels, templates, board, status issue
+$EDITOR .omni/brief.md                       # a paragraph — your only input
+~/.nightshift/deploy/preflight.sh         # ~50 checks before a multi-day run
+PYTHONPATH=~/.nightshift/deploy/policies \
+omnigent run ~/.nightshift/program        # web UI on :6767
+
+~/.nightshift/bin/nightshift-add-crew.sh crew_gamma   # clone + register a crew</code></pre>
+  <p>Adding a crew does not add capacity — it adds a claimant on the same budget. Raise
+  <code>max_concurrent_workers</code> only after a wave where no vendor hit a limit.</p>
+</section>
+
+<section data-accent="security">
+  <h2>What is not hands-off</h2>
+  <p class="kicker">The honest list</p>
+  <p>The build loop needs nobody. The <em>run</em> is not the same claim, and pretending
+  otherwise is how a multi-day run dies quietly at 3am. Three categories.</p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Fully autonomous</caption>
+      <thead><tr><th>No human anywhere in this chain</th></tr></thead>
+      <tbody>
+        <tr><td>Planning · design debate · ADRs · specs and criteria · test plans · implementation · in-crew review · cross-crew review · QA · security gate · integration · merge to <code>main</code> · tagging · self-revert on red · incident triage · rate-limit sleeping · retros · reporting</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Needs you once, before it starts — about 45 minutes</caption>
+      <thead><tr><th>Step</th><th>Why it cannot be automated</th></tr></thead>
+      <tbody>
+        <tr><td><code>claude setup-token</code>, <code>codex login</code></td><td>OAuth browser and device flows</td></tr>
+        <tr><td><code>gh auth login</code> + <code>-s project</code></td><td>Same, and the token needs merge rights and board access</td></tr>
+        <tr><td>VPS provisioning, <code>tailscale up --ssh</code></td><td>One interactive login</td></tr>
+        <tr><td><strong>The brief</strong> — <code>.omni/brief.md</code>, one paragraph</td><td>Someone has to say what should exist. The PRD, the definition of finished and the plan are all derived from it, so this is the whole of your authoring</td></tr>
+        <tr><td>Branch protection: status checks, <em>no</em> required approvals</td><td>Required human approvals deadlock the integrator, which has no approver</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Needs you during the run — unpredictable</caption>
+      <thead><tr><th>What</th><th>What happens if you are away</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Credential expiry</strong> — the one that will bite</td>
+          <td>Subscription tokens expire or get revoked; every worker fails at once and only a human can re-auth. Plan for it on a multi-week run.</td>
+        </tr>
+        <tr>
+          <td><code>.omni/blocked.md</code></td>
+          <td>Anything needing something outside the box: a paid API key, a third-party account, a staging environment, real data, or a decision with pricing or legal weight.</td>
+        </tr>
+        <tr>
+          <td>Quota exhaustion</td>
+          <td>It sleeps — correctly, but it sleeps. Only you can raise a plan or add an API key.</td>
+        </tr>
+        <tr>
+          <td>Deploys</td>
+          <td>Nothing ships to users. Merging <code>main</code> is the end of the org's authority, deliberately.</td>
+        </tr>
+        <tr>
+          <td>Infrastructure</td>
+          <td>Instance failure, disk beyond the hourly guard's pruning, Tailscale key expiry, the hosting bill.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <span class="lbl">Two risks no mechanism covers</span>
+    <p><strong>A wrong brief gets built, confidently, for days.</strong> Discovery makes this
+    cheaper than it was — two vendors interrogate the brief, assumptions get written
+    down, and milestone 1 must produce something demonstrable specifically so being
+    wrong surfaces in days rather than weeks. But nothing questions the <em>premise</em>: the
+    debate argues how, never whether. Reading the first report is what that costs you.</p>
+    <p><strong>Agents verify against tests agents wrote.</strong> Cross-crew review and QA catch a
+    great deal, but nobody checks against real users or real data. An escaped defect
+    lands in <code>main</code> and stays there until someone notices.</p>
+  </div>
+</section>
+
+<footer>
+  Bundle: <code>nightshift/</code> · N crews × 6 members + 6 shared functions · Claude Code +
+  Codex on subscription auth · fully autonomous, integrator-merged
+</footer>

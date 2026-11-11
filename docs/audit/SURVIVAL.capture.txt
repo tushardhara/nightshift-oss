@@ -1,0 +1,124 @@
+SURVIVAL audit — raw command captures (issue #478, DoD condition 14)
+Base/audit SHA: 662600662ee17267aed75bb945556f9a40ae0e42 (origin/main tip at audit time,
+verified via `git rev-parse origin/main` in the same turn the worktree was cut).
+Every command below was re-run fresh in this turn against a clean worktree checked out at
+that exact commit (`.worktrees/478-survival-audit`), not copied from an earlier capture.
+
+====================================================================
+$ cd tests && python3 -m unittest -v test_recovery
+====================================================================
+test_dead_worker_reaped_slot_claim_run (test_recovery.Recovery.test_dead_worker_reaped_slot_claim_run) ... ok
+test_restart_reconstructs_state_no_duplicates (test_recovery.Recovery.test_restart_reconstructs_state_no_duplicates) ... ok
+test_rt26_explicit_reap_is_immune_to_setup_scheduling (test_recovery.Recovery.test_rt26_explicit_reap_is_immune_to_setup_scheduling)
+RT-26 — the flake in #32, made deterministic (ADR-0005 D4). ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 8.633s
+
+OK
+
+====================================================================
+$ cd tests && python3 -m unittest -v test_vendor
+====================================================================
+test_backoff_doubles_and_caps (test_vendor.VendorCooldowns.test_backoff_doubles_and_caps) ... ok
+test_both_limited_yields_timer (test_vendor.VendorCooldowns.test_both_limited_yields_timer) ... ok
+test_single_vendor_cooling_other_available (test_vendor.VendorCooldowns.test_single_vendor_cooling_other_available) ... ok
+test_success_resets_backoff (test_vendor.VendorCooldowns.test_success_resets_backoff) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 3.735s
+
+OK
+
+====================================================================
+$ cd tests && python3 -m unittest test_beat        (31 tests — heartbeat write/show/progress contract)
+====================================================================
+Ran 31 tests in 18.858s
+
+OK   (all 31 pass: BeatRecordTest, BeatValidationTest, BeatProgressTest,
+      ControlPlaneUnreadableTest — includes test_previous_boot_is_not_alive_BY_DEFAULT,
+      test_wrong_run_is_not_alive, test_new_boot_resets_the_sequence_and_says_so)
+
+====================================================================
+$ cd tests && python3 -m unittest test_checkpoint   (7 tests)
+====================================================================
+test_detached_head_off_the_ref_is_refused ... ok
+test_explicit_sha_not_on_ref_is_refused ... ok
+test_recorded_checkpoint_echoes_the_ref_it_was_verified_against ... ok
+test_ref_is_now_required ... ok
+test_sha_on_ref_is_accepted ... ok
+test_dirty_specs_block_checkpoint ... ok
+test_worktree_pinned_to_checkpoint_sha ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 3.468s
+
+OK
+
+====================================================================
+$ cd tests && python3 -m unittest test_watchdog     (101 tests)
+====================================================================
+.....................................................................................................
+----------------------------------------------------------------------
+Ran 101 tests in 51.061s
+
+OK
+
+====================================================================
+$ cd tests && python3 -m unittest test_worktree_reap   (57 tests)
+====================================================================
+.........................................................
+----------------------------------------------------------------------
+Ran 57 tests in 42.838s
+
+OK
+
+====================================================================
+$ cd tests && python3 -m unittest test_scheduler_probe   (33 tests)
+====================================================================
+.................................
+----------------------------------------------------------------------
+Ran 33 tests in 22.404s
+
+OK
+
+====================================================================
+$ python3 /tmp/rt478/probe_vendor_timer.py
+(Q3 fixture: persisted vendor cooldown, a resume attempt exactly at/across
+ the timer boundary, and repeated-limited behaviour with no terminal state.
+ Uses tests/ctlutil.py's Ctl harness with a virtual clock — same harness the
+ shipped suite uses, advanced explicitly rather than by sleeping, per its own
+ documented contract.)
+====================================================================
+limited #1: 0 {'consecutive_limits': 1, 'cooldown_seconds': 1800.0, 'cooldown_until': 1001800.0, 'vendor': 'codex'}
+check immediately after limited (still cooling): 3 {'cooling': True, 'remaining': 1800.0, 'vendor': 'codex'}
+check at cooldown-1s (still cooling): 3 {'cooling': True, 'remaining': 1.0, 'vendor': 'codex'}
+check at cooldown+1s (resume attempt across the timer boundary): 0 {'cooling': False, 'vendor': 'codex'}
+vendor ok (successful resume, resets backoff): 0 {'ok': True, 'vendor': 'codex'}
+limited again after a recovery (backoff resets to base, not cumulative): 0 {'consecutive_limits': 1, 'cooldown_seconds': 1800.0, 'cooldown_until': 1003601.0, 'vendor': 'codex'}
+limited x6 more (simulated persistent outage): 0 {'consecutive_limits': 7, 'cooldown_seconds': 14400.0, 'cooldown_until': 1016201.0, 'vendor': 'codex'}
+NOTE: cooldown_seconds caps at --cap and consecutive_limits keeps counting; nothing in this row or in cmd_vendor_check ever reports a maximum-retries-exceeded or terminal/non-expiring-outage state. The org will keep retrying every 14400.0 seconds forever.
+
+====================================================================
+$ sqlite3 read (live control.db, read-only) — Q1 lead-build evidence
+(confirms a crew lead's own WA-5 self-performed build never creates a
+task_claims row: EXEMPT_AGENTS bypasses the whole claim/slot admission path,
+not just the slot half of it)
+====================================================================
+>>> SELECT * FROM task_claims WHERE task_id IN ('477-concurrency-audit','478-survival-audit');
+(zero rows)
+>>> SELECT * FROM worker_slots WHERE task_id IN ('477-concurrency-audit','478-survival-audit');
+{'id': 65, 'holder': 'crew_alpha/qa', ..., 'task_id': '477-concurrency-audit', 'state': 'released', ...}
+{'id': 66, 'holder': 'crew_alpha/eng_claude', ..., 'task_id': '477-concurrency-audit', 'state': 'released', ...}
+(both rows are the two counted-worker dispatch ATTEMPTS that #477's own WA-5
+disclosure records as denied/released before the lead self-performed — no
+slot or claim row exists for the lead's own build itself, on either task)
+
+====================================================================
+Live control-plane facts read at audit time (read-only, `nightshift-ctl lease list` / `slot list`)
+====================================================================
+Lease 66 — docs/audit/SURVIVAL.md, holder crew_alpha, mode edit, task 478-survival-audit,
+  acquired_at 1788291184.32, expires_at 1788377584.32 (delta 86400s = CAP_DEFAULTS
+  lease_ttl_seconds, confirms edit leases are TTL-bounded, never open-ended).
+No active `program_authority` row at audit time (table empty) — consistent with no Program
+turn holding the ADR-0044 fence at the moment this snapshot was read.

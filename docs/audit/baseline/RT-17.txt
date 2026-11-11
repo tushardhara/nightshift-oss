@@ -1,0 +1,8 @@
+test_concurrent_acquires_converge_on_one_normal_worker_ceiling (test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling) ... ok
+test_oncall_reserve_rejects_missing_and_wrong_authority_token (test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token) ... ok
+test_denied_for_a_fenced_out_generation (test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 6.134s
+
+OK

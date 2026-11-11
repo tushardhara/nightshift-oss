@@ -1,0 +1,280 @@
+
+=== 0. builds under test ===
+PRE  = bin/nightshift-ctl at 685e773 (the $NIGHTSHIFT_NOW build)
+POST = bin/nightshift-ctl at 265ff26 (worktree tip, env channel deleted)
+36c2d1c95d407702394712e9911c6c57304159370be181acbd8b5cc68d6a8a1d  /home/nightshift/scratch-rt29/pre/nightshift-ctl
+bffac7ec3d3c075145849748ada03512dcd31f7f583cf21256ec7b1a1e5297bc  /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl
+-- grep for the env channel in each build --
+PRE : 4 line(s) mentioning NIGHTSHIFT_NOW
+1356:                        "$NIGHTSHIFT_NOW). Test seam -- see ADR-0004 D4.")
+1567:    if injected is None and os.environ.get("NIGHTSHIFT_NOW"):
+1569:            injected = float(os.environ["NIGHTSHIFT_NOW"])
+1572:                 "value": os.environ["NIGHTSHIFT_NOW"]}, 2)
+POST: 1 line(s) mentioning NIGHTSHIFT_NOW -- and it is a comment:
+1568:    # revision of this change also read $NIGHTSHIFT_NOW; security blocked it as
+
+=== 1. CONSEQUENCE 1, PRE-FIX: an inherited forward clock reaps a healthy plane through a read-looking command ===
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c1/control.db init
+{"db": "/home/nightshift/scratch-rt29/planes/pre-c1/control.db", "ok": true}
+exit=0
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c1/control.db slot acquire --holder crew_alpha/eng_claude --crew crew_alpha --task rt29-healthy --ttl 3600
+{"active_after": 1, "expires_at": 1787462624.9073374, "granted": true, "kind": "normal", "max_concurrent_workers": 4, "slot_id": 1}
+exit=0
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c1/control.db slot list
+{"active": [{"acquired_at": 1787459024.9073374, "bound_agent": null, "bound_title": null, "crew": "crew_alpha", "dispatched_at": null, "expires_at": 1787462624.9073374, "generation": 0, "holder": "crew_alpha/eng_claude", "id": 1, "kind": "normal", "released_at": null, "run_id": null, "state": "active", "task_id": "rt29-healthy"}]}
+exit=0
+-- the SAME read-looking command, with NIGHTSHIFT_NOW inherited from the environment --
+
+$ NIGHTSHIFT_NOW=1787559024 /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c1/control.db slot list
+nightshift-ctl: CLOCK OVERRIDE active, now=1787559024.0 (TTL expiry is computed against this, not wall time)
+{"active": []}
+exit=0
+-- back on the real clock: is the hold still there? --
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c1/control.db slot list
+{"active": []}
+exit=0
+
+=== 2. CONSEQUENCE 2, PRE-FIX: an inherited backward clock turns a dead Program alive (fail-open on the dead-man's switch) ===
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2/control.db init
+{"db": "/home/nightshift/scratch-rt29/planes/pre-c2/control.db", "ok": true}
+exit=0
+-- fixture: the run beat show checks against, so wrong_run does NOT fire and AGE is the only gate --
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2/control.db run current --set rt29
+{"ok": true, "run_id": "rt29"}
+exit=0
+-- fixture: a heartbeat written 6h ago (constructed with --now; argv, deliberate, not the channel under test) --
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2/control.db --now 1787437424 beat write --who program --run rt29 --seq 1
+nightshift-ctl: CLOCK OVERRIDE active, now=1787437424.0 (TTL expiry is computed against this, not wall time)
+{"ok": true, "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437424.0, "who": "program"}, "reset": false, "who": "program"}
+exit=0
+-- real clock: correct verdict --
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2/control.db beat show --who program --max-age 600
+{"age": 21601.41572189331, "alive": false, "reason": "heartbeat is 21601s old, threshold 600s", "reason_code": "stale", "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437424.0, "who": "program"}, "who": "program"}
+exit=3
+-- clock pinned to the heartbeat's own ts, via the inherited environment variable --
+
+$ NIGHTSHIFT_NOW=1787437424 /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2/control.db beat show --who program --max-age 600
+nightshift-ctl: CLOCK OVERRIDE active, now=1787437424.0 (TTL expiry is computed against this, not wall time)
+{"age": 0.0, "alive": true, "max_age": 600.0, "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437424.0, "who": "program"}, "who": "program"}
+exit=0
+
+=== 3. CONSEQUENCE 1, POST-FIX: same commands, current build ===
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c1/control.db init
+{"db": "/home/nightshift/scratch-rt29/planes/post-c1/control.db", "ok": true}
+exit=0
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c1/control.db slot acquire --holder crew_alpha/eng_claude --crew crew_alpha --task rt29-healthy --ttl 3600
+{"active_after": 1, "expires_at": 1787462625.6249385, "granted": true, "kind": "normal", "max_concurrent_workers": 4, "slot_id": 1}
+exit=0
+
+$ NIGHTSHIFT_NOW=1787559024 /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c1/control.db slot list
+{"active": [{"acquired_at": 1787459025.6249385, "bound_agent": null, "bound_title": null, "crew": "crew_alpha", "dispatched_at": null, "expires_at": 1787462625.6249385, "generation": 0, "holder": "crew_alpha/eng_claude", "id": 1, "kind": "normal", "released_at": null, "run_id": null, "state": "active", "task_id": "rt29-healthy"}]}
+exit=0
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c1/control.db slot list
+{"active": [{"acquired_at": 1787459025.6249385, "bound_agent": null, "bound_title": null, "crew": "crew_alpha", "dispatched_at": null, "expires_at": 1787462625.6249385, "generation": 0, "holder": "crew_alpha/eng_claude", "id": 1, "kind": "normal", "released_at": null, "run_id": null, "state": "active", "task_id": "rt29-healthy"}]}
+exit=0
+
+=== 4. CONSEQUENCE 2, POST-FIX: same commands, current build ===
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c2/control.db init
+{"db": "/home/nightshift/scratch-rt29/planes/post-c2/control.db", "ok": true}
+exit=0
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c2/control.db run current --set rt29
+{"ok": true, "run_id": "rt29"}
+exit=0
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c2/control.db --now 1787437424 beat write --who program --run rt29 --seq 1
+nightshift-ctl: CLOCK OVERRIDE active, now=1787437424.0 (TTL expiry is computed against this, not wall time)
+{"ok": true, "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437424.0, "who": "program"}, "reset": false, "who": "program"}
+exit=0
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c2/control.db beat show --who program --max-age 600
+{"age": 21602.003111839294, "alive": false, "reason": "heartbeat is 21602s old, threshold 600s", "reason_code": "stale", "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437424.0, "who": "program"}, "who": "program"}
+exit=3
+
+$ NIGHTSHIFT_NOW=1787437424 /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-c2/control.db beat show --who program --max-age 600
+{"age": 21602.059758901596, "alive": false, "reason": "heartbeat is 21602s old, threshold 600s", "reason_code": "stale", "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437424.0, "who": "program"}, "who": "program"}
+exit=3
+
+=== 5. CONTROL: --now on the POST build still reaps. The fix removed the CHANNEL, not the CAPABILITY. ===
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-control/control.db init
+{"db": "/home/nightshift/scratch-rt29/planes/post-control/control.db", "ok": true}
+exit=0
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-control/control.db slot acquire --holder crew_alpha/eng_claude --crew crew_alpha --task rt29-control --ttl 3600
+{"active_after": 1, "expires_at": 1787462626.2059965, "granted": true, "kind": "normal", "max_concurrent_workers": 4, "slot_id": 1}
+exit=0
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-control/control.db --now 1787559024 slot list
+nightshift-ctl: CLOCK OVERRIDE active, now=1787559024.0 (TTL expiry is computed against this, not wall time)
+{"active": []}
+exit=0
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-control/control.db slot list
+{"active": []}
+exit=0
+
+=== 6. CONTROL: a bad --now is still a loud refusal on the POST build ===
+
+$ /home/nightshift/wt/alpha-pr39-b1/bin/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/post-control/control.db --now not-a-number slot list
+usage: nightshift-ctl [-h] [--db DB] [--now NOW] [--capacity CAPACITY]
+                      {init,slot,claim,lease,seq,checkpoint,task,issue,beat,run,vendor,pr-lint,pr-create,reap,dump,selftest}
+                      ...
+nightshift-ctl: error: argument --now: invalid float value: 'not-a-number'
+exit=2
+
+captured 2026-08-23T04:23:46Z on Linux 6.8.0-138-generic / 8 cores
+=== 7. RT-26 determinism: 3 consecutive runs, each under 8 CPU hogs on an 8-core box ===
+cores: 8
+
+--- run 1 --- hogs: 1349386 1349387 1349388 1349389 1349390 1349391 1349392 1349393  load1=1.43
+RT-26 — the flake in #32, made deterministic (ADR-0005 D4). ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.001s
+
+OK
+
+--- run 2 --- hogs: 1349529 1349530 1349531 1349532 1349533 1349534 1349536 1349537  load1=2.36
+RT-26 — the flake in #32, made deterministic (ADR-0005 D4). ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.139s
+
+OK
+
+--- run 3 --- hogs: 1349696 1349697 1349698 1349699 1349700 1349701 1349702 1349705  load1=2.36
+RT-26 — the flake in #32, made deterministic (ADR-0005 D4). ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.996s
+
+OK
+
+=== 8. Full suite at the tip this record was captured against ===
+$ cd /home/nightshift/wt/alpha-pr39-b1 && tests/run.sh
+
+----------------------------------------------------------------------
+Ran 189 tests in 34.143s
+
+OK
+
+=== 9. The retracted RT-26 failure: invocation, not code ===
+The exact argv of the original false alarm was NOT preserved. What CAN be shown is
+that this suite is CWD-sensitive, which is the class the false alarm belonged to:
+
+$ (repo root) python3 -m unittest -v tests.test_recovery
+    from ctlutil import Ctl, VIRTUAL_T0
+ModuleNotFoundError: No module named 'ctlutil'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+
+$ (repo root) python3 -m unittest discover   # finds nothing, exits 0-looking
+Ran 0 tests in 0.000s
+
+NO TESTS RAN
+
+$ cd tests && python3 -m unittest -v test_recovery   # the sanctioned invocation
+----------------------------------------------------------------------
+Ran 3 tests in 1.587s
+
+OK
+
+=== 10. C2's FIRST fixture, which did NOT reproduce (kept on purpose) ===
+Identical to section 2 except that NO expected run is recorded. beat show then
+fail-closes on a DIFFERENT guard (no_expected_run) before age is ever consulted,
+so the pinned clock changes 'age' to 0.0 and changes nothing else.
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2-norun/control.db init
+{"db": "/home/nightshift/scratch-rt29/planes/pre-c2-norun/control.db", "ok": true}
+exit=0
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2-norun/control.db --now 1787437732 beat write --who program --run rt29 --seq 1
+nightshift-ctl: CLOCK OVERRIDE active, now=1787437732.0 (TTL expiry is computed against this, not wall time)
+{"ok": true, "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437732.0, "who": "program"}, "reset": false, "who": "program"}
+exit=0
+
+$ /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2-norun/control.db beat show --who program --max-age 600
+{"age": 21600.707098722458, "alive": false, "reason": "no run to check against: pass --run, set $NIGHTSHIFT_RUN_ID, or record one with `nightshift-ctl run current --set <run-id>`. Refusing to report alive on a heartbeat whose run cannot be verified", "reason_code": "no_expected_run", "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437732.0, "who": "program"}, "who": "program"}
+exit=3
+
+$ NIGHTSHIFT_NOW=1787437732 /home/nightshift/scratch-rt29/pre/nightshift-ctl --db /home/nightshift/scratch-rt29/planes/pre-c2-norun/control.db beat show --who program --max-age 600
+nightshift-ctl: CLOCK OVERRIDE active, now=1787437732.0 (TTL expiry is computed against this, not wall time)
+{"age": 0.0, "alive": false, "reason": "no run to check against: pass --run, set $NIGHTSHIFT_RUN_ID, or record one with `nightshift-ctl run current --set <run-id>`. Refusing to report alive on a heartbeat whose run cannot be verified", "reason_code": "no_expected_run", "record": {"boot_id": "345b0497-f304-439f-9747-ed8106495e6a", "phase": null, "run_id": "rt29", "schema_version": 1, "seq": 1, "session": null, "ts": 1787437732.0, "who": "program"}, "who": "program"}
+exit=3
+
+Note the pinned run: age becomes 0.0 -- the clock IS injected -- but alive stays
+false, exit 3. wrong_run is doing the work here, and in the watchdog's real
+scenario wrong_run MATCHES, which is why section 2 records the expected run.
+
+=== 11. I reproduced #31 on myself, mid-turn, by accident ===
+While looking for slot 35 I ran the OLD build (a73ba88, create-on-connect) from
+/home/nightshift/nightshift-runtime. It manufactured a control plane and answered
+from it. I read '{"active": []}' and briefly concluded my slot and lease were gone.
+
+$ stat -c 'Birth: %w  Size: %s' /home/nightshift/nightshift-runtime/.omni/control.db
+Birth: 2026-08-23 04:33:38.943055019 +0000  Size: 69632
+  ^ birth time == the minute of my first command against that directory
+
+$ git -C /home/nightshift/nightshift-runtime status --porcelain --ignored .omni
+?? .omni/
+  ^ untracked. Not a checked-in fixture; an artifact.
+
+row counts, phantom plane:
+    agent_runs 0
+    checkpoints 0
+    leases 0
+    meta 0
+    sequences 0
+    sqlite_sequence 0
+    task_claims 0
+    tasks 0
+    vendors 0
+    worker_slots 0
+row counts, REAL plane /srv/project/.omni/control.db:
+    agent_runs 0
+    checkpoints 2
+    leases 12
+    meta 2
+    sequences 0
+    sqlite_sequence 4
+    task_claims 10
+    tasks 12
+    vendors 0
+    worker_slots 37
+
+AND the worktree resolved to the phantom, not the real plane:
+$ (in /home/nightshift/wt/alpha-pr39-b1) ./bin/nightshift-ctl dump   # no --db
+{"checkpoints": [], "claims": [], "generated_at": 1787459755.5463116, "leases": [], "slots": [], "tasks": [], "vendors": []}
+
+  ^ the POST-fix build. D2 stops a plane being MANUFACTURED; it does not stop an
+    already-manufactured one being ADOPTED. This one already existed by then.
+
+-- cleanup: removing MY artifact, restoring the pre-04:33:38 state --
+$ rm -rf /home/nightshift/nightshift-runtime/.omni
+$ (in /home/nightshift/wt/alpha-pr39-b1) ./bin/nightshift-ctl slot list   # no --db
+{"cwd": "/home/nightshift/wt/alpha-pr39-b1", "db": "/home/nightshift/wt/alpha-pr39-b1/.omni/control.db", "db_source": "unresolved", "error": "control_plane_missing", "hint": "run from inside the project (or a worktree of it), or pass --db. `nightshift-ctl init` CREATES a new empty control plane and is almost never what you want here", "ok": false}
+exit=1
+  ^ the loud refusal is back. That is the correct answer and it is what a worktree
+    saw before 04:33:38. The real plane is /srv/project/.omni/control.db and it is
+    reached with --db, never by discovery from this clone.
+
+$ nightshift-ctl --db /srv/project/.omni/control.db slot list   # the real plane, unharmed
+{"active": [{"acquired_at": 1787459482.8999505, "bound_agent": null, "bound_title": null, "crew": null, "dispatched_at": null, "expires_at": 1787473882.8999505, "generation": 0, "holder": "crew_beta", "id": 37, "kind": "normal", "released_at": null, "run_id": null, "state": "active", "task_id": "beta-w2-f1f2-build"}]}
+

@@ -1,0 +1,129 @@
+RT-27 BASELINE — first boot is not a dead org (issue #34)
+==========================================================
+Baseline: 7c16fbe (wave-2 checkpoint), deploy/ UNMODIFIED at capture time.
+Command:  python3 -m unittest -v \
+            tests.test_watchdog.RT27FirstBootIsNotADeadOrg \
+            tests.test_watchdog.RT27FirstBootPathEndToEnd
+          run from the repo root.
+
+CORRECTION — READ BEFORE COUNTING THE FAILURES (issue #57)
+----------------------------------------------------------
+The verbatim block below is the ORIGINAL capture and ends `FAILED (failures=4)`.
+**That number is not reproducible from the shipped tree, and the record it
+underwrites is #34's own acceptance criteria, so the correction belongs here
+rather than in a review comment.**
+
+RE-MEASURED: the SHIPPED tests/test_watchdog.py, run against this same
+baseline_sha with deploy/ restored to 7c16fbe, gives
+
+    Ran 8 tests ... FAILED (failures=3)
+
+**The true baseline split is 5 PASS / 3 FAIL.** The three that fail are
+`..._never_started_box_does_not_alert`,
+`..._run_current_is_asked_of_the_PROJECT_control_plane` and
+`..._install_then_start_then_first_beat`.
+
+1. THE COUNT. 3 of 8, not 4 of 8. The original capture was taken against the
+   PRE-F2 harness; F2 later moved the state directory, and with it the path
+   `Box.marker_exists()` reads. The archived 4th failure was GENUINE THEN and is
+   INVISIBLE TO THE SHIPPED ASSERTION NOW: against the pre-F2 harness
+   `marker_exists()` read the XDG path the script actually wrote, so that
+   failure was real evidence that the baseline burned the re-alert window - the
+   behaviour point 2 below re-measures and confirms. It does not reproduce
+   because the assertion moved, not because the box behaved differently. Read
+   "does not reproduce" as "the shipped test can no longer see it", never as
+   "it never happened".
+
+2. THE FLIPPED ASSERTION PASSES **VACUOUSLY**, AND IS NOT EVIDENCE.
+   `test_rt27_never_started_box_does_not_burn_the_realert_window` passes at this
+   baseline for the wrong reason entirely. `Box.marker_exists()` resolves
+   `$HOME/.config/omnigent/watchdog-last-alert` — the POST-F2 path — while
+   `Box.run()` deliberately points `XDG_STATE_HOME` at a decoy, and the 7c16fbe
+   script resolves `STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omnigent"`.
+   Producer and consumer resolve to different directories, so the check reads a
+   directory the script never writes.
+
+   MEASURED at this baseline, same setup as the test:
+
+       alert_count()                            -> 1
+       marker_exists()  ($HOME/.config/omnigent)-> False
+       files under the XDG decoy                -> $XDG_STATE_HOME/omnigent/
+                                                     watchdog-last-alert
+
+   The box **did** alert and the re-alert window **was** burned. The marker
+   landed in the decoy, so `assertFalse` passed. "No marker was burned" is the
+   right answer read off the wrong directory.
+
+   It is therefore disclosed, not counted — in EITHER direction. It is not a
+   pre-fix failure, and it is equally not a pre-fix pass that proves anything.
+   The 4 remaining passes ARE meaningful: they are the fail-closed guards (a
+   recorded run with no beat still alerts, an unreadable plane still alerts,
+   non-`missing` reasons are never graced, the alive path asks no second
+   question), and they are what stops this fix degenerating into "delete the
+   `missing` alert".
+
+3. WHAT IS UNAFFECTED. The headline evidence for #34 stands on its own and was
+   re-measured: `..._never_started_box_does_not_alert` and
+   `..._install_then_start_then_first_beat` both fail at this baseline, exit_code
+   is 1, and the derived kind is still `regression`. The correction narrows the
+   claim; it does not withdraw it.
+
+The verbatim block is left byte-for-byte as captured. An archive that is edited
+to agree with a later re-run is not an archive.
+
+--- verbatim run output follows (ORIGINAL capture, unaltered) ---
+test_rt27_a_recorded_run_with_no_beat_STILL_alerts (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_a_recorded_run_with_no_beat_STILL_alerts)
+The fail-closed half. This is the ONLY thing separating the fix from ... ok
+test_rt27_an_unreadable_control_plane_is_not_a_fresh_install (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_an_unreadable_control_plane_is_not_a_fresh_install)
+`beat show` exits 1 with no JSON (pre-#16 shape) and `run current` ... ok
+test_rt27_never_started_box_does_not_alert (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_never_started_box_does_not_alert)
+The issue itself: arm the watchdog against a never-written beat. ... FAIL
+test_rt27_never_started_box_does_not_burn_the_realert_window (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_never_started_box_does_not_burn_the_realert_window)
+Silence must be real silence: no marker, so the FIRST genuine alert ... FAIL
+test_rt27_only_missing_is_ever_graced (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_only_missing_is_ever_graced)
+A beat that EXISTS but is stale/wrong-boot/malformed is evidence the ... ok
+test_rt27_run_current_is_asked_of_the_PROJECT_control_plane (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_run_current_is_asked_of_the_PROJECT_control_plane)
+Same trap as RT-09: nightshift-ctl resolves .omni/control.db from ... FAIL
+test_rt27_the_grace_is_not_paid_for_on_every_healthy_tick (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_the_grace_is_not_paid_for_on_every_healthy_tick)
+A live org must not incur a second control-plane query per tick. ... ok
+test_rt27_install_then_start_then_first_beat (tests.test_watchdog.RT27FirstBootPathEndToEnd.test_rt27_install_then_start_then_first_beat) ... FAIL
+
+======================================================================
+FAIL: test_rt27_never_started_box_does_not_alert (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_never_started_box_does_not_alert)
+The issue itself: arm the watchdog against a never-written beat.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 514, in test_rt27_never_started_box_does_not_alert
+    self.assertEqual(
+AssertionError: 1 != 0 : a box where no run has ever been recorded and no beat has ever been written is NOT a dead org - it is an org that has not started, and alerting on it fires STALE on every fresh install
+
+======================================================================
+FAIL: test_rt27_never_started_box_does_not_burn_the_realert_window (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_never_started_box_does_not_burn_the_realert_window)
+Silence must be real silence: no marker, so the FIRST genuine alert
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 527, in test_rt27_never_started_box_does_not_burn_the_realert_window
+    self.assertFalse(
+AssertionError: True is not false : the not-yet-started path wrote the alert marker; the first real alert after startup would then be throttled away
+
+======================================================================
+FAIL: test_rt27_run_current_is_asked_of_the_PROJECT_control_plane (tests.test_watchdog.RT27FirstBootIsNotADeadOrg.test_rt27_run_current_is_asked_of_the_PROJECT_control_plane)
+Same trap as RT-09: nightshift-ctl resolves .omni/control.db from
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 585, in test_rt27_run_current_is_asked_of_the_PROJECT_control_plane
+    self.assertTrue(b.run_current_calls(),
+AssertionError: [] is not true : `run current` was never consulted: ['nightshift-ctl beat show --who program --max-age 10800', 'CWD /tmp/tmpzcbm1wdz/project', 'systemctl --user is-active omnigent-server', 'systemctl --user is-active omnigent-host', 'gh issue list --search Program status in:title --state open --json number --jq .[0].number', 'gh issue comment 4242 --body 🚨 **Watchdog: the Program is not alive** (reason `missing`, threshold 3h).', '', 'no Program heartbeat has ever been recorded for this run.', '', "This verdict is read from the Program's own heartbeat record BY CONTENT — not from file timestamps under `.omni/`, and not from `STATUS.md`. Backup writes, timer output and this watchdog's own marker cannot make it look healthy (ADR-0002, issue #10). Heartbeat age: `27h`.", '', '**If this run has FINISHED, this alert is EXPECTED and can be ignored.** Terminal project state is not yet readable from the control plane (issue #26, ADR-0002 §6). Until that lands the watchdog cannot tell "finished" from "dead", and it deliberately errs toward alerting: a finished run that alerts every 6h is noise, a dead run that stays quiet is the defect this watchdog exists to catch.', '', 'Services (read-only check): omnigent-server `active`, omnigent-host `active`.', '', 'Recovery (one command on the box): start a session on the program agent with:', '`Resume from files: read .omni/goal.md, .omni/STATUS.md and the registries, reconcile against open PRs, continue the current wave. Re-create the hourly heartbeat task and confirm it with sys_scheduled_task_list.`']
+
+======================================================================
+FAIL: test_rt27_install_then_start_then_first_beat (tests.test_watchdog.RT27FirstBootPathEndToEnd.test_rt27_install_then_start_then_first_beat)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 621, in test_rt27_install_then_start_then_first_beat
+    self.assertEqual(b.alert_count(), 0,
+AssertionError: 1 != 0 : install-time tick alerted on a healthy fresh box
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.821s
+
+FAILED (failures=4)

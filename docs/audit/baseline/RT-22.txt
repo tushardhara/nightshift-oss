@@ -1,0 +1,38 @@
+test_heartbeat_requires_the_holder_to_prove_identity (test_slots.GlobalSemaphore.test_heartbeat_requires_the_holder_to_prove_identity)
+ADR-0002 §4a. Renewal is a capability of the HOLDER, not of ... FAIL
+test_heartbeat_without_a_holder_is_refused (test_slots.GlobalSemaphore.test_heartbeat_without_a_holder_is_refused)
+The defect verbatim: `slot heartbeat --slot <n>` with no identity. ... FAIL
+test_heartbeat_keeps_slot_alive (test_slots.GlobalSemaphore.test_heartbeat_keeps_slot_alive)
+CHANGED by ADR-0002 §4a. This test previously renewed a slot with ... FAIL
+
+======================================================================
+FAIL: test_heartbeat_requires_the_holder_to_prove_identity (test_slots.GlobalSemaphore.test_heartbeat_requires_the_holder_to_prove_identity)
+ADR-0002 §4a. Renewal is a capability of the HOLDER, not of
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_slots.py", line 168, in test_heartbeat_requires_the_holder_to_prove_identity
+    self.assertEqual(code, 0)
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_heartbeat_without_a_holder_is_refused (test_slots.GlobalSemaphore.test_heartbeat_without_a_holder_is_refused)
+The defect verbatim: `slot heartbeat --slot <n>` with no identity.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_slots.py", line 198, in test_heartbeat_without_a_holder_is_refused
+    self.assertNotEqual(code, 0)
+AssertionError: 0 == 0
+
+======================================================================
+FAIL: test_heartbeat_keeps_slot_alive (test_slots.GlobalSemaphore.test_heartbeat_keeps_slot_alive)
+CHANGED by ADR-0002 §4a. This test previously renewed a slot with
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_slots.py", line 144, in test_heartbeat_keeps_slot_alive
+    self.assertEqual(code, 0)
+AssertionError: 2 != 0
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.571s
+
+FAILED (failures=3)

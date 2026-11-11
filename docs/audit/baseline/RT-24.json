@@ -1,0 +1,7 @@
+{
+  "baseline_sha": "de741a8810eef2ce0b029a240d3cc24405eb7dd8",
+  "command": "cd tests && python3 -m unittest -v test_beat.ControlPlaneUnreadableTest",
+  "exit_code": 1,
+  "output_path": "docs/audit/baseline/RT-24.txt",
+  "note": "Baseline is branch tip de741a8, NOT wave checkpoint 139726e, and that is deliberate: 'beat show' does not exist at 139726e, so at the checkpoint this command fails with argparse 'invalid choice: beat' rather than with the defect. de741a8 is the first SHA at which this defect is reachable. 3 of 5 tests FAIL pre-fix (corrupt / unreadable / absent control plane each traceback to exit 1 with no JSON); the 2 that pass pre-fix are guards pinning behaviour that must NOT change."
+}

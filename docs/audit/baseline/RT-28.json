@@ -1,0 +1,8 @@
+{
+  "baseline_sha": "8803c907bb9c731504e1ace96e4951b69835d270",
+  "command": "python3 -m unittest -v tests.test_watchdog.RT28TheGraceIsBounded",
+  "exit_code": 1,
+  "output_path": "docs/audit/baseline/RT-28.txt",
+  "issue": 34,
+  "note": "security finding B1 on PR #35. Captured against PR #35's own first commit 8803c90 -- the pre-fix state for THIS change is the unbounded grace, not the wave checkpoint -- with deploy/ UNMODIFIED at capture time (git diff --name-only deploy/ empty). exit_code 1 => derived kind 'regression'. 12 failures + 1 error of 11 test methods (subTests inflate the count). The 2 methods that pass pre-fix are the RT-27 behaviour the bound must PRESERVE: inside the window stays silent, and a recorded run with no beat still alerts at once."
+}

@@ -1,0 +1,200 @@
+RT-28 BASELINE — F1: future-dated attestation is FAIL-OPEN
+==========================================================
+Captured by: crew_beta lead, under control-plane slot 1 (task beta-w2-r22-f1f2).
+Tree:    beta/34-watchdog-first-boot, deploy/ IDENTICAL to 86efd26.
+Proof:   `git diff --name-only 86efd26 -- deploy/` -> EMPTY, verified at capture.
+Command: python3 -m unittest -v \
+           test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts \
+           test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_future_attestation_cannot_rescue_an_ESTABLISHED_box \
+           test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_future_attestation_gets_its_OWN_operator_story
+         run from tests/ (the suite's own working directory, per tests/run.sh).
+
+CORRECTION — THE DOCUMENTED COMMAND NO LONGER REPRODUCES 4 (issue #51)
+----------------------------------------------------------------------
+**Run the command above against the shipped tree and you get `Ran 3 tests ...
+FAILED (failures=1)`, not 4.** Re-measured, deploy/ restored to 86efd26. Anyone
+checking this record will hit that discrepancy, and the wrong conclusion to draw
+from it — "F1 was never real" — would reopen a fail-open in a dead-man's switch.
+So it is disclosed here in full.
+
+WHY THE OTHER THREE FAILURES EVAPORATED. The harness moved under this record.
+F2 relocated the state directory, so the shipped tests plant the attestation at
+`$HOME/.config/omnigent/bootstrapped-at`, while the 86efd26 script still reads
+`STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omnigent"` — and `Box.run()`
+points `XDG_STATE_HOME` at a decoy. The old script therefore finds **no
+attestation at all**, takes `installer_at=0`, fails the gate on the FIRST
+conjunct and alerts. `alert_count == 1` is what the assertions want, so
+`..._a_garbled_attestation_alerts` (all 7 subTests) and
+`..._cannot_rescue_an_ESTABLISHED_box` now PASS — **the right outcome via the
+wrong cause.** They never exercise the future date at all.
+
+THE ONE SURVIVING FAILURE ALSO FAILS FOR A DIFFERENT REASON THAN ARCHIVED.
+`..._gets_its_OWN_operator_story` still fails, but not as recorded below. The
+archived traceback is `'never_started' not found in ''` at line 1074 — an EMPTY
+body, i.e. no alert whatsoever. Re-run, it fails at line 1119 on
+`assertIn("future", ...)` against a FULL `never_started` body whose text is the
+no-attestation story. Same verdict line, different mechanism. It is not
+independent confirmation of F1 either.
+
+F1 IS REAL, AND HERE IS THE REPRODUCTION THAT ACTUALLY SHOWS IT.
+The defect is in the SCRIPT, so exercise the script, and plant the attestation
+where the script under test actually reads it. Established box (bootstrapped
+long ago), control plane restored, Program dead, `run current` -> exit 3,
+attestation written to BOTH candidate paths so path resolution is not the
+variable and only the DATE varies:
+
+    attestation date        deploy/ @ 86efd26      deploy/ @ 9cb87ba (head)
+    ----------------------  ---------------------  ------------------------
+    +48h   (future)         posted = 0  SILENT     posted = 1  alerts
+    +10y   (future)         posted = 0  SILENT     posted = 1  alerts
+    -30d   (established)    posted = 1  alerts     posted = 1  alerts
+    -1h    (fresh install)  posted = 0  silent     posted = 0  silent
+
+The two controls are identical on both sides: an established box still alerts,
+a genuinely fresh one is still graced. Only the future-dated rows move. That is
+F1 exactly — `now - installer_at` goes NEGATIVE and a negative number is
+unconditionally less than the grace window, so a future date was the one input
+that could never fail the gate, and it bought silence forever. The `-le "$now"`
+conjunct is what closes it.
+
+THE TABLE ABOVE IS NOW A SHIPPED TEST, NOT AN ASSERTION.
+Every cell is executed by two tests in `tests/test_watchdog.py`, in class
+`RT28GraceNeedsPositiveEvidence` (cited by NAME: line numbers in prose drift
+the moment anyone edits above them, which is the defect #53 and F-E were
+raised for):
+
+  - `test_rt28_f1_reproduction_table_the_HEAD_column`
+        the right-hand column - all four rows against the shipped script.
+  - `test_rt28_f1_reproduction_table_the_86efd26_BASELINE_column`
+        the left-hand column - the same four rows against the watchdog as of
+        `86efd26`, resolved by `git show` (or from $NS_BASELINE_WATCHDOG when
+        there is no history, e.g. a `git archive` export, where it SKIPS rather
+        than silently passing).
+
+  Run them:
+      python3 -m unittest tests.test_watchdog.RT28GraceNeedsPositiveEvidence -v
+      # or the single row-table pair:
+      python3 -m unittest \
+        tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_f1_reproduction_table_the_HEAD_column \
+        tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_f1_reproduction_table_the_86efd26_BASELINE_column
+
+  `posted` in the table is `Box.alert_count()` - the number of non-blank lines
+  in $NS_ALERTS, which the stub `gh` appends to once per alert actually sent.
+  The box in every cell: `not_alive("missing")`, `no_run_recorded()` (i.e.
+  `run current` -> exit 3), grace 24h.
+
+  THE ATTESTATION IS PLANTED AT BOTH CANDIDATE PATHS, by
+  `Box.attest_everywhere()`: $HOME/.config/omnigent/bootstrapped-at (post-F2,
+  what head reads) AND $XDG_STATE_HOME/omnigent/bootstrapped-at (what `86efd26`
+  reads, and the harness points XDG_STATE_HOME at a decoy on every run). That
+  is what keeps PATH RESOLUTION from being the variable, leaving the DATE as
+  the only difference between the two columns. It matters: with the
+  attestation planted ONLY at the post-F2 path, `86efd26` finds no file at all,
+  computes installer_at=0, fails the FIRST conjunct and alerts - which looks
+  exactly like the fix working while never once exercising the future date.
+
+  MEASURED, pointing the shipped-script constant at `86efd26`:
+      FAIL: ..._the_HEAD_column (row='+48h future')
+      AssertionError: 0 != 1 : RT-28-f1 table row '+48h future': expected the
+      shipped watchdog to be alerts, got alert_count()=0
+      FAIL: ..._the_HEAD_column (row='+10y future')
+      AssertionError: 0 != 1 : ... got alert_count()=0
+      Ran 1 test ... FAILED (failures=2)
+  ONLY the two future rows fail. The `-30d` and `-1h` rows PASS unchanged at
+  `86efd26` - which is the WA-009 control: it proves the baseline DID read the
+  attestation, so the future-dated silence is caused by the DATE and not by an
+  unread file.
+
+  That control is asserted too, not just observed. The BASELINE_column test
+  additionally runs `86efd26` with the attestation removed from BOTH paths and
+  requires it to ALERT with the "NO installer attestation" story. So the +48h
+  cell and the no-attestation cell differ only in that the file is present and
+  dated ahead, and they come out opposite ways round. If BOTH were silent, the
+  future-dated silence would prove nothing about the date.
+
+  FALSIFIER. This record is wrong if any of these hold: `86efd26` ALERTS on a
+  future-dated attestation planted at the path it reads; or head goes SILENT on
+  one; or the `-30d`/`-1h` controls differ between the two columns; or the
+  no-attestation cell at `86efd26` is silent. Any one of them fails a shipped
+  test rather than merely contradicting this paragraph.
+
+WHAT THIS RECORD STILL SUPPORTS, AND WHAT IT DOES NOT. The MEASURED paragraph
+below (a box bootstrapped 30 days ago, plane restored, attestation +365d ->
+alerts = 0) is reproduced by the table above and stands. The failure COUNT of 4,
+and the per-method breakdown that follows it, do not reproduce on the shipped
+tree and must not be cited as four independent confirmations. The verbatim block
+is left byte-for-byte as captured; an archive edited to agree with a later re-run
+is not an archive.
+
+SUBTEST INFLATION, DISCLOSED: 3 test methods -> 4 reported failures.
+`test_rt28_a_garbled_attestation_alerts` runs 7 subTests and contributes 2 of
+those 4. That split is itself the evidence, not noise: the 5 PRE-EXISTING junk
+values ('', '   ', 'yesterday', '-5', '12x34') all PASS at baseline, and only
+the two new future-dated values fail. The test isolates F1 and nothing else.
+
+WHAT EACH WOULD HAVE SHOWN HAD THE CLAIM BEEN FALSE:
+ - garbled[now+3600] / [now+365d]: alert_count == 1 here would have meant the
+   future date was already rejected, i.e. F1 does not exist.
+ - cannot_rescue_an_ESTABLISHED_box: alert_count == 1 would have meant the R-22
+   gate survives a future date, i.e. the headline case was never at risk.
+ - gets_its_OWN_operator_story: any non-empty alert body would have meant the
+   box alerted at all. It fails on `'never_started' not found in ''` — the
+   EMPTY body is the finding: the watchdog emitted no alert whatsoever.
+
+MEASURED: a box bootstrapped 30 DAYS ago, control plane restored, Program dead,
+attestation dated +365d -> alerts = 0. The gate built to catch precisely that
+case is what silenced it, because `now - installer_at` goes NEGATIVE and a
+negative number is unconditionally < the grace window. Fail-open, not fail-slow.
+
+--- verbatim run output follows ---
+test_rt28_a_garbled_attestation_alerts (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts)
+An attestation that cannot be read is not positive evidence. ... 
+  test_rt28_a_garbled_attestation_alerts (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='now+3600')
+An attestation that cannot be read is not positive evidence. ... FAIL
+  test_rt28_a_garbled_attestation_alerts (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='now+365d')
+An attestation that cannot be read is not positive evidence. ... FAIL
+test_rt28_a_future_attestation_cannot_rescue_an_ESTABLISHED_box (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_future_attestation_cannot_rescue_an_ESTABLISHED_box)
+R-22's headline case, defeated by F1. ... FAIL
+test_rt28_a_future_attestation_gets_its_OWN_operator_story (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_future_attestation_gets_its_OWN_operator_story)
+F4: 'the installer ran in the future' and 'no installer ran' are ... FAIL
+
+======================================================================
+FAIL: test_rt28_a_garbled_attestation_alerts (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='now+3600')
+An attestation that cannot be read is not positive evidence.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1029, in test_rt28_a_garbled_attestation_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : an attestation of 'now+3600' attests nothing an installer could have done, so it must not buy silence
+
+======================================================================
+FAIL: test_rt28_a_garbled_attestation_alerts (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='now+365d')
+An attestation that cannot be read is not positive evidence.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1029, in test_rt28_a_garbled_attestation_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : an attestation of 'now+365d' attests nothing an installer could have done, so it must not buy silence
+
+======================================================================
+FAIL: test_rt28_a_future_attestation_cannot_rescue_an_ESTABLISHED_box (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_future_attestation_cannot_rescue_an_ESTABLISHED_box)
+R-22's headline case, defeated by F1.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1051, in test_rt28_a_future_attestation_cannot_rescue_an_ESTABLISHED_box
+    self.assertEqual(
+AssertionError: 0 != 1 : a future-dated attestation made `now - installer_at` negative, which is unconditionally inside the grace window - so the one case R-22 was built to catch (a restored plane on an established box) was silenced by the very gate that was supposed to catch it
+
+======================================================================
+FAIL: test_rt28_a_future_attestation_gets_its_OWN_operator_story (test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_future_attestation_gets_its_OWN_operator_story)
+F4: 'the installer ran in the future' and 'no installer ran' are
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1074, in test_rt28_a_future_attestation_gets_its_OWN_operator_story
+    self.assertIn("never_started", future_story)
+AssertionError: 'never_started' not found in ''
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.621s
+
+FAILED (failures=4)

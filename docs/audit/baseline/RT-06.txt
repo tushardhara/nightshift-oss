@@ -1,0 +1,28 @@
+test_rt06_bootstrap_never_mutates_before_it_probes (tests.test_user_manager.RT06CapabilityUnobtainable.test_rt06_bootstrap_never_mutates_before_it_probes)
+The ordering defect itself, asserted against the real script. ... FAIL
+test_rt06_does_not_fall_back_to_sudo (tests.test_user_manager.RT06CapabilityUnobtainable.test_rt06_does_not_fall_back_to_sudo) ... ok
+test_rt06_exits_non_zero (tests.test_user_manager.RT06CapabilityUnobtainable.test_rt06_exits_non_zero) ... ok
+test_rt06_leaves_none_of_the_six_named_units_enabled (tests.test_user_manager.RT06CapabilityUnobtainable.test_rt06_leaves_none_of_the_six_named_units_enabled) ... ok
+test_rt06_message_names_the_ROOT_remediation (tests.test_user_manager.RT06CapabilityUnobtainable.test_rt06_message_names_the_ROOT_remediation) ... FAIL
+
+======================================================================
+FAIL: test_rt06_bootstrap_never_mutates_before_it_probes (tests.test_user_manager.RT06CapabilityUnobtainable.test_rt06_bootstrap_never_mutates_before_it_probes)
+The ordering defect itself, asserted against the real script.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-9/tests/test_user_manager.py", line 281, in test_rt06_bootstrap_never_mutates_before_it_probes
+    self.assertIsNotNone(
+AssertionError: unexpectedly None : bootstrap.sh:176 mutates the user manager with no reachability probe anywhere before it — under `set -e` this is the line that aborted the script and left both safety timers disabled
+
+======================================================================
+FAIL: test_rt06_message_names_the_ROOT_remediation (tests.test_user_manager.RT06CapabilityUnobtainable.test_rt06_message_names_the_ROOT_remediation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-9/tests/test_user_manager.py", line 241, in test_rt06_message_names_the_ROOT_remediation
+    self.assertIn("root", low, f"message must aim the fix at the root step: {out!r}")
+AssertionError: 'root' not found in 'bash: line 1: nightshift_install_user_units: command not found\n' : message must aim the fix at the root step: 'bash: line 1: nightshift_install_user_units: command not found\n'
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.020s
+
+FAILED (failures=2)

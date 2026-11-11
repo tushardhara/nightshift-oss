@@ -1,0 +1,52 @@
+[Unit]
+Description=Omnigent server (session history, catalog, policy enforcement)
+Documentation=https://omnigent.ai/docs/deploy/overview
+# Honest note: this is a USER unit — the user manager has no docker.service or
+# network-online.target, so these orderings are inert. Restart=always covers the
+# race with Postgres/network instead.
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_DIR__
+# Root-owned (deploy/install-root-config.sh): it sets the policy path and
+# the merge-fence scope, so the runtime user must not be able to edit it.
+EnvironmentFile=/etc/nightshift/server.env
+Environment=PATH=__HOME__/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# Applied after EnvironmentFile=, so the environment file cannot re-arm a
+# fail-open fence. systemd takes no globs; preflight FAILs on any other
+# *_FAIL_OPEN.
+UnsetEnvironment=NIGHTSHIFT_SEMAPHORE_FAIL_OPEN NIGHTSHIFT_AUTHORITY_FAIL_OPEN
+
+# Foreground mode is the documented deploy posture (--background is for the
+# managed local server that `run` reuses). Loopback bind: reachable over
+# Tailscale to this host, never from the internet.
+ExecStart=__HOME__/.local/bin/omnigent server \
+  --host 127.0.0.1 \
+  --port 6767 \
+  --database-uri ${OMNIGENT_DATABASE_URI} \
+  --execution-timeout 21600 \
+  --no-open \
+  --agent __TEAMS_DIR__/program
+
+# No setuid escalation from the coordinator either (see TRUST-BOUNDARY.md).
+NoNewPrivileges=yes
+
+# A multi-day run must survive a crash, an OOM kill, and a reboot.
+Restart=always
+RestartSec=10
+# Do not give up after repeated failures — the agents' state is on disk, so a
+# late restart still resumes usefully.
+StartLimitIntervalSec=0
+
+# The server coordinates; it should not be the process that gets OOM-killed.
+OOMPolicy=continue
+OOMScoreAdjust=-500
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omnigent-server
+
+[Install]
+WantedBy=default.target

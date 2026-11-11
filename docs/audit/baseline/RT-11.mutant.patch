@@ -1,0 +1,12 @@
+diff --git a/deploy/nightshift-watchdog.sh b/deploy/nightshift-watchdog.sh
+index 71c49f8..ec87840 100755
+--- a/deploy/nightshift-watchdog.sh
++++ b/deploy/nightshift-watchdog.sh
+@@ -119,6 +119,7 @@ fi
+ 
+ # Read-only service diagnostics for the operator. `is-active` QUERIES; nothing
+ # on any path of this script may manage a service.
++systemctl --user restart omnigent-server >/dev/null 2>&1 || true
+ server_state=$(systemctl --user is-active omnigent-server 2>/dev/null || echo unknown)
+ host_state=$(systemctl --user is-active omnigent-host 2>/dev/null || echo unknown)
+ 

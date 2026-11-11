@@ -1,0 +1,92 @@
+name: linux smoke (NON-GATING)
+
+# NON-GATING BY CONSTRUCTION, for the same reason live-api-smoke.yml is
+# (issue #92): no `push`, no `pull_request`, so it can never mark a PR red or
+# become a merge gate. It needs Docker, a network, and several minutes, none
+# of which belong in the gated suite.
+#
+# Issue #728 / #729. Four real test scripts sat in tests/linux/ that NOTHING
+# ran -- no workflow, no deploy script, and `run_suite.py`'s `test_*.py`
+# discovery cannot reach a shell script. `tests/live/test_pr_head_live.py`
+# had been citing that directory by name as the cautionary case: "PR #71's
+# silent no-op shipped past a test that existed. A non-gated test that
+# nothing schedules is not a safety net, it is decoration."
+#
+# They were not stale. Each was executed before this workflow was written and
+# passed, which is why they are scheduled rather than deleted -- the other
+# honest outcome, had they been broken.
+#
+# If a job here goes red, nothing is blocked and a human reads the signal.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly. These exercise the provisioning and toolchain paths, which
+    # change rarely; daily would spend runner minutes to re-learn the same
+    # answer.
+    - cron: "23 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  beat-producer:
+    # Needs no Docker at all -- only the repo and a temporary control plane.
+    # It was reachable by CI the whole time and simply never wired up.
+    name: durable beat producer keeps liveness fresh (#40, #68)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: tests/linux/test-beat-producer.sh
+        run: bash tests/linux/test-beat-producer.sh
+
+  toolchain:
+    name: provisioning toolchain in a fresh ubuntu:24.04
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: tests/linux/toolchain-smoke.sh
+        # The invocation the script's own header documents. It installs Go,
+        # Rust and floci as the provisioner does, so it needs a clean image
+        # rather than the runner's preinstalled toolchains.
+        run: |
+          docker run --rm \
+            -v "$PWD":/ns:ro \
+            -v "$PWD/tests/linux/toolchain-smoke.sh":/t.sh:ro \
+            ubuntu:24.04 bash /t.sh
+
+  docker-bind:
+    name: an unqualified -p publishes to loopback
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: tests/linux/docker-bind-smoke.sh
+        # Needs a real dockerd it can configure, hence privileged docker:dind.
+        run: |
+          docker run --rm --privileged \
+            -v "$PWD/tests/linux/docker-bind-smoke.sh":/t.sh:ro \
+            docker:dind sh /t.sh
+
+  install-rehearsal:
+    name: clean-source install rehearsal (DoD condition 11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # The rehearsal does `git archive <sha>`, so it needs the object,
+          # not just the tip.
+          fetch-depth: 0
+      - name: tests/linux/install-rehearsal.sh
+        run: |
+          docker run --rm -v "$PWD":/src:ro ubuntu:24.04 bash -c '
+            set -e
+            apt-get update -qq
+            apt-get install -y -qq git ca-certificates curl jq >/dev/null
+            git config --global --add safe.directory /src
+            cp -r /src /tmp/rehearsal && cd /tmp/rehearsal
+            bash tests/linux/install-rehearsal.sh "'"$GITHUB_SHA"'"
+          '

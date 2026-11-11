@@ -1,0 +1,32 @@
+[Unit]
+Description=Alert on failed, missed, or stuck Omnigent scheduled runs (no LLM)
+
+[Service]
+Type=oneshot
+WorkingDirectory=__PROJECT_DIR__
+Environment=HOME=__HOME__
+Environment=PATH=__HOME__/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=http_proxy= https_proxy= all_proxy= HTTP_PROXY= HTTPS_PROXY= ALL_PROXY=
+EnvironmentFile=__HOME__/.config/omnigent/scheduled-run-detector.env
+ExecStart=__TEAMS_DIR__/deploy/nightshift-scheduled-run-detector.py \
+  --server http://127.0.0.1:6767 \
+  --task-id ${NIGHTSHIFT_SCHEDULED_TASK_ID} \
+  --controller __TEAMS_DIR__/bin/nightshift-ctl \
+  --control-db __PROJECT_DIR__/.omni/control.db \
+  --repo ${NIGHTSHIFT_ALERT_REPO} \
+  --issue ${NIGHTSHIFT_ALERT_ISSUE}
+
+# Observation and alert only. This unit never manages a service or scheduled
+# task, and needs no privilege escalation.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=__PROJECT_DIR__/.omni
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+UMask=0077
+TimeoutStartSec=240
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nightshift-scheduled-run-detector

@@ -1,0 +1,7 @@
+{
+  "schema": "nightshift-omnigent-runtime-lock-v1",
+  "distribution": "omnigent",
+  "repository": "https://github.com/tushardhara/omnigent.git",
+  "commit": "ef39b91aff4050567ca0c49b303794faf7889b0c",
+  "version": "0.12.0.dev0"
+}

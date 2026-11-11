@@ -1,0 +1,23 @@
+test_rt09_alive_is_quiet (tests.test_watchdog.RT09ValidRecordIsAlive.test_rt09_alive_is_quiet) ... FAIL
+test_rt09_asks_the_control_plane_by_owner (tests.test_watchdog.RT09ValidRecordIsAlive.test_rt09_asks_the_control_plane_by_owner) ... FAIL
+
+======================================================================
+FAIL: test_rt09_alive_is_quiet (tests.test_watchdog.RT09ValidRecordIsAlive.test_rt09_alive_is_quiet)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 267, in test_rt09_alive_is_quiet
+    self.assertEqual(b.alert_count(), 0,
+AssertionError: 1 != 0 : a live Program with an idle .omni must not alert — content decides, not mtime
+
+======================================================================
+FAIL: test_rt09_asks_the_control_plane_by_owner (tests.test_watchdog.RT09ValidRecordIsAlive.test_rt09_asks_the_control_plane_by_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 276, in test_rt09_asks_the_control_plane_by_owner
+    self.assertTrue(beats, f"the watchdog never consulted the heartbeat: {b.calls()}")
+AssertionError: [] is not true : the watchdog never consulted the heartbeat: ['nightshift-ctl slot renew-active']
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.052s
+
+FAILED (failures=2)

@@ -1,0 +1,58 @@
+{
+  "baseline_sha": "c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+  "command": "cd tests && python3 -m unittest -v test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation",
+  "exit_code": 0,
+  "output_path": "docs/audit/baseline/RT-17.txt",
+  "kind": "preservation",
+  "note": "ADR-0069 preservation capture, extended by ADR-0074 with a third node. 14 independently produced normal acquires across two crews converge on explicit hermetic capacity 7/2; the Program-authority gate refuses missing and wrong tokens for oncall reserve acquires; and an oncall acquire presenting a token from a FENCED-OUT generation is refused. The third node is what earns the 'live, current-generation' clause of RT-17's amended id text -- product made binding it a condition of D06 going green (DEFINITION-OF-DONE.md D06 changelog, 2026-09-02, PR #611). No third mutant is authored: M2 already kills it.",
+  "baseline_sha_correction": "ADR-0074 C4/decision 5. This record previously declared baseline_sha f2abab84785412f7dabc8e05d870e55f189ce9c7 with exit_code 0. That record was not reproducible: test_slots.RT17ConcurrentAcquiresShareOneBudget does not exist at f2abab8 (the class was renamed in PR #585 round 3), so the declared command at the declared SHA yields 'AttributeError: module test_slots has no attribute RT17ConcurrentAcquiresShareOneBudget', exit 1 -- from which baseline_kind() would derive 'regression', the exact contamination class ADR-0069 constraint (3) exists to prevent, and the same disease staff F-8 raised against RT-16. Re-pinned to c34d23b (= origin/main at STEP 2's base), where both classes exist and the declared command genuinely yields exit 0. Verified: `git show f2abab8:tests/test_slots.py | grep -c 'class RT17ConcurrentAcquiresShareOneBudget'` -> 0. Note that test_authority_fence.SlotAcquireOncallTokenGate DOES exist at f2abab8 (-> 1); only the test_slots class is absent. Both mutants' applied_to_sha moved with it.",
+  "production": {
+    "file": "bin/nightshift-ctl",
+    "symbol": "cmd_slot_acquire"
+  },
+  "capture": {
+    "composition": "SINGLE TREE, no swap. Unlike RT-16, this record is fully self-reproducing: a clean detached worktree of baseline_sha, then the command above.",
+    "test_source_sha": "c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+    "reproduce": [
+      "git worktree add --detach /tmp/rt17 c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+      "cd /tmp/rt17/tests && python3 -m unittest -v <the three node ids above>   # exit 0",
+      "# for each mutant: cp -a /tmp/rt17 /tmp/rt17-m && cd /tmp/rt17-m && patch -p1 < <patch_path>, then re-run the SAME command"
+    ],
+    "expected": {
+      "testsRun": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "setup_failure_discriminator": "unittest reports a property miss as a FAILURE and a setUp/import/loader collapse as an ERROR. Every capture in this record must show errors=0. The f2abab8 record this one replaces failed precisely this test: its 2 results were ERRORS (_FailedTest load errors), not failures."
+  },
+  "mutations": [
+    {
+      "id": "RT-17.M1",
+      "target_path": "normal worker ceiling in cmd_slot_acquire",
+      "patch_path": "docs/audit/baseline/RT-17.mutant.patch",
+      "mutation": "remove reserve_for_oncall from the normal-slot ceiling",
+      "rationale": "A normal acquire must never consume the on-call reserve.",
+      "command": "cd tests && python3 -m unittest -v test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation",
+      "exit_code": 1,
+      "output_path": "docs/audit/baseline/RT-17.mutation.txt",
+      "applied_to_sha": "c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+      "committed_to_branch": false,
+      "observed": "FAILED (failures=1): the ceiling node only (7 != 5). The token node and the fenced-out-generation node both pass, as expected -- M1 does not touch the authority gate."
+    },
+    {
+      "id": "RT-17.M2",
+      "target_path": "Program authority-token predicate in cmd_slot_acquire",
+      "patch_path": "docs/audit/baseline/RT-17.authority-mutant.patch",
+      "mutation": "bypass the oncall authority-token rejection branch",
+      "rationale": "An oncall reserve acquire without a live, current-generation Program authority token must be denied with exit 3. The same _authority_token_matches predicate carries both the missing/wrong-token refusal and the fenced-out-generation refusal, which is why one mutant kills both nodes and no third mutant is needed.",
+      "command": "cd tests && python3 -m unittest -v test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation",
+      "exit_code": 1,
+      "output_path": "docs/audit/baseline/RT-17.authority-mutation.txt",
+      "applied_to_sha": "c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+      "committed_to_branch": false,
+      "observed": "FAILED (failures=2): the missing/wrong-token node AND the fenced-out-generation node. The ceiling node passes, as expected."
+    }
+  ],
+  "mutation_hygiene": "Both patches are inert evidence only, were applied in separate copies of a clean c34d23b worktree, and the tracked bin/nightshift-ctl is unchanged. Neither patch file was modified by ADR-0074 -- same mutants, same target lines; only the command each runs and the resulting captures changed. Both commands are byte-identical to baseline.command, as _validate_mutation (tests/dod_validate.py:325-327) requires."
+}

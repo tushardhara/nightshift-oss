@@ -1,0 +1,14 @@
+test_rt13_broken_bwrap_is_a_preflight_failure_not_an_ok (tests.test_bwrap_probe.RT13ProbeFailureFailsPreflight.test_rt13_broken_bwrap_is_a_preflight_failure_not_an_ok) ... FAIL
+
+======================================================================
+FAIL: test_rt13_broken_bwrap_is_a_preflight_failure_not_an_ok (tests.test_bwrap_probe.RT13ProbeFailureFailsPreflight.test_rt13_broken_bwrap_is_a_preflight_failure_not_an_ok)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-12/tests/test_bwrap_probe.py", line 169, in test_rt13_broken_bwrap_is_a_preflight_failure_not_an_ok
+    self.assertFalse(
+AssertionError: True is not false : preflight reported a broken bwrap as ok: ['ok   bwrap -> /usr/bin/bwrap']
+
+----------------------------------------------------------------------
+Ran 1 test in 3.006s
+
+FAILED (failures=1)

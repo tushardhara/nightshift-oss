@@ -1,0 +1,486 @@
+{
+  "crew": "crew_beta",
+  "seam": "B \u2014 host integration and recovery",
+  "wave": "393 (M2 seam-B close-out)",
+  "milestone": 1,
+  "base_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+  "pr_base_branch": "program/discovery-state",
+  "updated_at": "2026-08-30",
+  "grant": {
+    "workers": 2,
+    "items_in_flight": 3,
+    "note": "Worker dispatch is STERILE for this crew (#13, confirmed general). All items implemented by the crew lead under the wave-1 charter fallback clause. Concurrency is therefore sequential in practice; slots are still acquired and released per item."
+  },
+  "gates": {
+    "in_crew_review": "UNAVAILABLE \u2014 beta_reviewer_claude/codex unreachable (#13)",
+    "in_crew_qa": "UNAVAILABLE \u2014 beta_qa unreachable (#13)",
+    "acceptance_signoff": "cross-crew reviewing lead (crew_alpha), per working agreement 6 / .omni/decisions.md R-7",
+    "cross_crew_review": "crew_alpha, routed by program",
+    "cross_vendor_review": "DEFERRED, not dropped \u2014 every Codex seat down (#5)"
+  },
+  "tasks": [
+    {
+      "id": "beta-12-bwrap",
+      "issue": 12,
+      "dod_condition": 5,
+      "title": "probe bwrap by function, not presence",
+      "agent": "crew_beta_lead",
+      "branch": "beta/12-bwrap-functional-probe",
+      "worktree": "/srv/project/.worktrees/beta-12",
+      "base_sha": "139726e",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/15",
+      "state": "review",
+      "adr": "none new \u2014 DoD condition 5 fixes the required behaviour verbatim",
+      "rt_ids": [
+        "RT-13",
+        "RT-14",
+        "RT-15"
+      ],
+      "baselines": [
+        "docs/audit/baseline/RT-13.txt",
+        "docs/audit/baseline/RT-13.json",
+        "docs/audit/baseline/RT-14.txt",
+        "docs/audit/baseline/RT-14.json",
+        "docs/audit/baseline/RT-15.txt",
+        "docs/audit/baseline/RT-15.json"
+      ],
+      "file_scope": [
+        "deploy/lib/deploy-lib.sh",
+        "deploy/preflight.sh",
+        "deploy/provision-ubuntu.sh",
+        "deploy/bootstrap.sh",
+        "docs/TRUST-BOUNDARY.md",
+        "tests/test_bwrap_probe.py",
+        "docs/audit/baseline/RT-1[345].*"
+      ],
+      "gates_run": {
+        "tests/run.sh": "Ran 93 tests in 23.238s ... OK",
+        "bash -n (shebang manifest)": "12 files, 0 failures",
+        "grep 'AppArmor profile on 24.04' docs/TRUST-BOUNDARY.md": "no match (DoD condition 5 check)",
+        "nightshift-ctl pr-lint": "ok"
+      },
+      "sensitive_set": true,
+      "sensitive_reason": "sandboxing / trust boundary \u2014 changes the confinement story in docs/TRUST-BOUNDARY.md and the preflight gate on it. Security review requested via program.",
+      "lease_required": false,
+      "head": "287bbe4",
+      "last_amendment": "full 40-char baseline_sha on RT-13/14/15",
+      "cross_crew": "SIGNED on substance by crew_alpha; sha blocker fixed in 287bbe4"
+    },
+    {
+      "id": "beta-9-user-manager",
+      "issue": 9,
+      "dod_condition": 3,
+      "title": "establish the user-manager capability as root, probe it in bootstrap",
+      "agent": "crew_beta_lead",
+      "branch": "beta/9-user-manager-capability",
+      "worktree": "/srv/project/.worktrees/beta-9",
+      "base_sha": "139726e",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/18",
+      "state": "review",
+      "adr": "ADR reconciliation A11 (.omni/decisions.md)",
+      "rt_ids": [
+        "RT-05",
+        "RT-06",
+        "RT-07"
+      ],
+      "baselines": [
+        "docs/audit/baseline/RT-05.txt",
+        "docs/audit/baseline/RT-05.json",
+        "docs/audit/baseline/RT-06.txt",
+        "docs/audit/baseline/RT-06.json",
+        "docs/audit/baseline/RT-07.txt",
+        "docs/audit/baseline/RT-07.json"
+      ],
+      "file_scope": [
+        "deploy/lib/deploy-lib.sh",
+        "deploy/bootstrap.sh",
+        "deploy/provision-ubuntu.sh",
+        "tests/test_user_manager.py",
+        "docs/audit/baseline/RT-0[567].*"
+      ],
+      "gates_run": {
+        "tests/run.sh": "Ran 97 tests in 16.965s ... OK",
+        "bash -n": "3 changed scripts, 0 failures",
+        "nightshift-ctl pr-lint": "ok"
+      },
+      "not_proven": "survival across a real logout/reboot via linger \u2014 needs a real user manager and a real reboot; stated in the PR body",
+      "merge_ordering": "conflicts with PR #15 at the tail of deploy/lib/deploy-lib.sh (both append from 139726e). Merge #15 first; crew_beta rebases this one.",
+      "lease_required": false,
+      "cross_crew": "SIGNED clean by crew_alpha (condition 3)"
+    },
+    {
+      "id": "beta-8-go-toolchain",
+      "issue": 8,
+      "dod_condition": [
+        1,
+        2
+      ],
+      "title": "Go toolchain: pipefail at TWO sites plus the missing-go abort",
+      "agent": "crew_beta_lead",
+      "branch": "beta/8-go-toolchain",
+      "base_sha": "139726e",
+      "state": "review",
+      "rt_ids": [
+        "RT-01",
+        "RT-02",
+        "RT-03",
+        "RT-04"
+      ],
+      "note": "RT-04 originally PASSED at 139726e (it asserted the diagnostic existed rather than that it was reached) and was rewritten as behavioural. Live box does NOT reproduce bug 1 - go already installed, response too small for the race - so the fixtures are the evidence.",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/22",
+      "worktree": "/srv/project/.worktrees/beta-8",
+      "baselines": [
+        "docs/audit/baseline/RT-01.txt",
+        "docs/audit/baseline/RT-01.json",
+        "docs/audit/baseline/RT-02.txt",
+        "docs/audit/baseline/RT-02.json",
+        "docs/audit/baseline/RT-03.txt",
+        "docs/audit/baseline/RT-03.json",
+        "docs/audit/baseline/RT-04.txt",
+        "docs/audit/baseline/RT-04.json"
+      ],
+      "gates_run": {
+        "tests/run.sh": "Ran 101 tests in 16.646s ... OK",
+        "bash -n": "clean",
+        "nightshift-ctl pr-lint": "ok"
+      },
+      "head": "51a9fdd",
+      "last_amendment": "real-script abort captured; site-B framing corrected",
+      "cross_crew": "REFUSED on evidence; re-captured in 51a9fdd, awaiting re-check"
+    },
+    {
+      "id": "beta-10-watchdog",
+      "issue": 10,
+      "dod_condition": 4,
+      "title": "watchdog liveness by content; stop renewing worker slots",
+      "agent": "crew_beta_lead",
+      "base_sha": "139726e",
+      "state": "review",
+      "rt_ids": [
+        "RT-08",
+        "RT-09",
+        "RT-10",
+        "RT-11",
+        "RT-12"
+      ],
+      "consumes": ".omni/handoffs/LIVENESS-RECORD-v1.md (v1, published and verified)",
+      "blocked_on": null,
+      "contract_finding": "beat show prints NO JSON on exit 1 (corrupt/unreadable control.db) though \u00a73 claims it always does. Raised to program; consumer guards its JSON parse regardless.",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/24",
+      "branch": "beta/10-watchdog-liveness",
+      "worktree": "/srv/project/.worktrees/beta-10",
+      "baselines": [
+        "docs/audit/baseline/RT-08.txt",
+        "docs/audit/baseline/RT-08.json",
+        "docs/audit/baseline/RT-09.txt",
+        "docs/audit/baseline/RT-09.json",
+        "docs/audit/baseline/RT-10.txt",
+        "docs/audit/baseline/RT-10.json",
+        "docs/audit/baseline/RT-11.txt",
+        "docs/audit/baseline/RT-11.json",
+        "docs/audit/baseline/RT-12.txt",
+        "docs/audit/baseline/RT-12.json"
+      ],
+      "gates_run": {
+        "tests/run.sh": "Ran 102 tests in 20.248s ... OK",
+        "bash -n": "clean",
+        "nightshift-ctl pr-lint": "ok",
+        "integration vs real ctl @7bf66bc": "6/6 scenarios"
+      },
+      "open_questions": [
+        "ADR-0002 \u00a76 terminal state: the contract exposes no way to READ a control-plane project-state transition. Watchdog fails safe by continuing to monitor. Still open."
+      ],
+      "rt11_evidence": {
+        "ruling": "product 2026-08-22 - condition 8 admits a second evidence form; kind is DERIVED from the capture",
+        "kind": "preservation (exit_code == 0)",
+        "captures": [
+          "docs/audit/baseline/RT-11.txt (passing baseline, retained)",
+          "docs/audit/baseline/RT-11.mutation.txt (M1, alert path, exit 1)",
+          "docs/audit/baseline/RT-11.mutation-alive.txt (M2, alive path, exit 1)"
+        ],
+        "patches": [
+          "docs/audit/baseline/RT-11.mutant.patch",
+          "docs/audit/baseline/RT-11.mutant-alive.patch"
+        ],
+        "committed_to_branch": false,
+        "amendment_commit": "1feb881 (fast-forward; deploy/ and tests/ byte-identical to bdcdcfc)"
+      },
+      "head": "07f728f",
+      "last_amendment": "successor control named, bound to issue #26",
+      "cross_crew": "REFUSED on the STATUS.md naming; finding upheld, remedy overruled (R-13); naming delivered in 07f728f"
+    },
+    {
+      "id": "beta-w2-r22-f1f2",
+      "issue": 34,
+      "title": "F1 fail-open future date + F2 attestation out of the agent sandbox",
+      "agent": "crew_beta_lead",
+      "vendor": "claude",
+      "branch": "beta/34-watchdog-first-boot",
+      "worktree": "/srv/project/.worktrees/beta-34",
+      "base_sha": "86efd26",
+      "head_sha": "9cb87ba",
+      "pr": 35,
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/35",
+      "adr": "ADR-0004 Amendment 2 (3645187)",
+      "requirement_ids": [
+        "RT-28 (extended, F1)",
+        "RT-30 (allocated by program, sandbox-boundary invariant)"
+      ],
+      "slot": 1,
+      "state": "ready-for-cross-crew-review",
+      "gates": {
+        "deterministic": "tests/run.sh -> Ran 220 tests OK, x3 consecutive. 206 at 86efd26, +14 new.",
+        "suite_reliability": "NOT a clean gate: test_recovery flaky (#32) 7 OK/1 FAILED in 8 module runs on this branch; 0/10 failed in isolation. Pre-existing, unrelated to this diff.",
+        "in_crew_review": "UNAVAILABLE (#13) - lead implemented; no self-review claimed",
+        "in_crew_qa": "UNAVAILABLE (#13)",
+        "security": "REQUIRED - diff touches the sandbox writable_roots and an authentication-adjacent attestation. security re-verifies F1/F2 + suite.",
+        "cross_crew_review": "REQUESTED via program"
+      },
+      "evidence": [
+        "docs/audit/baseline/RT-28-f1.txt",
+        "docs/audit/baseline/RT-30.txt"
+      ],
+      "scope_excluded": [
+        "#45 .omni-absence path (nightshift-watchdog.sh:112) - serialises behind this"
+      ]
+    },
+    {
+      "id": "beta-fix-71-producer",
+      "issue": 40,
+      "also_refs": 68,
+      "title": "durable beat producer -- security BLOCKING fix (F1/F5/F6/F7)",
+      "agent": "crew_beta_lead",
+      "agent_note": "worker dispatch STERILE (#13) re-confirmed on this fix: beta_eng_claude and beta_pm, two fresh titles, identical `sys_session_send requires parent session inbox`. Charter fallback applied.",
+      "branch": "beta/w3-durable-beat-producer",
+      "worktree": "/srv/project/.worktrees/beta-w3-beat",
+      "base_sha": "4d13c59c661c8d3df54274bf378817a1284c0daa",
+      "head": "78b2771f68277745135eeb9243bd7fc1e355c8c0",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/71",
+      "state": "ready-for-security-recheck",
+      "file_scope": [
+        "deploy/nightshift-heartbeat.sh",
+        "deploy/systemd/nightshift-heartbeat.service",
+        "deploy/systemd/nightshift-heartbeat.timer",
+        "deploy/bootstrap.sh",
+        "deploy/lib/deploy-lib.sh",
+        "tests/test_heartbeat_producer.py"
+      ],
+      "gates_run": {
+        "tests/run.sh": "Ran 244 tests in 43.705s ... OK (was 234; +10)",
+        "bash -n (shebang manifest)": "13 files, 0 failures",
+        "counterfactual": "revert deploy/nightshift-heartbeat.sh to 4d13c59 -> 5 of 10 new tests FAIL, all `AssertionError: 0 == 0`",
+        "real-frozen-binary": "NIGHTSHIFT_CTL=/home/nightshift/.local/bin/nightshift-ctl -> exit 1, loud stderr, seq unchanged",
+        "nightshift-ctl pr-lint": "{\"ok\": true}"
+      },
+      "sensitive_set": true,
+      "sensitive_reason": "systemd unit + liveness/monitoring path; security is the returning gate",
+      "findings_addressed": [
+        "F1 blocking",
+        "F5",
+        "F6",
+        "F7"
+      ],
+      "findings_answered_not_coded": [
+        "F2 (watchdog not armed)",
+        "F3 (masking needs no privilege)"
+      ],
+      "out_of_scope": [
+        "F4 -- pre-existing, filed separately"
+      ],
+      "lease_required": false
+    },
+    {
+      "id": "beta-76-signal-ownership",
+      "issue": 76,
+      "also_refs": [
+        40,
+        68
+      ],
+      "title": "ADR-0006 D2 -- the beat timer writes its own signal, never the Program's",
+      "agent": "crew_beta_lead",
+      "agent_note": "#13 still live; implemented under charter fallback. Committed via `git -c` per R-37/#75 -- NOT git config --local.",
+      "branch": "beta/w3-durable-beat-producer",
+      "worktree": "/srv/project/.worktrees/beta-w3-beat",
+      "base_sha": "78b2771f68277745135eeb9243bd7fc1e355c8c0",
+      "head": "61a019e89e6143e952bf2ea102fc5d0c3df9c42e",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/71",
+      "state": "ready-for-security-recheck",
+      "adr": "ADR-0006 D1/D2/D3",
+      "file_scope": [
+        "deploy/nightshift-heartbeat.sh",
+        "tests/test_heartbeat_producer.py"
+      ],
+      "gates_run": {
+        "tests/run.sh": "Ran 252 tests in 52.634s ... OK (was 244)",
+        "bash -n (shebang manifest)": "13 files, 0 failures",
+        "counterfactual": "revert script to 78b2771 -> 9 of 18 FAIL, all clean assertions naming the ownership defect, 0 harness errors",
+        "nightshift-ctl pr-lint": "{\"ok\": true} (caught 'fixes #40' in prose on first pass -- reworded)"
+      },
+      "sensitive_set": true,
+      "sensitive_reason": "liveness signal ownership; security is the returning gate",
+      "not_touched": [
+        "bin/nightshift-ctl -- crew_alpha owns it, slot 67, implementing beat progress (D4)"
+      ],
+      "out_of_scope": [
+        "#73 forgeable liveness",
+        "#74 tests/linux not gated",
+        "#68 -> ADR-0006 D4"
+      ]
+    },
+    {
+      "id": "393-m2-seamB-preflight-rehearsal",
+      "issue": 393,
+      "also_refs": 5,
+      "dod_condition": [
+        11,
+        12
+      ],
+      "title": "clean-source install rehearsal (D11) + preflight check manifest (D12)",
+      "agent": "crew_beta_lead",
+      "agent_note": "WA-5 single-author build -- issue #236 (P0, open) makes sys_session_send dispatch to every COUNTED_AGENTS target sterile this session (reproduced live against beta_qa's planning slot, 3 request shapes, 3 distinct policy/schema rejections). beta_pm dispatch unaffected (EXEMPT_AGENTS) -- DoR pass (PR #396) and acceptance sign-off both went through beta_pm normally.",
+      "branch": "beta/393-preflight-rehearsal",
+      "worktree": "/srv/project/.worktrees/beta-393-preflight-rehearsal",
+      "base_sha": "23b9311157a596a821afdc9323cf3cbae1382529",
+      "head_sha": "b7ea06a638fbee0b4dfd7f9eb12cc56ca9d32b07",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/404",
+      "dor_pr_url": "https://github.com/tushardhara/nightshift/pull/396",
+      "spec_ref": "docs/prd/393-m2-seamB-preflight-rehearsal.md (frozen review contract v1)",
+      "adr": "ADR-0054-m2-seamb-install-rehearsal-and-preflight-manifest.md (renumbered from a draft ADR-0052 -- 0052 already merged for #286, 0053 claimed by open PR #401)",
+      "state": "review",
+      "file_scope": [
+        "docs/prd/DOD-MANIFEST.json",
+        "tests/linux/install-rehearsal.sh",
+        "tests/test_install_rehearsal.py",
+        "tests/test_preflight.py",
+        "docs/decisions/ADR-0054-*.md"
+      ],
+      "gates_run": {
+        "python3 tests/dod_validate.py": "D11 PASS, D12 PASS; all 22 other conditions unchanged from origin/main 23b9311 baseline, no new FAILs",
+        "bash tests/run.sh": "Ran 1178 tests in 733.4s ... OK, zero regressions",
+        "python3 -m unittest tests.test_preflight tests.test_install_rehearsal": "Ran 45 tests ... OK",
+        "python3 -m unittest tests.test_preflight tests.test_install_rehearsal tests.test_bwrap_probe -v (post D12-4 fix, head 157e3a9)": "Ran 59 tests in 130.306s ... OK",
+        "python3 tests/dod_validate.py (post D12-4 fix, head 157e3a9)": "D11 PASS, D12 PASS; all other 22 lines unchanged"
+      },
+      "review_plan": {
+        "tool": "nightshift-ctl review plan --task 393-m2-seamB-preflight-rehearsal --head-sha 63c0a573abd0c4b963e099afb6cc2094cad8cc23",
+        "suggested_domains": [
+          "code_review",
+          "cross_crew",
+          "pm",
+          "qa",
+          "security",
+          "staff"
+        ],
+        "profile": "HIGH_RISK",
+        "triggers": "blast_radius (5 files/1822 lines); protected_path docs/decisions/** (constitution, program-owned); other_owner docs/prd/DOD-MANIFEST.json (product); sensitive_content terms in new test files (session/auth/exec/subprocess)",
+        "reconfirmed_at_head_157e3a9": "suggested_domains unchanged: [code_review, cross_crew, pm, qa, security, staff]"
+      },
+      "gates_needed": {
+        "code_review": "REQUESTED from program -- in-crew beta_reviewer_claude/beta_reviewer_codex both COUNTED_AGENTS, sterile (#236)",
+        "qa": "REQUESTED from program -- in-crew beta_qa COUNTED_AGENTS, sterile (#236), reproduced live this task",
+        "security": "REQUESTED from program -- suggested_domains names it",
+        "staff": "REQUESTED from program -- suggested_domains names it; new ADR-0054",
+        "cross_crew": "REQUESTED from program -- suggested_domains names it",
+        "pm": "beta_pm PASS 17/17 on head 157e3a9 (round 2, supersedes round 1 CONDITIONAL PASS)"
+      },
+      "lease_required": false,
+      "sensitive_set": "flagged by review plan (security in suggested_domains) -- diff does not itself add auth/secrets/subprocess-of-external-input, but tests/test_preflight.py and tests/test_install_rehearsal.py contain the terms exec()/subprocess/session/auth as part of exercising deploy/preflight.sh and deploy/lib/deploy-lib.sh's own real functions; security's call, not pre-judged here",
+      "pm_signoff": {
+        "round1_head_63c0a57": "CONDITIONAL PASS 16/17 -- D12-4 gap: CompletenessGuard's TESTED_IDS claimed nightshift_bwrap_diagnosis fixture coverage in tests/test_preflight.py with no such fixture there (real coverage lived only in tests/test_bwrap_probe.py RT-13/14)",
+        "round2_head_157e3a9": "PASS 17/17 (supersedes round-1 CONDITIONAL PASS) -- https://github.com/tushardhara/nightshift/pull/404#issuecomment-5469599668"
+      },
+      "fix_back_round2": {
+        "finding": "D12-4 (beta_pm CONDITIONAL PASS on PR #404)",
+        "fix": "BwrapFunctionalProbe added to tests/test_preflight.py (+65 lines, test-only)",
+        "commit": "157e3a99a969d16a1c9284b76a30db0cca1878a9",
+        "wa5_continuation_evidence": "nightshift-ctl claim acquire denied ('implementer claim requires an admitted known task'); nightshift-ctl slot acquire --purpose implement denied ('NEW must match the pending task implementer/title'); direct sys_session_send to beta_eng_claude/393-build denied by policy ('args.slot_id must be a strict positive integer'). See .omni/decisions.md '#393 D12-4 fix-back'."
+      },
+      "note_head_history": "63c0a57 (build) -> 157e3a9 (this session's D12-4 fix-back) -> a26ce70 (concurrent crew_beta lead session's CI PATH-resolution fix, verified not redone -- see decisions.md ~15:30Z)",
+      "review_contract": {
+        "path": "docs/reviews/393-build-CONTRACT.md",
+        "added_commit": "b7ea06a638fbee0b4dfd7f9eb12cc56ca9d32b07",
+        "required_domains_checked": [
+          "pm_acceptance",
+          "code_review",
+          "qa",
+          "cross_crew_review",
+          "staff_adr",
+          "security"
+        ],
+        "required_domains_unchecked": [
+          "ux"
+        ],
+        "parser_verified": "parse_required_domains() -> ['code_review','cross_crew_review','pm_acceptance','qa','security','staff_adr']; nightshift-ctl review eligibility ok:true, eligible:false, missing_domains: all 6 (no receipts recorded yet)"
+      }
+    }
+  ],
+  "reviews_given": [
+    {
+      "pr": 16,
+      "crew": "crew_alpha",
+      "issue": 11,
+      "head": "7bf66bc",
+      "verdict": "9 of 10 criteria MET; C10 (contract completeness) NOT MET \u2014 non-blocking",
+      "finding": "beat show emits no JSON on exit 1 (corrupt or unreadable control.db) while handoff \u00a73 states output is always one JSON object; \u00a75.3 tells the consumer to read reason_code from it",
+      "verified_independently": [
+        "\u00a76 worked example extracted verbatim and run from my own detached checkout: 17 PASS, exit 0",
+        "83 \u2192 99 test count (PR body says 85 \u2192 99, +14; actual is 83 \u2192 99, +16)",
+        "test_claims.py / test_recovery.py byte-identical, git diff empty",
+        "fencing columns present on both tables AND droppable (the DROP COLUMN trap genuinely fixed)",
+        "migration onto a pre-existing 139726e database preserves rows",
+        "slot renew-active still present (staging rule respected)",
+        "no mocks \u2014 tests drive the real bin/nightshift-ctl via subprocess"
+      ]
+    },
+    {
+      "pr": 25,
+      "crew": "product",
+      "head": "a4231a1",
+      "file": "docs/prd/DEFINITION-OF-DONE.md",
+      "verdict": "2 BLOCKING, 3 non-blocking, 1 stale fact; recommend merge after the two blockers",
+      "method": "implemented condition 8 literally as written and ran it against all 18 existing baseline captures",
+      "blocking": [
+        "B1 `mutation` specified as a single object; RT-11 needs two because M1 cannot reach the alive branch - a single-mutant schema would leave path='alive' asserting a property it cannot detect the loss of",
+        "B2 `mutated_symbol` must name a declared file:symbol, but deploy/nightshift-watchdog.sh has 0 shell functions (RT-08..12) and preflight.sh has none on the bwrap path (RT-13/14)"
+      ],
+      "non_blocking": [
+        "N1 `kind` listed as a required key contradicts 'derived, never chosen' and fails all 18 existing captures; recommend optional-in-storage, always computed",
+        "N2 'applies cleanly to the tip' perishes on any context-line change (a comment reword suffices - verified 3 ways); recommend mutant_base_sha",
+        "N3 section-A guard needs an RT->condition edge the manifest does not define; condition 9's author cannot implement it"
+      ],
+      "verified_clean": [
+        "exactly two manual exceptions (:230 1of2, :406 2of2), :38 line intact, 24 conditions",
+        "changelog rows carry a reason from delivery; diff touches only what the rows declare"
+      ],
+      "stale_fact": "changelog + PR body say RT-11's mutant capture is outstanding; it landed in 1feb881",
+      "reviewed_by_constraint": "RT-11 reviewed_by deliberately ABSENT - not filled by crew_beta, awaits crew_alpha re-attestation",
+      "recheck_verdict": "1 of 2 findings CLOSED (site-B/condition-1, verified against diff); 1 NEW BLOCKING found: Section A header (:85) requires every RT id a failing pre-fix baseline, contradicting condition 8 own preservation form which this same PR defines - excludes RT-11",
+      "recheck_remedy": "reword :85-86 to branch on kind: regression -> failing pre-fix baseline (as today); preservation (condition 8 second form, currently only RT-11) -> passing pre-fix baseline + condition 8 mutation evidence. New changelog row scoped to the header clause only.",
+      "recheck_posted": "https://github.com/tushardhara/nightshift/pull/25#issuecomment-5383530374",
+      "round2_verdict": "CLEAR \u2014 literal validator admits RT-11 (exit_code:0, mutations M1/M2 satisfy condition 8), rejects the hypothetical passing-baseline-with-no-mutation escape hatch (conjunctive clause + condition 8 validator-check both catch it); scope diff +10/-2 confirmed limited to :50, :85-91, EOF changelog; checked for a 3rd excluding-phrase instance, none found (Test standard bullet :511 already fixed at c0436ea, condition 18 :421 already kind-neutral); deviation 1 (datestamp) accepted; deviation 2 (restated derivation/no-preservation-alone sentence) accepted and NOT cut on request \u2014 restates already-binding condition 8 rules, no scope widening",
+      "round2_posted": "https://github.com/tushardhara/nightshift/pull/25#issuecomment-5383564003",
+      "signed": "crew_beta signs per working agreement 6 (pm seat unreachable, #13): condition 8 evidence-form revision meets criteria"
+    }
+  ],
+  "leases_held": [
+    {
+      "resource": ".omni/registry-crew_beta.json",
+      "mode": "edit",
+      "lease": 3,
+      "granted_by": "program"
+    }
+  ],
+  "open_with_program": [
+    "crew_alpha re-check of #22 (evidence) and #24 (naming); acceptance signatures on all four",
+    "RT-11 reviewed_by remains ABSENT - crew_alpha's re-attestation against the mutant patches",
+    "#28 (crew_beta, later): regression guard that no write under .omni/ may change the liveness verdict",
+    "Rebases held until the program starts the merge order",
+    "PR #25: CLEARED round 2 (a4231a1) by crew_beta, signed; ready for release/integrator once bwrap seat (#5) unblocks"
+  ],
+  "merge_order": "HARD DEPENDENCY: #16 -> #15 -> #18 -> #22 -> #24 (the watchdog calls beat show, which does not exist until crew_alpha's branch lands; inverted it gives permanent false alerts)",
+  "findings_reported": [
+    "PR #25 review: B1 mutation-as-single-object excludes RT-11; B2 mutated_symbol unsatisfiable for 5-7 RT ids (no shell symbols); N1 kind-as-required-key fails all 18 captures; N2 applies-to-the-tip perishes on a context-line change; N3 section-A guard needs an RT->condition edge",
+    "Site B framing: the checksum pipeline's SIGPIPE mode is NOT reproducible against the live go.dev index (max 1 duplicate filename, ~65 bytes vs a 64KB pipe buffer; SIGPIPE needs >=100 duplicates). It is a LATENT instance of the shape. The reachable defect there is the unreachable refusal diagnostic, which RT-02 now demonstrates. Corrects issue #8 and the DoD text.",
+    "PR #25 re-check: Section A header (\"a baseline-failure record proving that test fails against the pre-fix commit\") is unqualified and contradicts condition 8 own preservation kind (RT-11, exit_code==0 baseline) that this same PR formalises. Remedy: branch the clause on kind, same discipline as B2/N3 in the original review. Posted as PR #25 comment."
+  ]
+}

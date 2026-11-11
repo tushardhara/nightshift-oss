@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""The sanctioned path for every issue write: resolves Nightshift's own
+tracker repository from its declared binding and execs `gh issue <verb>
+--repo <tracker> ...` -- never the working directory's repository.
+
+    nightshift-file-issue create  --title "..." --label "..."
+    nightshift-file-issue edit    <n> --remove-label needs-dor --add-label state:ready
+    nightshift-file-issue comment <n> --body-file <path>
+    nightshift-file-issue close   <n>
+    nightshift-file-issue reopen  <n>
+    nightshift-file-issue pin     <n>
+
+WHY THIS EXISTS
+================
+`deploy/policies/nightshift_issue_fence.py` DENIES every raw `gh issue
+<write-verb>` that does not carry `--repo <Nightshift's own tracker>`. This
+wrapper is the other half: it supplies that `--repo` mechanically, so an
+agent never has to remember to pass it (and cannot be talked out of it by
+prompt drift -- the fence denies the alternative regardless of what any
+prompt says). Same division of labour as `nightshift-ctl pr-create` versus
+the `--body-file` denial in `deploy/policies/omnipods_policies.py`'s
+`pr_close_keyword_guard`: the policy forbids the raw form, the wrapper
+supplies the argument the policy demands.
+
+REFUSES RATHER THAN GUESSES
+=============================
+- No tracker declared for this deployment           -> exit 3, `tracker_unbound`
+- Caller passes their own `--repo`/`-R` (any pflag
+  spelling) or `develop --branch-repo`               -> exit 3, `tracker_repo_override_forbidden`
+- A flag outside the verb's allowlist               -> exit 3, `tracker_flag_not_allowed`
+- An issue argument that is not a number (a URL)    -> exit 3, `tracker_issue_reference_invalid`
+- `GH_REPO`/`GH_HOST` set in the environment          -> exit 3, `tracker_repo_override_forbidden`
+  (both are documented `gh` environment overrides that would re-resolve the
+  target repository out from under the `--repo` this wrapper supplies)
+
+Never falls back to a bare, unscoped `gh issue <verb>` for any reason --
+that fallback is exactly the cwd-resolved behaviour this wrapper exists to
+remove.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+_BIN_DIR = str(Path(__file__).resolve().parent)
+if _BIN_DIR not in sys.path:
+    sys.path.insert(0, _BIN_DIR)
+
+import nightshift_tracker_authority as tracker_authority  # noqa: E402
+
+# `transfer` is deliberately ABSENT. It moves an issue OUT of the tracker and
+# its destination is a bare positional this wrapper would forward unchecked, so
+# `nightshift-file-issue transfer 5 customer/repo` would have landed a
+# Nightshift issue in a customer's tracker through the SANCTIONED path. The
+# policy fence refuses it too (tracker_fence_transfer_forbidden); a wrapper
+# that forwards an unbound destination is not a narrower surface than raw `gh`.
+_VERBS = ("create", "edit", "comment", "close", "reopen", "delete",
+          "pin", "unpin", "lock", "unlock", "develop")
+
+_REPO_OVERRIDE_ENV = ("GH_REPO", "GH_HOST")
+
+# Per-verb allowlist: gh's own flags for each verb (long name -> takes a
+# value) plus their shorthands, minus every flag that names another
+# repository. Arguments are read with pflag's rules -- gh's parser -- so a
+# bundle is read the way gh reads it: `develop 5 -cRvictim/repo` is
+# `--checkout --repo victim/repo`, while `close 5 -cRvictim/repo` is a
+# closing comment. A token-scan for `-R` cannot tell those apart.
+_VERB_FLAGS = {
+    "create": ({"assignee": True, "body": True, "body-file": True,
+                "editor": False, "label": True, "milestone": True,
+                "project": True, "recover": True, "template": True,
+                "title": True, "web": False},
+               {"a": "assignee", "b": "body", "F": "body-file", "e": "editor",
+                "l": "label", "m": "milestone", "p": "project",
+                "T": "template", "t": "title", "w": "web"}),
+    "edit": ({"add-assignee": True, "add-label": True, "add-project": True,
+              "body": True, "body-file": True, "milestone": True,
+              "remove-assignee": True, "remove-label": True,
+              "remove-milestone": False, "remove-project": True,
+              "title": True},
+             {"b": "body", "F": "body-file", "m": "milestone", "t": "title"}),
+    "comment": ({"body": True, "body-file": True, "create-if-none": False,
+                 "delete-last": False, "edit-last": False, "editor": False,
+                 "web": False, "yes": False},
+                {"b": "body", "F": "body-file", "e": "editor", "w": "web"}),
+    "close": ({"comment": True, "duplicate-of": True, "reason": True},
+              {"c": "comment", "r": "reason"}),
+    "reopen": ({"comment": True}, {"c": "comment"}),
+    "delete": ({"yes": False}, {}),
+    "pin": ({}, {}),
+    "unpin": ({}, {}),
+    "lock": ({"reason": True}, {"r": "reason"}),
+    "unlock": ({}, {}),
+    # `--branch-repo` is deliberately absent: it creates the branch in
+    # ANOTHER repository.
+    "develop": ({"base": True, "checkout": False, "list": False,
+                 "name": True},
+                {"b": "base", "c": "checkout", "l": "list", "n": "name"}),
+}
+# Parsed (so their values are consumed correctly) but always refused.
+_REPO_OVERRIDE_FLAGS = {"repo": True, "branch-repo": True}
+# An issue reference must be a number in the tracker. gh resolves a URL to
+# the repository IN the URL, ignoring --repo.
+_ISSUE_NUMBER = re.compile(r"\A#?[0-9]+\Z")
+
+
+def _parse_pflag_args(argv, flags, short):
+    """Read argv with spf13/pflag's rules; same algorithm as
+    `parse_pflag_args` in bin/nightshift-ctl. Returns ([(name, value)],
+    positionals); raises ValueError(token) for an unknown flag."""
+    seen, positionals, i = [], [], 0
+    while i < len(argv):
+        tok = argv[i]
+        i += 1
+        if tok == "--":
+            positionals.extend(argv[i:])
+            break
+        if tok.startswith("--"):
+            name, eq, value = tok[2:].partition("=")
+            if name not in flags:
+                raise ValueError(tok)
+            if flags[name] and not eq:
+                if i >= len(argv):
+                    raise ValueError(tok)
+                value, i = argv[i], i + 1
+            seen.append((name, value if (flags[name] or eq) else "true"))
+        elif tok.startswith("-") and tok != "-":
+            rest = tok[1:]
+            while rest:
+                letter, rest = rest[0], rest[1:]
+                if letter not in short:
+                    raise ValueError(tok)
+                name = short[letter]
+                if rest.startswith("="):
+                    seen.append((name, rest[1:]))
+                    break
+                if not flags[name]:
+                    seen.append((name, "true"))
+                    continue
+                if not rest:
+                    if i >= len(argv):
+                        raise ValueError(tok)
+                    rest, i = argv[i], i + 1
+                seen.append((name, rest))
+                break
+        else:
+            positionals.append(tok)
+    return seen, positionals
+
+
+def _fail(reason_code, details=None):
+    payload = {"ok": False, "reason_code": reason_code, **(details or {})}
+    print(json.dumps(payload, sort_keys=True), file=sys.stderr)
+    sys.exit(3)
+
+
+def main(argv):
+    if not argv:
+        _fail("tracker_file_issue_missing_verb", {
+            "usage": "nightshift-file-issue <verb> [gh issue args...]",
+            "verbs": list(_VERBS)})
+    verb, rest = argv[0], argv[1:]
+    if verb not in _VERBS:
+        _fail("tracker_file_issue_unknown_verb", {"verb": verb, "verbs": list(_VERBS)})
+
+    # A caller's `-R<value>` would reach gh beside the wrapper's own --repo,
+    # and gh's last-flag-wins rule would send the write to <value>. So would
+    # `develop --branch-repo`, a bundled `-cR<value>`, or an issue URL.
+    flags, short = _VERB_FLAGS[verb]
+    try:
+        seen, positionals = _parse_pflag_args(
+            rest, {**flags, **_REPO_OVERRIDE_FLAGS}, {**short, "R": "repo"})
+    except ValueError as exc:
+        _fail("tracker_flag_not_allowed", {
+            "verb": verb, "flag": exc.args[0],
+            "allowed": sorted(flags),
+            "detail": "only the gh flags this verb needs are forwarded; "
+                      "anything else is refused rather than guessed at."})
+    for name, value in seen:
+        if name in _REPO_OVERRIDE_FLAGS:
+            _fail("tracker_repo_override_forbidden", {
+                "flag": "--" + name,
+                "detail": "nightshift-file-issue supplies --repo itself; a "
+                          "caller-supplied repository (--repo/-R in any "
+                          "spelling, or --branch-repo) is refused rather "
+                          "than silently overridden or silently honoured."})
+        if name == "duplicate-of" and not _ISSUE_NUMBER.match(value):
+            _fail("tracker_issue_reference_invalid", {"flag": "--" + name,
+                                                      "value": value})
+    for value in positionals:
+        if verb == "create" or not _ISSUE_NUMBER.match(value):
+            _fail("tracker_issue_reference_invalid", {
+                "verb": verb, "argument": value,
+                "detail": "an issue is named by its number in the tracker; "
+                          "gh resolves a URL to the repository in the URL, "
+                          "ignoring --repo."})
+
+    for name in _REPO_OVERRIDE_ENV:
+        if os.environ.get(name):
+            _fail("tracker_repo_override_forbidden", {
+                "environment_variable": name,
+                "detail": f"{name} would re-resolve gh's target repository "
+                          "out from under the --repo this wrapper supplies; "
+                          "unset it and retry."})
+
+    state_root, repository_id = tracker_authority.scope_from_env()
+    try:
+        resolved = tracker_authority.require_tracker(state_root, repository_id)
+    except tracker_authority.TrackerAuthorityError as exc:
+        _fail(exc.reason_code, tracker_authority.error_payload(exc))
+        return  # unreachable; _fail exits
+
+    tracker = resolved["tracker"]
+    os.execvp("gh", ["gh", "issue", verb, "--repo", tracker, *rest])
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

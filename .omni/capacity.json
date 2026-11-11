@@ -1,0 +1,6 @@
+{
+  "max_concurrent_workers": 5,
+  "max_items_in_flight": 6,
+  "reserve_for_oncall": 1,
+  "notes": "One budget for ALL crews. Adding a crew adds queueing, not workers. Raise only after a wave with no usageLimited."
+}

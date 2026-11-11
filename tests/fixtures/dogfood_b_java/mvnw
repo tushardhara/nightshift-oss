@@ -1,0 +1,6 @@
+#!/bin/sh
+# Dogfood B fixture (#443): stub wrapper, never actually invoked by the
+# discovery tool -- discovery observes that this file exists, it does not
+# run it. See tests/test_contract_dogfood_b.py.
+echo "dogfood-b-java fixture mvnw stub -- not a real Maven wrapper" >&2
+exit 1

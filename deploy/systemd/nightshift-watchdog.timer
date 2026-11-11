@@ -1,0 +1,18 @@
+[Unit]
+Description=Check every 10 minutes that the org's heartbeat is alive and its scheduled runs are firing
+
+[Timer]
+# Give a rebooted box time to bring services and the first heartbeat up
+# before judging silence.
+OnBootSec=20min
+# 10 minutes, tightened from 30 (issue #132). The watchdog now also reports a
+# FAILED scheduled run, and it re-fires one with backoff. At a 30-minute tick a
+# transient vendor 529 could still cost most of an hour before anything reacted
+# — which is the exact cost #132 exists to remove. A tick is one HTTP GET to
+# localhost plus one `beat show`; ticking three times as often is free, and the
+# 6-hour re-alert throttle means it cannot turn into three times the noise.
+OnUnitActiveSec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

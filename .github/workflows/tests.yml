@@ -1,0 +1,199 @@
+name: control-plane tests
+
+# Independent verification of the suite the docs claim is green: pull requests
+# run the full race/crash/restart simulation on a clean runner, and main runs it
+# again after integration. Feature-branch pushes are covered by the PR event.
+# stdlib-only by design — no pip install step exists on purpose.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Pull requests: one run per PR, newest wins. A new push makes the older run
+  # moot, so cancelling it is correct and frees a runner.
+  #
+  # Pushes to main: key on the SHA, never the ref. Keying on the ref put EVERY
+  # merge commit into one group under cancel-in-progress, so each merge killed
+  # the previous merge's verification run. Observed 2026-09-02: the run for
+  # 41f2f90 (PR #499) was cancelled by the push of 9c215e5 (PR #497) four
+  # minutes later, and 9c215e5's own run was then cancelled by 2dd0dd2 (#500).
+  # main's post-integration run is the only check that ever executes the suite
+  # against the actual merged result -- a cancelled one is a hole in the gate,
+  # not a saved runner. Per-SHA groups let every merge commit finish.
+  #
+  # A merge queue would also solve this, by serialising merges so the situation
+  # never arises. It is unavailable here: branch protection and rulesets both
+  # return 403 "Upgrade to GitHub Pro or make this repository public" on this
+  # private repo's plan, and a merge queue requires one of them.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  suite:
+    # Issue #738. The suite was one job at 13-17 minutes, paid twice per change
+    # -- once on the PR and once on main after merge -- and it was the dominant
+    # cost of shipping anything here.
+    #
+    # Sharded by MODULE, never by individual test: a module's tests share
+    # setUpClass fixtures, and splitting one across runners would rebuild the
+    # same temporary control plane in two processes.
+    #
+    # The safety property is that the partition is TOTAL and DISJOINT -- a
+    # module in no shard is a module nothing runs, which is the failure #729
+    # exists to catch arriving through the door marked "faster CI". That is
+    # asserted in tests/test_738_shard_partition.py for shard counts 1..12, not
+    # just the one configured here, and an empty shard announces itself rather
+    # than printing the same "OK" a full one does.
+    name: suite ${{ matrix.shard }}/${{ strategy.job-total }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false      # one shard's failure must not hide another's
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # Same reason as the gates job below: several tests resolve pinned
+          # historical commits and die on a shallow clone (#609). Every shard
+          # pays this clone; that cost is real and was measured, not assumed.
+          fetch-depth: 0
+      - name: git identity for checkpoint/rollback simulations
+        run: |
+          git config --global user.name ci
+          git config --global user.email ci@localhost
+      - name: run shard
+        run: tests/run.sh --shard ${{ matrix.shard }}/${{ strategy.job-total }}
+
+  gates:
+    # The commit-range gates and the standalone checks. These are NOT tests and
+    # must run exactly once: each judges a range, so in a matrix they would
+    # fire four times and produce four identical refusals.
+    name: gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # Full history, not the default shallow (depth 1) clone. Several
+          # tests are PREMISE tests: they assert something about this repo's
+          # real past by resolving a pinned historical commit -- e.g. that the
+          # `Refs #` rule TEXT was already present at 4f931e6:bin/omni-ctl
+          # before PR #1 merged, so a later rename-only commit cannot satisfy
+          # the premise. Those commits are not in a depth-1 checkout, so on a
+          # runner they died as "fatal: bad object" (issue #609, PR #587: 1
+          # failure + 1 error, nothing else wrong with the change).
+          #
+          # The rejected alternatives, recorded so they are not re-proposed:
+          #   * Make the guards skip when the commit is unavailable. That is the
+          #     vacuous-evidence failure mode this project spent 2026-09-02
+          #     removing -- a premise test that silently passes on no evidence
+          #     is how a false premise about PR #1 survived several heartbeats.
+          #   * Exclude the paths from CI. Rejected under ADR-0037.
+          #   * Pin a depth deep enough to contain the anchors. Rejected as
+          #     fragile: it rots silently the next time an anchor moves further
+          #     back, and it fails in exactly the same unhelpful way.
+          #
+          # Cost is clone time on a repo this size, paid deliberately.
+          fetch-depth: 0
+      - name: git identity for checkpoint/rollback simulations
+        run: |
+          git config --global user.name ci
+          git config --global user.email ci@localhost
+      - name: policy module imports standalone
+        run: python3 -c "import sys; sys.path.insert(0,'deploy/policies'); import omnipods_policies"
+      - name: shell scripts parse
+        run: |
+          for f in deploy/*.sh deploy/lib/*.sh bin/*.sh tests/run.sh; do bash -n "$f"; done
+      - name: comment density
+        # Issue #715 / epic #716. The first external run wrote a package at 47%
+        # comment lines against a repository whose own style was 4-7%, after
+        # being instructed to match the surrounding style. This is that
+        # instruction as arithmetic: the ceiling is a MULTIPLE of the target
+        # repository's own house style, computed at run time, so it transfers
+        # to the next project without retuning.
+        #
+        # PR-only and merge-base, for the reasons the two steps below give.
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base=$(git merge-base "$PR_BASE" "$PR_HEAD")
+          python3 tests/comment_density_guard.py --base "$base" --head "$PR_HEAD"
+
+      - name: authorship gate
+        # Issue #732 / ADR-0094, epic #716 change 5: the coordinator authored
+        # ~93% of the commits in the run this epic came from, against its own
+        # rule to author Markdown only -- and most of those commits carried the
+        # box's fallback git identity, so afterwards nobody could say who wrote
+        # them. This refuses a source commit authored by the coordinator or by
+        # a name that identifies no seat.
+        #
+        # PR-only, and merge-base rather than the base SHA directly, for the
+        # same reasons the conformance gate below gives: there is no candidate
+        # to judge on a push to main, and a stale branch must be judged against
+        # where it actually forked. History before this gate is full of such
+        # commits (32 of the last 60 on main when it was written); scoping to
+        # the branch's own commits is what makes it enforceable today rather
+        # than a demand to rewrite the past.
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base=$(git merge-base "$PR_BASE" "$PR_HEAD")
+          python3 tests/authorship_guard.py --base "$base" --head "$PR_HEAD"
+
+      - name: project conformance gate
+        # Issue #442 / ADR-0086: refuse a candidate that widens the repo's own
+        # declared Engineering Contract (an undeclared language, an undeclared
+        # test/integration/e2e framework) beyond what program/conformance-rules.json
+        # and the base commit's own observed facts permit. PR-only -- there is no
+        # "candidate" to compare against on a push to main. `git merge-base` (not
+        # `github.event.pull_request.base.sha` directly) so a stale branch is judged
+        # against where it actually forked, not against another PR's changes that
+        # landed on the base branch after this branch was cut.
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base=$(git merge-base "$PR_BASE" "$PR_HEAD")
+          python3 bin/nightshift_conformance.py . \
+            --base-sha "$base" --head-sha "$PR_HEAD" \
+            --rules program/conformance-rules.json
+
+  tests:
+    # The single check `release` trusts, kept deliberately.
+    #
+    # `release`'s merge procedure verifies a check NAMED `tests` is green for
+    # the exact candidate SHA, and tests/test_seat_contract.py asserts that
+    # name appears in this repository's resolved CI inventory. Sharding the
+    # suite renamed that check out of existence -- and the failure mode was
+    # worse than a red build: a check called `tests` that no longer ran the
+    # suite would have let release verify a name while the thing it stood for
+    # happened elsewhere. Both tests caught it.
+    #
+    # So one aggregate keeps the contract: `tests` is green only when every
+    # shard and the gates are.
+    name: tests
+    if: always()
+    needs: [suite, gates]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: every shard and every gate must have succeeded
+        # `always()` above means this runs even when a dependency failed or
+        # was cancelled -- without it the job is SKIPPED on failure, and a
+        # skipped required check is not a red one.
+        run: |
+          echo "suite=${{ needs.suite.result }} gates=${{ needs.gates.result }}"
+          [ "${{ needs.suite.result }}" = "success" ] || exit 1
+          [ "${{ needs.gates.result }}" = "success" ] || exit 1

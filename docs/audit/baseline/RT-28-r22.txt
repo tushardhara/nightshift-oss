@@ -1,0 +1,131 @@
+test_rt28_a_freshly_bootstrapped_box_is_still_graced (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_freshly_bootstrapped_box_is_still_graced)
+R-22 must not undo #34: a genuinely fresh install stays quiet. ... ok
+test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts)
+An attestation that cannot be read is not positive evidence. ... 
+  test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='')
+An attestation that cannot be read is not positive evidence. ... FAIL
+  test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='   ')
+An attestation that cannot be read is not positive evidence. ... FAIL
+  test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='yesterday')
+An attestation that cannot be read is not positive evidence. ... FAIL
+  test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='-5')
+An attestation that cannot be read is not positive evidence. ... FAIL
+  test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='12x34')
+An attestation that cannot be read is not positive evidence. ... FAIL
+test_rt28_a_recorded_run_still_ignores_the_attestation (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_recorded_run_still_ignores_the_attestation)
+The attestation gates ONLY the not-yet-started grace. ... ok
+test_rt28_a_restored_plane_on_an_ESTABLISHED_box_alerts_at_once (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_restored_plane_on_an_ESTABLISHED_box_alerts_at_once)
+The decisive case, and the one the bounded-but-absence-keyed version ... FAIL
+test_rt28_no_installer_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_no_installer_attestation_alerts)
+The R-22 case. Absence of evidence must buy nothing - including the ... FAIL
+test_rt28_the_alert_tells_the_operator_WHICH_state_this_is (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_the_alert_tells_the_operator_WHICH_state_this_is)
+'restored plane' and 'never installed' need different operator ... FAIL
+test_rt28_the_attestation_expires_with_the_grace (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_the_attestation_expires_with_the_grace) ... 
+  test_rt28_the_attestation_expires_with_the_grace (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_the_attestation_expires_with_the_grace) (bootstrapped_hours_ago=25) ... FAIL
+test_rt28_the_watchdog_NEVER_writes_the_attestation (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_the_watchdog_NEVER_writes_the_attestation)
+A monitor that forges the installer's signature is the same defect as ... ok
+test_rt28_bootstrap_writes_the_attestation (tests.test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_bootstrap_writes_the_attestation) ... FAIL
+test_rt28_it_is_written_BEFORE_the_units_are_enabled (tests.test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_it_is_written_BEFORE_the_units_are_enabled)
+Ordering is the whole point: a timer armed while the attestation is ... FAIL
+
+======================================================================
+FAIL: test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='')
+An attestation that cannot be read is not positive evidence.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1010, in test_rt28_a_garbled_attestation_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : an attestation of '' is unreadable, so it attests nothing and must not buy silence
+
+======================================================================
+FAIL: test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='   ')
+An attestation that cannot be read is not positive evidence.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1010, in test_rt28_a_garbled_attestation_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : an attestation of '   ' is unreadable, so it attests nothing and must not buy silence
+
+======================================================================
+FAIL: test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='yesterday')
+An attestation that cannot be read is not positive evidence.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1010, in test_rt28_a_garbled_attestation_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : an attestation of 'yesterday' is unreadable, so it attests nothing and must not buy silence
+
+======================================================================
+FAIL: test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='-5')
+An attestation that cannot be read is not positive evidence.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1010, in test_rt28_a_garbled_attestation_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : an attestation of '-5' is unreadable, so it attests nothing and must not buy silence
+
+======================================================================
+FAIL: test_rt28_a_garbled_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_garbled_attestation_alerts) (stamp='12x34')
+An attestation that cannot be read is not positive evidence.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1010, in test_rt28_a_garbled_attestation_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : an attestation of '12x34' is unreadable, so it attests nothing and must not buy silence
+
+======================================================================
+FAIL: test_rt28_a_restored_plane_on_an_ESTABLISHED_box_alerts_at_once (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_a_restored_plane_on_an_ESTABLISHED_box_alerts_at_once)
+The decisive case, and the one the bounded-but-absence-keyed version
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 971, in test_rt28_a_restored_plane_on_an_ESTABLISHED_box_alerts_at_once
+    self.assertEqual(
+AssertionError: 0 != 1 : an empty control plane on a box installed a month ago is a RESTORE, not an install, and must alert immediately rather than after another 24h of silence
+
+======================================================================
+FAIL: test_rt28_no_installer_attestation_alerts (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_no_installer_attestation_alerts)
+The R-22 case. Absence of evidence must buy nothing - including the
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 953, in test_rt28_no_installer_attestation_alerts
+    self.assertEqual(
+AssertionError: 0 != 1 : no heartbeat, no recorded run AND no installer attestation - nothing here is positive evidence of a fresh install, so the watchdog must not grant itself silence
+
+======================================================================
+FAIL: test_rt28_the_alert_tells_the_operator_WHICH_state_this_is (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_the_alert_tells_the_operator_WHICH_state_this_is)
+'restored plane' and 'never installed' need different operator
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1045, in test_rt28_the_alert_tells_the_operator_WHICH_state_this_is
+    self.assertIn("never_started", missing_story)
+AssertionError: 'never_started' not found in ''
+
+======================================================================
+FAIL: test_rt28_the_attestation_expires_with_the_grace (tests.test_watchdog.RT28GraceNeedsPositiveEvidence.test_rt28_the_attestation_expires_with_the_grace) (bootstrapped_hours_ago=25)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 996, in test_rt28_the_attestation_expires_with_the_grace
+    self.assertEqual(
+AssertionError: 0 != 1 : a box bootstrapped 25h ago with no beat and no run should alert
+
+======================================================================
+FAIL: test_rt28_bootstrap_writes_the_attestation (tests.test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_bootstrap_writes_the_attestation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1076, in test_rt28_bootstrap_writes_the_attestation
+    self.assertIn("bootstrapped-at", code,
+AssertionError: 'bootstrapped-at' not found in '\n\n\n\n\n\n\nset -euo pipefail\n\nTEAMS_DIR="${TEAMS_DIR:-/srv/nightshift}"\nPROJECT_DIR="${PROJECT_DIR:-/srv/project}"\nPATH="$HOME/.local/bin:$PATH"\n\n. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/deploy-lib.sh"\n\nsay() { printf \'\\n=== %s\\n\' "$1"; }\n\n\n\n\n[ "$(id -u)" -ne 0 ] || { echo "do not run bootstrap as root — run it as the runtime user (sudo -iu nightshift)" >&2; exit 1; }\n\n\nsay "installing Omnigent + harness CLIs"\nuv tool install --python 3.12 --force omnigent\n\n\n\nnpm config set prefix "$HOME/.local"\nnpm install -g @anthropic-ai/claude-code @openai/codex\n\nsay "versions"\nomnigent --version\n\nclaude --version\ncodex --version\nnode --version; tmux -V\n\n\n\n\nbwrap_code=0\nnightshift_bwrap_probe "${NIGHTSHIFT_BWRAP:-bwrap}" || bwrap_code=$?\nif [ "$bwrap_code" -eq 0 ]; then\n  echo "  $(nightshift_bwrap_diagnosis 0)"\nelse\n  echo "WARN: $(nightshift_bwrap_diagnosis "$bwrap_code")" >&2\nfi\n\n\n\n\n\n\n\n\nsay "rtk token filter (optional)"\nif ! command -v rtk >/dev/null 2>&1 && command -v brew >/dev/null 2>&1; then\n  brew install rtk || true\nfi\nif command -v rtk >/dev/null 2>&1; then\n  python3 - <<\'PY\'\nimport json, os\np = os.path.expanduser("~/.claude/settings.json")\nos.makedirs(os.path.dirname(p), exist_ok=True)\ntry:\n    with open(p) as f: cfg = json.load(f)\nexcept (FileNotFoundError, json.JSONDecodeError):\n    cfg = {}\nhook = {"type": "command", "command": "rtk hook claude"}\npre = cfg.setdefault("hooks", {}).setdefault("PreToolUse", [])\nif not any(h.get("command") == "rtk hook claude"\n           for m in pre for h in m.get("hooks", [])):\n    pre.append({"matcher": "Bash", "hooks": [hook]})\n    with open(p, "w") as f: json.dump(cfg, f, indent=2)\n    print("  rtk hook installed into ~/.claude/settings.json")\nelse:\n    print("  rtk hook already present")\nPY\n  rtk --version\nelse\n  echo "  rtk not found and no brew — skipping (install later: https://www.rtk-ai.app/)"\nfi\n\n\n\n\n\nsay "nightshift-ctl control plane"\nln -sf "$TEAMS_DIR/bin/nightshift-ctl" "$HOME/.local/bin/nightshift-ctl"\nnightshift-ctl --db /tmp/nightshift-ctl-boot-check.db selftest && rm -f /tmp/nightshift-ctl-boot-check.db*\n\n\n\n\n\n\n\n\nsay "codex sandbox config"\nif [ ! -f "$HOME/.codex/config.toml" ]; then\n  mkdir -p "$HOME/.codex"\n  cat > "$HOME/.codex/config.toml" <<\'EOF\'\n\n\napproval_policy = "never"\nsandbox_mode = "workspace-write"\n\n[sandbox_workspace_write]\nnetwork_access = true\n\n\n\nwritable_roots = ["~/.cache", "~/.npm", "~/.cargo", "~/.rustup", "~/go", "~/.floci", "~/.local/state"]\nEOF\n  echo "  wrote ~/.codex/config.toml (approval never, workspace-write)"\nelse\n  echo "  ~/.codex/config.toml exists — leaving it alone"\n  \n  \n  for root in .rustup .floci; do\n    grep -q "~/$root" "$HOME/.codex/config.toml" \\\n      || echo "  WARN: writable_roots is missing ~/$root — add it, or Codex workers cannot write there"\n  done\nfi\n\n\nsay "starting Postgres (session history must survive restarts)"\nmkdir -p "$HOME/omnigent-db"\n\n\ninstall -m 0644 "$TEAMS_DIR/deploy/docker-compose.postgres.yml" "$HOME/omnigent-db/docker-compose.yml"\nif [ ! -f "$HOME/omnigent-db/.env" ]; then\n  printf \'POSTGRES_PASSWORD=%s\\n\' "$(openssl rand -hex 24)" > "$HOME/omnigent-db/.env"\n  chmod 600 "$HOME/omnigent-db/.env"\nfi\n( cd "$HOME/omnigent-db" && docker compose up -d )\n\nPGPASS=$(grep POSTGRES_PASSWORD "$HOME/omnigent-db/.env" | cut -d= -f2)\nDB_URI="postgresql://omnigent:${PGPASS}@127.0.0.1:5433/omnigent"\n\n\nsay "writing systemd environment"\nmkdir -p "$HOME/.config/omnigent"\nENVFILE="$HOME/.config/omnigent/server.env"\nif [ ! -f "$ENVFILE" ]; then\n  cat > "$ENVFILE" <<EOF\n\nOMNIGENT_DATABASE_URI=${DB_URI}\n\nOMNIGENT_ANALYTICS=0\n\n\nEOF\n  chmod 600 "$ENVFILE"\nfi\n\n\n\nif ! grep -q \'^PYTHONPATH=\' "$ENVFILE"; then\n  printf \'PYTHONPATH=%s/deploy/policies\\n\' "$TEAMS_DIR" >> "$ENVFILE"\n  echo "  PYTHONPATH -> $TEAMS_DIR/deploy/policies (custom policies)"\nfi\n\n\nsay "installing systemd units"\n\n\n\ntotal_gb=$(nightshift_mem_total_gb)\nread -r mem_high_gb mem_max_gb <<<"$(nightshift_memory_limits "$total_gb")"\nMEMORY_HIGH="${NIGHTSHIFT_MEMORY_HIGH:-${mem_high_gb}G}"\nMEMORY_MAX="${NIGHTSHIFT_MEMORY_MAX:-${mem_max_gb}G}"\necho "  ${total_gb}G RAM detected -> omnigent-host MemoryHigh=$MEMORY_HIGH MemoryMax=$MEMORY_MAX"\n\nmkdir -p "$HOME/.config/systemd/user"\nfor unit in omnigent-server.service omnigent-host.service \\\n            nightshift-state-backup.service nightshift-state-backup.timer \\\n            nightshift-watchdog.service nightshift-watchdog.timer; do\n  install -m 0644 "$TEAMS_DIR/deploy/systemd/$unit" "$HOME/.config/systemd/user/$unit"\ndone\nsed -i "s\n        s\n  "$HOME/.config/systemd/user/"omnigent-*.service \\\n  "$HOME/.config/systemd/user/"nightshift-*.service "$HOME/.config/systemd/user/"nightshift-*.timer\n\n\n\n\n\n\nif ! loginctl show-user "$USER" 2>/dev/null | grep -q \'Linger=yes\'; then\n  loginctl enable-linger "$USER" 2>/dev/null \\\n    || echo "WARN: linger is off — as root run: loginctl enable-linger $USER (preflight will FAIL until then)" >&2\nfi\n\n\n\n\n\n\n\n\n\n\n\n\nif ! nightshift_install_user_units "$(id -u)" "$USER"; then\n  exit 1\nfi\n\nsay "next steps (interactive, once)"\ncat <<\'EOF\'\n  1. claude setup-token          \n  2. codex login                 \n  3. gh auth login               \n  4. gh auth refresh -s project  \n  5. git -C /srv/project clone … \n  6. /srv/nightshift/bin/nightshift-init.sh /srv/project\n  7. /srv/nightshift/bin/nightshift-tracker-init.sh /srv/project   \n  8. $EDITOR /srv/project/.omni/brief.md   \n  9. confirm the UI proxy exists — root set it during provisioning with\n     \'tailscale serve --bg 6767\' (persists across reboots). If preflight\n     warns it is missing, run that command FROM A ROOT SHELL — this user\n     deliberately cannot manage tailscale. Never \'tailscale funnel\'.\n 10. /srv/nightshift/deploy/preflight.sh    \n 11. systemctl --user start omnigent-server omnigent-host\n 12. launch the program agent (see deploy/README.md "Starting the run")\nEOF' : deploy/bootstrap.sh must write the installer attestation the watchdog gates the grace on
+
+======================================================================
+FAIL: test_rt28_it_is_written_BEFORE_the_units_are_enabled (tests.test_watchdog.RT28BootstrapWritesTheAttestation.test_rt28_it_is_written_BEFORE_the_units_are_enabled)
+Ordering is the whole point: a timer armed while the attestation is
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-34/tests/test_watchdog.py", line 1087, in test_rt28_it_is_written_BEFORE_the_units_are_enabled
+    self.assertNotEqual(write, -1)
+AssertionError: -1 == -1
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.792s
+
+FAILED (failures=11)

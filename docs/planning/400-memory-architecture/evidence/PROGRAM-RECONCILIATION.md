@@ -1,0 +1,92 @@
+# Decisions taken without asking
+
+Every call the org made on its own: the options rejected, why, and what would make
+us revisit. This is the file that answers "why is it like this?" later.
+
+| Date | Decision | Rejected | Reason | Reversal trigger | By |
+|---|---|---|---|---|---|
+| 2026-08-29 | Treat the project deliverable as a DESIGN, not a running system; every DoD condition must be decidable against files in this repo | Writing runtime conditions ("artifacts are encrypted at rest") | The brief's hard constraints say "architecture and planning only for this evaluation" and "work entirely locally" — a runtime condition would be permanently unverifiable and the project unfinishable | Owner says implementation is in scope; then the DoD is re-derived, not patched | program |
+| 2026-08-29 | Proceed with no control plane: `nightshift-ctl` is not on PATH in this fixture | Halting discovery until the binary exists | Discovery allocates no worker slots, takes no leases and charters no crews, so the control plane has nothing to arbitrate; run_id is recorded as unavailable rather than invented | Any dispatch that would take a worker slot or a shared-path lease | program |
+| 2026-08-29 | Ran the Fable tier for exactly two dispatches (`product` seat, `staff`'s one blind architecture draft) | Fable for the Codex-side architect and for the DoD critique | Fable is ~2× subscription burn per token and review must come from the other vendor anyway; independence beats horsepower | — | program |
+
+---
+
+# Discovery — architecture reconciliation, decision by decision
+
+Two blind drafts, same brief, neither seeing the other: `docs/architecture/PROPOSAL-codex.md`
+(architect, Codex/gpt-5.6-sol) and `docs/architecture/PROPOSAL-claude.md` (staff acting as
+Claude-side architect, claude-fable-5). Both files are kept unedited so "did anyone consider X?"
+is answerable in seconds.
+
+Tie-break order used, stopping at the first rule that decides it: **(1) numbers · (2) fewer
+moving parts · (3) reversible over optimal · (4) cheaper to run · (5) already in the repo ·
+(6) debuggable at 3am.** Where a row says "merge", the taken answer is in neither draft intact —
+that is the expected outcome, and it is never an average of two designs.
+
+## Where they agreed — cheapest confidence available, no further thinking spent
+
+| # | Decision point | Both said | Taken |
+|---|---|---|---|
+| A1 | Control authority store | SQLite local / one HA PostgreSQL in production | Yes |
+| A2 | Artifact bodies | Filesystem content-addressed store local / encrypted object storage in production | Yes |
+| A3 | Git's role | Source identity + pinning, and approved customer-owned documents. Never live control or private narrative | Yes |
+| A4 | Mem0 | Never adopt as a component or authority — a second self-editing authority is the exact failure mode the fence exists to prevent | Yes |
+| A5 | Temporal knowledge graph | Not now; the append-only event log already is the temporal record | Yes |
+| A6 | Redis | Not now; day-one load is ~0.1–0.6 writes/sec | Yes |
+| A7 | Vector store | pgvector now, dedicated vector DB only at a trigger | Yes |
+| A8 | Deployment shape | Modular monolith with storage adapter ports; one stateless process day one | Yes |
+| A9 | Overall verdict of the arithmetic | Hundreds of events/day, not millions — one transactional store with an order of magnitude spare | Yes |
+| A10 | Authority when planes disagree | Control wins for operations; the finalized artifact wins for narrative; customer Git wins for a published document | Yes |
+| A11 | Lease/fence model | Store-side time, monotone generation per resource, idempotency keys, TTL reclaim | Yes |
+| A12 | Contract enforcement | A shared conformance suite executed against BOTH adapters is the contract; prose is not | Yes |
+
+Cross-vendor agreement on the capacity verdict is the single most reassuring result of discovery:
+two independent models (Codex ~6 ops/sec peak day one, 600 at 100×; Claude ~0.2 writes/sec, 120/sec
+peak at 100×) differ in method and land in the same order of magnitude, and both conclude the same
+thing — this is not a high-throughput system, and nothing here justifies a broker, a cache tier or
+a dedicated vector database on day one.
+
+## Where they disagreed — resolved
+
+| # | Decision | Codex said | Claude said | Taken | Rule that decided it |
+|---|---|---|---|---|---|
+| D1 | **Seam count (caps how many crews can ever run in parallel)** | **3** — control, memory, publication. Provenance, encryption, source mirror, migrations, observability are cross-cutting constraints, deliberately not seams | **5** — adds Workspace & Provenance Manager and a Tenancy & Safety Envelope | **3**, with source-snapshot/workspace named as a module inside the control seam and a promotion trigger (below) | **(2) fewer moving parts**, applied to the seam test itself. Claude's own description of its seam 5 is that it "wraps seams 1–2 storage calls" — a component that wraps two others cannot be built by an independent crew without editing both, which is a shared-path lease, not a seam. Provenance appears in every entity in *both* data models, so it fails the same test. Workspace/mirror is the genuinely arguable one: it has a narrow interface (`snapshot`/`checkout`/`resolve`) and two teams could work either side. It is still not chartered as a seam, on **(3) reversible over optimal** — splitting a seam later is cheap, un-chartering a crew that is queueing on another crew's files is not, and the roster caps us at 2 crews regardless. **Promotion trigger:** two crews blocked more than one wave on source-mirror/workspace paths → promote to seam 4. |
+| D2 | Sequence numbers | Repository sequence strictly increasing, **gaps allowed** after a crashed range holder; duplicates never | **Gapless** per-task `seq` | **Codex** — monotone, gaps allowed, no duplicates; per-task ordering derives from the repository sequence rather than a second counter | **(6) debuggable** / correctness. Gaplessness is precisely the property that breaks under a crash: it forces either a transaction held across the work or a renumbering pass. Deriving per-task order from the repository sequence also deletes a moving part (**rule 2**) |
+| D3 | Vector-tier switch trigger | >25M live vectors **and** filtered p95 >2s for 7 days after tuning, or recall <80% at required latency | Per-tenant index >5M vectors, or retrieval p95 >300 ms at k=20 | **Codex's trigger, Claude's mechanism** — per-tenant partitioning is adopted as the thing that defers the trigger; the recall floor is kept because it is measurable | **(1) numbers.** CAPACITY.md states the latency a user actually notices for retrieval is 2s. A 300 ms trigger moves a tier — and its cost — without any user-visible problem, which is the unbudgeted-cost pattern `staff` exists to flag |
+| D4 | Budget, day one / 100× | ~$150/mo (range $100–250) / ~$2,000/mo; ceilings $300 and $3,000 | ~$50–80/mo / ~$700–950/mo | **Codex** | **(1) numbers.** Claude's model omits the HA standby and, more importantly, the external source mirrors and workspace disk — which zero-file mode *requires*, since that is where the repository goes when it leaves the customer's tree. Claude's figure is retained as the honest floor for a single-AZ, no-standby install |
+| D5 | Zero-file mode, definition | Stricter: also no `git worktree` against the customer checkout (it writes metadata under `.git`), no alternates, no lock files, no ignore-file edits. Two modes: zero-Nightshift-file (approved publication allowed) and no-generated-file (reviewed patches only) | External mirror + worktrees outside the repo; one mode | **Merge** — Codex's stricter definition and its two modes, plus Claude's honest list of what the mode costs | **(1) numbers**, in the literal sense: "zero files" that still writes into `.git` is a false claim, and the DoD requires a command an operator can run to prove the footprint. Codex's two modes also settle brief contradiction C1 better than a single reading |
+| D6 | Capability lost in zero-file mode | "No capability lost, only conveniences" | Three named losses: repo-local discoverability, history no longer travels with `git clone`, no plain-`git diff` review of working notes | **Claude** | **(6) debuggable / honesty.** DoD condition 4(d) requires stating what becomes unrecoverable; "no capability lost" is the answer that gets a customer angry six months in |
+| D7 | Provenance across rewritten history | Pinned retention ref + pack/bundle digest + **closure manifest covering submodule OIDs and Git LFS objects** + `derived_from` relation + an explicit `source_not_retained` flag when retention expires | `refs/nightshift/keep/<sha>` in the mirror + `patch-id` equivalence mapping | **Codex, plus Claude's patch-id mapping as an advisory signal** | **(1) numbers / completeness.** A pinned commit whose submodule and LFS content was never fetched does not reconstruct; Claude's draft has no closure concept. The `source_not_retained` flag is what stops the system implying it can rebuild bytes it deleted |
+| D8 | Dirty working tree | Copy to external workspace, create a **synthetic snapshot commit** there, record parent + patch digest, mark synthetic, pin the bundle; customer checkout untouched | Not addressed | **Codex** | Only one draft answered, and DoD condition 6(c) requires an answer |
+| D9 | Memory fence mechanism | Capability separation (the scheduler principal holds no memory capability; planners receive `advisory_context`) **plus** ControlPort recomputing every scheduling predicate from current control rows inside the transaction | DB role with zero grants on control tables, fencing token, advisory type, audit | **Both, layered** | Not a conflict — four independent mechanisms that cost nothing together. The in-transaction predicate recomputation (Codex) is the strongest single one: it makes retrieved text structurally incapable of *satisfying* a scheduling predicate, rather than merely being disallowed from asserting one |
+| D10 | Deletion completeness | Tombstone → revoke links → remove chunks → delete body; canary list per storage adapter; **explicit disclosure** that embeddings and control metadata cannot be individually envelope-encrypted while staying searchable, so shared-backup deletion completes on backup expiry (declared max 35 days), not instantly | Crypto-shred the tenant KEK; `derived_from` lineage edge walked so nothing derived outlives its source | **Merge** — Codex's disclosure and canary verification, Claude's lineage edge as the mechanism that makes redaction complete | **(1) numbers / honesty.** Claude's crypto-shred is cleaner but overclaims: calling backup-resident ciphertext "erased" is the mislabel Codex refuses. Claude's lineage edge is the concrete thing that stops vectors of redacted text surviving their source — Codex's reindex-can't-resurrect rule is weaker |
+| D11 | Retention defaults | 7d unpinned workspaces · 24h unfinalized uploads · 90d raw transcripts · 365d reports/handoffs/evidence · tenant lifetime for control, audit, decisions, publication receipts | 90d transcripts · 365d evidence · ledger kept | **Codex** (a superset; Claude's classes all appear in it) | **(2) fewer moving parts** — one class list, not two |
+| D12 | Migration shape | 6 phases (inventory · snapshot · shadow import · compare · one quiesced atomic switch · decommission) against an external bootstrap registry holding `active_backend` + `authority_epoch`; **never an intentional dual authority** | 5 steps with a shadow period during which new runs write to the new stores while `.omni/` is frozen read-only | **Codex's phase model, plus Claude's step 4** — the commit that removes `.omni/` from the repo is itself a Publication-Gateway operation, i.e. the gateway's first real customer | **(3) reversible / single authority.** Codex's `authority_epoch` makes the switch atomic and auditable and keeps the "exactly one durable authority" invariant true *during* the migration, which Claude's shadow period technically suspends. Claude's dogfood step is kept because it makes the removal itself reviewable |
+| D13 | Async indexing / deletion / export | Transactional **outbox/job table** committed with the event, at-least-once handlers, dedupe by event id + handler version, no broker at T0 | Not addressed | **Codex** | **(6) debuggable.** One table, and it is what makes indexing and deletion survive a crash mid-handler. Cheaper than the bug class it removes |
+| D14 | Local multi-process safety | A local **coordinator** owns the single SQLite writer; workers go through it rather than each carrying ad hoc SQL | Same `ControlStore` contract on SQLite; conformance suite runs local mode with **multiple processes** | **Both** — Codex's coordinator as the mechanism, Claude's multi-process conformance run as the test that proves it | Complementary. Claude's test is the one that catches single-process assumptions creeping in, which is the named divergence risk |
+| D15 | Publication authorization | One-use approval bound to exact content digest + target path + expected base SHA + reviewer + expiry; any byte/path/base change invalidates it; reviewer is never the producing worker | Gateway refuses without a ledger approval decision; per-tenant path allowlist; single egress credential | **Codex's capability, Claude's allowlist and single-credential framing** | **(1) numbers / strength.** "Never an accidental side effect" is a property of *binding approval to exact bytes*; an approval that survives a byte change is exactly the accident the brief names |
+| D16 | Entity ids | UUIDv7, generated without tenant sequence leakage | ULID | **UUIDv7** | Genuinely equivalent — both sortable, both fine. Broke the tie on **(5) convention**: UUIDv7 is standardised and has native support in the selected store. Recorded as a coin-flip so nobody re-litigates it |
+| D17 | Content addressing | Content digest over stored bodies, per-tenant scoping | Hash of **plaintext**, dedupe **strictly per tenant** — cross-tenant dedupe leaks content existence across the isolation boundary | **Claude's explicit rule** (Codex does not contradict it) | Claude named the failure mode; the refusal of cross-tenant dedupe becomes a stated invariant rather than an implementation accident |
+| D18 | Object size limit | 2 GiB finalized cap, 8 MiB resumable chunks, larger output split into manifest + objects | 1 GB cap | **Codex** | **(1) numbers** — resumable chunking is what makes the cap survivable; Claude's cap has no ingest story |
+| D19 | Clock handling | Store-side authority time, **plus** a wall/monotonic jump detector that pauses new grants on a >30s jump | Store-side authority time only; worker clocks are informational | **Both** — Codex's detector applies to the local adapter, where "store-side" and "worker-side" are the same machine | Complementary; costs one check |
+| D20 | Behavioural contract framing | **NSC-v1**: three named ports + 10 normative invariants + normalized receipt comparison across adapters | Three seam interfaces + 7 invariants + shared conformance suite | **Codex's NSC-v1 frame**, plus two Claude rules imported verbatim: *every row carries `tenant_id` even locally — local mode is multi-tenant code with one tenant, not single-tenant code*; and *a fix lands as a conformance test first, then two implementations* | **(2) fewer moving parts** for the frame (one versioned contract beats three informal interfaces); Claude's two rules are the sharpest anti-divergence statements either draft produced |
+
+## Judgment calls that survived all six rules
+
+Only **D1 (seam count)** genuinely survived the ladder — it is a call about how the org is shaped,
+not about what the numbers say. Per the rule, both positions are recorded verbatim in ADR-0077,
+the cheaper and more reversible option (3) is taken, and the trigger that would flip it is named.
+D16 is a coin-flip, recorded so it is not re-argued.
+
+## Contradictions in the brief — named, never papered over
+
+Both architects were asked to report these independently, and their lists overlap. Consolidated,
+with the reading taken (always the one that makes the project finishable) and what it costs:
+
+| # | Contradiction | Reading taken | What we gave up |
+|---|---|---|---|
+| C1 | "A zero-Nightshift-file repository mode" vs "documents that should become part of the customer's repository" | Zero-file means zero *unsolicited* files. A reviewed ADR/PRD/release note becomes customer-owned the moment it merges and is therefore not Nightshift clutter. Customers who mean it literally get the stricter **no-generated-file mode**: reviewed patches only, no writes | The literal reading, which would delete the publication requirement outright |
+| C2 | "Semantic memory cannot decide scheduling" vs agents that plan using retrieved context | **Influence allowed, authority denied.** The fence sits at the mutation interface — roles, capabilities, types, and in-transaction predicate recomputation — not inside a planner's head | The unenforceable reading ("memory must not influence planning"), which no mechanism could ever verify |
+| C3 | "Local and production implement the same behavioural contract" vs genuinely different storage and key-custody guarantees | The contract is command outcomes, fencing, idempotency, authority, isolation, provenance, freshness declarations, export and deletion — proven by one conformance suite run against both adapters. Query plans, performance and retrieval *ranking* may differ and are explicitly not contract | Identical implementation, which is impossible offline; custody substitutions are named rather than hidden |
+| C4 | "Preserve everything Nightshift needs to remain explainable" vs redaction, retention, tenant deletion and removing Nightshift | Preserve acknowledged, policy-allowed material for its declared retention window and until an authorised deletion. **Deletion and legal policy win.** Manifests must visibly say when source bytes are no longer retained | Indefinite byte-for-byte preservation — which cannot coexist with a deletion request in any design |
+| C5 | The brief demands capacity-before-technology, then pre-names nine technologies | Read as the required *comparison scope*, not a shortlist endorsement. Every candidate got a verdict justified by a number from `CAPACITY.md` — including four rejections | Nothing; both drafts independently read it this way |

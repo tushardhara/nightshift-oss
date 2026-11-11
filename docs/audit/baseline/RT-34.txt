@@ -1,0 +1,16 @@
+test_permitted_after_authorized_release_generation_recorded (test_claims.RT34RecoveryTransitionRequiredForSequentialReexecution.test_permitted_after_authorized_release_generation_recorded) ... FAIL
+test_permitted_after_ttl_expiry_generation_recorded (test_claims.RT34RecoveryTransitionRequiredForSequentialReexecution.test_permitted_after_ttl_expiry_generation_recorded) ... ok
+test_refused_without_any_recovery_transition (test_claims.RT34RecoveryTransitionRequiredForSequentialReexecution.test_refused_without_any_recovery_transition) ... ok
+
+======================================================================
+FAIL: test_permitted_after_authorized_release_generation_recorded (test_claims.RT34RecoveryTransitionRequiredForSequentialReexecution.test_permitted_after_authorized_release_generation_recorded)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_claims.py", line 364, in test_permitted_after_authorized_release_generation_recorded
+    self.assertEqual(code, 0, rel)
+AssertionError: 2 != 0
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.352s
+
+FAILED (failures=1)

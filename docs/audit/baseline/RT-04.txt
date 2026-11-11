@@ -1,0 +1,50 @@
+test_rt04_an_explicit_override_short_circuits_the_network (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_an_explicit_override_short_circuits_the_network) ... FAIL
+test_rt04_empty_response_fails (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_empty_response_fails) ... ok
+test_rt04_http_failure_fails (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_http_failure_fails) ... ok
+test_rt04_the_diagnostic_is_REACHED_and_names_the_override (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_the_diagnostic_is_REACHED_and_names_the_override)
+The heart of bug 1, and the reason this assertion is behavioural. ... FAIL
+test_rt04_the_happy_path_still_resolves (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_the_happy_path_still_resolves) ... FAIL
+test_rt04_the_real_script_reaches_its_loud_diagnostic (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_the_real_script_reaches_its_loud_diagnostic)
+Pre-fix, `set -e` killed the substitution BEFORE the diagnostic on the ... FAIL
+
+======================================================================
+FAIL: test_rt04_an_explicit_override_short_circuits_the_network (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_an_explicit_override_short_circuits_the_network)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 456, in test_rt04_an_explicit_override_short_circuits_the_network
+    self.assertEqual(code, 0, err)
+AssertionError: 127 != 0 : bash: line 1: nightshift_go_want_version: command not found
+
+======================================================================
+FAIL: test_rt04_the_diagnostic_is_REACHED_and_names_the_override (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_the_diagnostic_is_REACHED_and_names_the_override)
+The heart of bug 1, and the reason this assertion is behavioural.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 447, in test_rt04_the_diagnostic_is_REACHED_and_names_the_override
+    self.assertIn("NIGHTSHIFT_GO_VERSION", err,
+AssertionError: 'NIGHTSHIFT_GO_VERSION' not found in 'bash: line 1: nightshift_go_want_version: command not found' : the diagnostic must be reached and name the override; stderr was: 'bash: line 1: nightshift_go_want_version: command not found'
+
+======================================================================
+FAIL: test_rt04_the_happy_path_still_resolves (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_the_happy_path_still_resolves)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 463, in test_rt04_the_happy_path_still_resolves
+    self.assertEqual(code, 0, err)
+AssertionError: 127 != 0 : bash: line 1: nightshift_go_want_version: command not found
+
+======================================================================
+FAIL: test_rt04_the_real_script_reaches_its_loud_diagnostic (tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly.test_rt04_the_real_script_reaches_its_loud_diagnostic)
+Pre-fix, `set -e` killed the substitution BEFORE the diagnostic on the
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 415, in test_rt04_the_real_script_reaches_its_loud_diagnostic
+    self.assertIn("NIGHTSHIFT_GO_VERSION", out,
+AssertionError: 'NIGHTSHIFT_GO_VERSION' not found in '=== go toolchain\ncurl: (22) 404\n' : the diagnostic never printed - `set -e` killed the script above it:
+=== go toolchain
+curl: (22) 404
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.030s
+
+FAILED (failures=4)

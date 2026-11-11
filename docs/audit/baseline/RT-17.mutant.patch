@@ -1,0 +1,11 @@
+--- a/bin/nightshift-ctl
++++ b/bin/nightshift-ctl
+@@ -1474,7 +1474,7 @@
+     max_w = int(cap["max_concurrent_workers"])
+     reserve = int(cap["reserve_for_oncall"])
+     if kind == "normal":
+-        granted = normal < max_w - reserve and total < max_w
++        granted = normal < max_w and total < max_w
+         if phase == "planning":
+             planning = sum(1 for row in rows if row["phase"] == "planning")
+             planning_cap = max(1, max_w - reserve - 1)

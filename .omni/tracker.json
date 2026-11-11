@@ -1,0 +1,9 @@
+{
+  "provider": "github",
+  "owner": "tushardhara",
+  "repo": "nightshift",
+  "project_number": 2,
+  "project_title": "Delivery — nightshift",
+  "status_issue": "search: Program status",
+  "notes": "Issues are the backlog — the single source of truth. .omni/backlog.md is a cached mirror for offline resume only."
+}

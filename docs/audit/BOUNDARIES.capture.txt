@@ -1,0 +1,166 @@
+Raw capture -- docs/audit/BOUNDARIES.md (issue #480, DoD condition 16)
+Audit SHA: 662600662ee17267aed75bb945556f9a40ae0e42 (checkpoint 6626006; no code changes made
+by this audit -- every command below was run against this exact commit's worktree, or against
+the live host, on 2026-09-01).
+
+Every command below is quoted verbatim in docs/audit/BOUNDARIES.md as a `"type": "command"`
+evidence record, citing the exact section of this file it appears in.
+
+SAFETY NOTE: this audit deliberately never `cat`s or otherwise prints the CONTENTS of any
+credential file. Every command below that touches a credential path uses `ls -la` (filename +
+permission + size metadata only) or a masked-output tool (`gh auth status`). No secret value
+appears anywhere in this file, in docs/audit/BOUNDARIES.md, or in the PR built from them.
+
+=====================================================================
+1. Live identity and group membership (Q2/Q3 -- docker-group evidence)
+=====================================================================
+$ id
+uid=1000(nightshift) gid=1000(nightshift) groups=1000(nightshift),988(docker)
+
+=====================================================================
+2. bwrap functional probe (Q2 -- corroborates blocked.md's "RESOLVED 2026-08-23" entry;
+   this is the SAME probe deploy/lib/deploy-lib.sh:170 (nightshift_bwrap_probe) runs)
+=====================================================================
+$ bwrap --ro-bind / / /bin/true; echo "bwrap_exit=$?"
+bwrap_exit=0
+
+=====================================================================
+3. Orchestrator-terminal (sys_os_shell) credential-mask probe -- F-1
+   (docs/TRUST-BOUNDARY.md:18-19 claims $HOME is never mounted and ~/.ssh, ~/.aws, ~/.claude,
+   ~/.codex, ~/.config are masked inside this exact tool)
+=====================================================================
+$ ls -la ~/.ssh
+total 32
+drwx------  2 nightshift nightshift 4096 Aug 23 04:32 .
+drwxr-x--- 98 nightshift nightshift 4096 Sep  1 19:44 ..
+-rw-------  1 nightshift nightshift  387 Aug 22 18:11 id_ed25519
+-rw-r--r--  1 nightshift nightshift   82 Aug 22 18:11 id_ed25519.pub
+-rw-r--r--  1 nightshift nightshift  142 Aug 23 04:32 known_hosts
+
+$ ls -la ~/.aws
+ls: cannot access '/home/nightshift/.aws': No such file or directory
+
+$ ls -la ~/.claude | head -8
+total 168
+drwxrwxr-x  12 nightshift nightshift  4096 Sep  1 19:37 .
+drwxr-x--- 98 nightshift nightshift  4096 Sep  1 19:44 ..
+-rw-------   1 nightshift nightshift   281 Aug 27 05:29 .credentials.json
+-rw-rw-r--   1 nightshift nightshift    24 Sep  1 19:43 .last-cleanup
+-rw-rw-r--   1 nightshift nightshift   165 Sep  1 19:37 .last-update-result.json
+drwxrwxr-x   2 nightshift nightshift  4096 Sep  1 19:44 backups
+drwxrwxr-x   2 nightshift nightshift  4096 Aug 22 20:31 cache
+
+$ ls -la ~/.codex | head -8
+total 2356
+drwxrwxr-x  4 nightshift nightshift    4096 Aug 22 19:09 .
+drwxr-x--- 98 nightshift nightshift    4096 Sep  1 19:44 ..
+-rw-------  1 nightshift nightshift    4065 Sep  1 18:06 auth.json
+-rw-rw-r--  1 nightshift nightshift     535 Aug 22 17:52 config.toml
+-rw-r--r--  1 nightshift nightshift    4096 Aug 22 19:09 goals_1.sqlite
+-rw-r--r--  1 nightshift nightshift   32768 Aug 28 08:40 goals_1.sqlite-shm
+-rw-r--r--  1 nightshift nightshift   74192 Aug 22 19:09 goals_1.sqlite-wal
+
+$ ls -la ~/.config/gh | head -8
+total 24
+drwxrwx--x 2 nightshift nightshift 4096 Aug 22 18:14 .
+drwxr-xr-x 8 nightshift nightshift 4096 Aug 22 20:48 ..
+-rw------- 1 nightshift nightshift  902 Aug 22 18:14 config.yml
+-rw------- 1 nightshift nightshift  214 Aug 22 18:18 hosts.yml
+
+Result: every path TRUST-BOUNDARY.md's diagram claims is masked ("does not exist") inside this
+tool is fully listable, with full read access to `id_ed25519` (an SSH private key),
+`.credentials.json` (Claude subscription auth) and `auth.json` (Codex subscription auth).
+
+=====================================================================
+4. Namespace evidence -- is sys_os_shell in ANY bwrap-created namespace? (Q2 -- F-1)
+=====================================================================
+$ ls -la /proc/self/ns
+total 0
+dr-x--x--x 2 nightshift nightshift 0 Sep  1 19:44 .
+dr-xr-xr-x 9 nightshift nightshift 0 Sep  1 19:44 ..
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 cgroup -> cgroup:[4026531835]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 ipc -> ipc:[4026531839]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 mnt -> mnt:[4026531841]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 net -> net:[4026531840]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 pid -> pid:[4026531836]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 pid_for_children -> pid:[4026531836]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 time -> time:[4026531834]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 time_for_children -> time:[4026531834]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 user -> user:[4026531837]
+lrwxrwxrwx 1 nightshift nightshift 0 Sep  1 19:44 uts -> uts:[4026531838]
+
+$ grep -i "^NStgid\|^NSpid\|^Seccomp" /proc/self/status
+NStgid:	1276265
+NSpid:	1276265
+Seccomp:	0
+Seccomp_filters:	0
+
+Result: every namespace inode (4026531834-4026531841) is a Linux kernel's well-known DEFAULT
+(initial) namespace id, not a freshly-created bwrap namespace. Seccomp is 0 (no filter active).
+This process is running in the host's initial namespaces, full stop -- consistent with (3)'s
+observed unmasked file access, not an unrelated coincidence.
+
+=====================================================================
+5. GitHub credential scope -- Q2 (docs/TRUST-BOUNDARY.md:43 claims "fine-grained PAT scoped to
+   the ONE project repo... Never a classic PAT, never org-wide") -- F-2
+   NOTE: `gh auth status` prints the token PREFIX AND SCOPES ONLY; it never reveals the token
+   value. This is the safe, standard way to inspect token shape without exfiltrating the secret.
+=====================================================================
+$ gh auth status
+github.com
+  - Logged in to github.com account tushardhara (/home/nightshift/.config/gh/hosts.yml)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'project', 'read:org', 'repo', 'workflow'
+
+Result: the live token carries the `gho_` prefix, which is a GitHub OAuth App (`gh auth login`
+device-flow) token, not a fine-grained PAT (`github_pat_...`). Its `repo` scope is the CLASSIC,
+account-wide repo grant (every repository the account can access), not a fine-grained grant
+scoped to one repository -- there is no fine-grained-PAT mechanism that expresses "one repo"
+within an OAuth App token's scope list at all. `read:org`/`gist`/`project` are also broader than
+"the one project repo".
+
+=====================================================================
+6. Static config verification -- Q2 (F-1's root cause: two DIFFERENT os_env/sandbox blocks
+   exist for the same crew-lead role in the SAME config file; sys_os_shell demonstrably uses the
+   unsandboxed one per capture 3-4 above)
+=====================================================================
+$ sed -n '305,345p' program/agents/crew_alpha/config.yaml
+(quoted in full in docs/audit/BOUNDARIES.md's Q2 evidence as two permalinks:
+ program/agents/crew_alpha/config.yaml:310-314 (top-level os_env, sandbox.type: none) and
+ program/agents/crew_alpha/config.yaml:316-338 (terminals.shell, sandbox.type: auto, with
+ write_paths/read_paths and a comment citing docs/TRUST-BOUNDARY.md by name).)
+
+$ sed -n '650,690p' program/config.yaml
+(same shape, program's own top-level config: program/config.yaml:654-658 (type: none) vs
+ program/config.yaml:660-682 (terminals.shell, type: auto).)
+
+=====================================================================
+7. bwrap/preflight cross-check (Q2 -- confirms condition-5's remediation is function-based, not
+   presence-based, exactly as docs/TRUST-BOUNDARY.md and .omni/blocked.md both state)
+=====================================================================
+$ grep -n "nightshift_bwrap_probe\|nightshift_bwrap_diagnosis" deploy/preflight.sh
+182:if command -v nightshift_bwrap_probe >/dev/null 2>&1; then
+184:  nightshift_bwrap_probe "${NIGHTSHIFT_BWRAP:-bwrap}" || bwrap_code=$?
+186:    ok "$(nightshift_bwrap_diagnosis 0)"
+188:    bad "$(nightshift_bwrap_diagnosis "$bwrap_code")"
+
+=====================================================================
+8. Sink-code review (Q1) -- alert-body construction deliberately excludes raw transcript text
+=====================================================================
+$ grep -n "Raw transcript/error text is intentionally excluded" deploy/nightshift-scheduled-run-detector.py
+254:        "Raw transcript/error text is intentionally excluded.\n\n"
+
+$ sed -n '236,255p' deploy/nightshift-scheduled-run-detector.py
+(quoted in full in docs/audit/BOUNDARIES.md's Q1 evidence: _alert_body() builds the GitHub
+issue-comment body from six templated, structured fields -- task/run/scheduled/status/
+failure_class/count/conversation -- and explicitly never interpolates the assistant-text list
+that _assistant_texts() (same file, line 161) reads from the Omnigent API response.)
+
+=====================================================================
+9. CI secret handling (Q1) -- only one workflow uses a secret, as an env var, no verbose tracing
+=====================================================================
+$ grep -rn "secrets\.\|GH_TOKEN\|set -x\|set -eux" .github/workflows/*.yml
+.github/workflows/live-api-smoke.yml:34:        env:
+.github/workflows/live-api-smoke.yml:35:          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,11 @@
+--- a/bin/nightshift-ctl
++++ b/bin/nightshift-ctl
+@@ -1736,7 +1736,7 @@
+         out({"granted": True, "claim_id": claim_id, "task": args.task,
+              "generation": generation, "run_id": run_id,
+              "expires_at": t + ttl})
+-    except sqlite3.IntegrityError:
++    except sqlite3.OperationalError:
+         holder = cx.execute(
+             "SELECT * FROM task_claims WHERE task_id=? AND state='active'",
+             (args.task,)).fetchone()

@@ -1,0 +1,59 @@
+[Unit]
+Description=Omnigent host daemon (runner: harness CLIs, tools, worktrees)
+Documentation=https://omnigent.ai/docs/deploy/overview
+After=omnigent-server.service
+Requires=omnigent-server.service
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_DIR__
+# Root-owned (deploy/install-root-config.sh): it sets the policy path and
+# the merge-fence scope, so the runtime user must not be able to edit it.
+EnvironmentFile=/etc/nightshift/server.env
+# __TEAMS_DIR__/bin FIRST: this is the process that actually execs the harness
+# CLIs' shell tool calls, so a rewritten prompt that calls `nightshift-file-issue`
+# bare (deploy/policies/nightshift_issue_fence.py's sanctioned wrapper) must find
+# it on PATH the same way nightshift-watchdog.service already resolves
+# nightshift-ctl this way (#42) -- ~/.local/bin has no symlink for it.
+Environment=PATH=__TEAMS_DIR__/bin:__HOME__/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=HARNESS_CODEX_DISABLE_NATIVE_TOOLS=1
+Environment=HARNESS_CODEX_ENABLE_WEB_SEARCH=0
+UnsetEnvironment=NIGHTSHIFT_SEMAPHORE_FAIL_OPEN NIGHTSHIFT_AUTHORITY_FAIL_OPEN
+# The runner is what actually spawns claude/codex, so it needs their credential
+# homes and a HOME that matches where `claude setup-token` / `codex login` wrote.
+Environment=HOME=__HOME__
+
+# Wait for the server socket before registering, otherwise the first attempt
+# races the server's startup and the unit flaps.
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 60); do curl -sf http://127.0.0.1:6767/health >/dev/null 2>&1 && exit 0; sleep 2; done; exit 0'
+
+# --non-interactive: never try to open a browser for sign-in on a headless box;
+# fail with the `omnigent login` hint instead so the failure is legible.
+ExecStart=__HOME__/.local/bin/omnigent host --server http://127.0.0.1:6767 --non-interactive
+
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=0
+
+# Nothing under this tree may escalate via setuid — compatible with bwrap's
+# unprivileged user namespaces. Deeper unit-level sandboxing (ProtectSystem=
+# etc.) is deliberately NOT used: user-manager namespace options fail on
+# Ubuntu 24.04's userns restrictions and would brick the service at boot.
+# The mount-namespace duty belongs to bwrap. See docs/TRUST-BOUNDARY.md.
+NoNewPrivileges=yes
+
+# Runners fork the harness CLIs; give the cgroup room for 2 crews x 2 workers
+# plus test runs, and let the kernel kill a runaway worker before the box dies.
+# Values are derived from detected host RAM by bootstrap.sh (lib/deploy-lib.sh:
+# 16G box -> 11G/13G, 32G box -> 24G/28G), leaving the reserve for the OS,
+# Docker+Postgres, the omnigent server, Tailscale and journald.
+MemoryHigh=__MEMORY_HIGH__
+MemoryMax=__MEMORY_MAX__
+TasksMax=4096
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omnigent-host
+
+[Install]
+WantedBy=default.target

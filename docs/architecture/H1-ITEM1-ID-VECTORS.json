@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "nightshift.project-run-id-vectors",
+  "vectors": [
+    {
+      "repository_id": 1344257718,
+      "request_id": "h1-102-item1-20260825-a",
+      "canonical_preimage_hex": "6e6967687473686966742e70726f6a6563742d72756e2e763100313334343235373731380068312d3130322d6974656d312d32303236303832352d61",
+      "sha256_hex": "431125b6f0044891469662b24f5bf74fd10bdb4b0d347826bfa5a30c4f7d792d",
+      "project_run_id": "prun_v1_imislnxqarejcruwmkze6w7xj7"
+    },
+    {
+      "repository_id": 1,
+      "request_id": "a",
+      "canonical_preimage_hex": "6e6967687473686966742e70726f6a6563742d72756e2e763100310061",
+      "sha256_hex": "072e15ac8ad6d6c6f3bc7b12eb6424f8c4894cd85a9eff36dcd3715e2c620bbc",
+      "project_run_id": "prun_v1_a4xbllek23lmn454pmjowzbe7d"
+    },
+    {
+      "repository_id": 1344257719,
+      "request_id": "h1-102-item1-20260825-a",
+      "canonical_preimage_hex": "6e6967687473686966742e70726f6a6563742d72756e2e763100313334343235373731390068312d3130322d6974656d312d32303236303832352d61",
+      "sha256_hex": "905c96bee8dec45fc50afa636944e14937473eaf9fd16d42227eab032fe9a645",
+      "project_run_id": "prun_v1_sbojnpxi33cf7rik7jrwsrhbje"
+    }
+  ]
+}

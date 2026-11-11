@@ -1,0 +1,36 @@
+test_rt15_all_three_scripts_probe_by_function (tests.test_bwrap_probe.RT15NoPresenceOnlyCheckSurvives.test_rt15_all_three_scripts_probe_by_function) ... FAIL
+test_rt15_manifest_is_not_empty (tests.test_bwrap_probe.RT15NoPresenceOnlyCheckSurvives.test_rt15_manifest_is_not_empty) ... ok
+test_rt15_no_presence_only_bwrap_check_in_deploy (tests.test_bwrap_probe.RT15NoPresenceOnlyCheckSurvives.test_rt15_no_presence_only_bwrap_check_in_deploy) ... FAIL
+
+======================================================================
+FAIL: test_rt15_all_three_scripts_probe_by_function (tests.test_bwrap_probe.RT15NoPresenceOnlyCheckSurvives.test_rt15_all_three_scripts_probe_by_function)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-12/tests/test_bwrap_probe.py", line 250, in test_rt15_all_three_scripts_probe_by_function
+    self.assertTrue(
+AssertionError: False is not true : deploy/preflight.sh does not call nightshift_bwrap_probe — it must probe bwrap by function, not presence (DoD condition 5)
+
+======================================================================
+FAIL: test_rt15_no_presence_only_bwrap_check_in_deploy (tests.test_bwrap_probe.RT15NoPresenceOnlyCheckSurvives.test_rt15_no_presence_only_bwrap_check_in_deploy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-12/tests/test_bwrap_probe.py", line 240, in test_rt15_no_presence_only_bwrap_check_in_deploy
+    self.assertEqual(
+AssertionError: Lists differ: ['deploy/bootstrap.sh:37: node --version; [204 chars]; }'] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+'deploy/bootstrap.sh:37: node --version; tmux -V; command -v bwrap || echo "WARN: bubblewrap missing (native terminals will fail)"'
+
++ []
+- ['deploy/bootstrap.sh:37: node --version; tmux -V; command -v bwrap || echo '
+-  '"WARN: bubblewrap missing (native terminals will fail)"',
+-  'deploy/provision-ubuntu.sh:90: command -v bwrap >/dev/null || { echo '
+-  '"bubblewrap failed to install" >&2; exit 1; }'] : presence-only bwrap checks still present — a box where bwrap is installed but cannot run would pass these:
+  deploy/bootstrap.sh:37: node --version; tmux -V; command -v bwrap || echo "WARN: bubblewrap missing (native terminals will fail)"
+  deploy/provision-ubuntu.sh:90: command -v bwrap >/dev/null || { echo "bubblewrap failed to install" >&2; exit 1; }
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.004s
+
+FAILED (failures=2)

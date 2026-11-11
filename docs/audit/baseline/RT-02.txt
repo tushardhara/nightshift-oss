@@ -1,0 +1,32 @@
+test_rt02_a_missing_checksum_entry_is_a_hard_failure (tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail.test_rt02_a_missing_checksum_entry_is_a_hard_failure) ... ok
+test_rt02_http_failure_still_fails_loudly (tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail.test_rt02_http_failure_still_fails_loudly) ... ok
+test_rt02_resolves_a_checksum_under_set_euo_pipefail (tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail.test_rt02_resolves_a_checksum_under_set_euo_pipefail) ... FAIL
+test_rt02_the_real_script_completes_the_checksum_path (tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail.test_rt02_the_real_script_completes_the_checksum_path)
+Site B on the happy path: an OLD Go is present, so control enters the ... ok
+test_rt02_the_real_script_reaches_its_unverified_toolchain_refusal (tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail.test_rt02_the_real_script_reaches_its_unverified_toolchain_refusal)
+Site B's REACHABLE defect, and the honest one. ... FAIL
+
+======================================================================
+FAIL: test_rt02_resolves_a_checksum_under_set_euo_pipefail (tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail.test_rt02_resolves_a_checksum_under_set_euo_pipefail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 329, in test_rt02_resolves_a_checksum_under_set_euo_pipefail
+    self.assertEqual(code, 0, f"checksum lookup aborted under pipefail: {err}")
+AssertionError: 127 != 0 : checksum lookup aborted under pipefail: bash: line 1: nightshift_go_checksum: command not found
+
+======================================================================
+FAIL: test_rt02_the_real_script_reaches_its_unverified_toolchain_refusal (tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail.test_rt02_the_real_script_reaches_its_unverified_toolchain_refusal)
+Site B's REACHABLE defect, and the honest one.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 319, in test_rt02_the_real_script_reaches_its_unverified_toolchain_refusal
+    self.assertIn("refusing to install an unverified toolchain", out,
+AssertionError: 'refusing to install an unverified toolchain' not found in '=== go toolchain\ncurl: (22) 404\n' : the refusal never printed - `set -e` killed the script above it:
+=== go toolchain
+curl: (22) 404
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.068s
+
+FAILED (failures=2)

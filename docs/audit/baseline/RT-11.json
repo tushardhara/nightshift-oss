@@ -1,0 +1,54 @@
+{
+  "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+  "command": "python3 -m unittest -v tests.test_watchdog.RT11NoServiceMutation",
+  "exit_code": 0,
+  "output_path": "docs/audit/baseline/RT-11.txt",
+  "kind": "preservation",
+  "note": "PRESERVATION property. The pre-fix watchdog already never managed services - its own header promised it - so this test cannot fail against 139726e without contriving a failure, and a contrived non-zero baseline is precisely the false evidence condition 8 exists to police. The passing capture below proves the property PRE-EXISTED the fix; the mutation captures prove the test can actually detect its loss.",
+  "kind_derivation": "exit_code == 0 => preservation (product ruling, 2026-08-22). Declared here only because it AGREES with the capture; a disagreement is a hard FAIL.",
+  "production": {
+    "file": "deploy/nightshift-watchdog.sh",
+    "symbol": "the alert path's read-only service diagnostics, and the alive-path early return",
+    "symbol_note": "A flat bash script has no function symbols on these paths, so the binding is made exact by the committed patches rather than by a name: each names the surrounding lines and applies cleanly to this file at bdcdcfc."
+  },
+  "mutations": [
+    {
+      "id": "RT-11.M1",
+      "target_path": "alert path (reached when the Program is NOT alive)",
+      "patch_path": "docs/audit/baseline/RT-11.mutant.patch",
+      "mutation": "insert `systemctl --user restart omnigent-server` before the read-only is-active diagnostics",
+      "rationale": "the realistic regression: a well-meaning 'the service looks dead, restart it' self-heal. Restarting kills in-flight worker turns.",
+      "command": "python3 -m unittest -v tests.test_watchdog.RT11NoServiceMutation",
+      "exit_code": 1,
+      "output_path": "docs/audit/baseline/RT-11.mutation.txt",
+      "subtests_failed": [
+        "path='stale'",
+        "path='error'"
+      ],
+      "subtests_passed": [
+        "path='alive'"
+      ],
+      "subtests_passed_reason": "the alive branch returns before this block, so M1 is unreachable there. Covered by M2.",
+      "applied_to_sha": "bdcdcfc1f3f4da0077f09fcfdc6588cff242e617",
+      "committed_to_branch": false
+    },
+    {
+      "id": "RT-11.M2",
+      "target_path": "alive path (early return when the Program IS alive)",
+      "patch_path": "docs/audit/baseline/RT-11.mutant-alive.patch",
+      "mutation": "insert `systemctl --user restart omnigent-host` into the alive branch before its exit 0",
+      "rationale": "M1 cannot reach the alive branch, so without M2 the path='alive' subtest would have no mutation proof at all - the same self-attestation trap this whole record exists to avoid.",
+      "command": "python3 -m unittest -v tests.test_watchdog.RT11NoServiceMutation",
+      "exit_code": 1,
+      "output_path": "docs/audit/baseline/RT-11.mutation-alive.txt",
+      "subtests_failed": [
+        "path='alive'"
+      ],
+      "applied_to_sha": "bdcdcfc1f3f4da0077f09fcfdc6588cff242e617",
+      "committed_to_branch": false
+    }
+  ],
+  "mutation_hygiene": "Both patches are EVIDENCE only. They are generated, applied to a scratch working tree, captured, and reverted; `git diff -- deploy/nightshift-watchdog.sh` is empty in the commit that adds them. The mutated code is never committed to a mergeable branch. Re-captured after the issue-#26 naming edit to deploy/nightshift-watchdog.sh; both patches still `git apply --check` clean (git tolerates line offsets) and both still exit 1. applied_to_sha is refreshed to the commit carrying that edit.",
+  "insufficient_alternative": "test_rt11_the_instrumented_boundary_can_actually_fire is retained and is NOT this evidence: it appends a mutation string to the journal by hand, so it proves the DETECTOR parses such a call, not that one reached from the watchdog's real code path would arrive at the boundary. Only M1/M2 prove that.",
+  "perishability_note": "Raised as finding N2 on PR #25: condition 8 as drafted requires the mutant patch to apply to THE TIP, so this evidence perishes if any CONTEXT line changes - verified that rewording a nearby comment is sufficient to break it. Recommended remedy there is a `mutant_base_sha` field mirroring `baseline_sha`. Until that is settled these captures are re-run whenever this file changes."
+}

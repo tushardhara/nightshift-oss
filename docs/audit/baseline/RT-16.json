@@ -1,0 +1,66 @@
+{
+  "baseline_sha": "6b52252ff8c4975ffc30a59b3142ae6b86a90875",
+  "command": "cd tests && python3 -m unittest -v test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_session_create_is_not_an_authorized_dispatch_form test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_opaque_session_id_cannot_prove_the_target test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches",
+  "exit_code": 1,
+  "output_path": "docs/audit/baseline/RT-16.txt",
+  "kind": "regression",
+  "note": "ADR-0069 regression capture, extended by ADR-0074 with a fourth node. Two fixture-free bypass denials fail because the ancestor returns ALLOW; the positive control and the consumed-slot exclusion node fail because the ancestor requires caller-supplied args.slot_id instead of deriving and consuming the matching slot. Fixture setup completes before every property assertion. SCOPE OF THE F-1 CLAIM (ADR-0074 decision 2, verbatim): \"F-1 makes a consumed slot a derivation candidate; the observable consequence is a false ambiguity denial on the index-sanctioned reuse path, asserted on persisted worker_slots columns. F-1 cannot produce a duplicate dispatch: the one-use compare-and-set independently forecloses it.\" The kill is on the LIVENESS face, not the safety face; a reviewer who expects \"the mutant lets a bad dispatch through\" is right to reject that framing, because no such scenario exists. Additionally: at ancestor 6b52252 the new node fails at its FIRST assertion for the same reason the existing positive control does (args.slot_id required), so it contributes a MUTATION KILL AT HEAD, NOT INDEPENDENT ANCESTOR REGRESSION EVIDENCE.",
+  "production": {
+    "file": "deploy/policies/omnipods_policies.py",
+    "symbol": "worker_semaphore"
+  },
+  "capture": {
+    "composition": "HYBRID TREE. This is a genuine hybrid and always will be: RT-16's regression evidence is only meaningful against an ancestor policy module, so the tests, the CLI and every other file come from the test SHA while exactly one file comes from the baseline SHA. staff finding F-8 exists because that composition was previously unrecorded.",
+    "test_source_sha": "801262bb0ecea298cd9830090ecdacd5a72941a9",
+    "test_source_note": "The ADR renumber commit 801262bb (the id-collision fix for PR #594), which is the first commit whose test docstrings match this capture's recorded text. All four bound nodes are present in tests/test_admission_derivation.py at this SHA, and that file is byte-identical here and at the branch head, so the capture is reproducible from this immutable id alone. It moved from 5b1d39fbe18de70b3d21e80021cf705b6b072d83 (the commit that introduced node 4) because `unittest -v` echoes each test's docstring first line, so the renumber changed this capture's own recorded output -- leaving the old SHA would hand a reader pre-renumber docstrings against a post-renumber capture. NOT the PR base c34d23b -- node 4 does not exist there (`git show c34d23b:tests/test_admission_derivation.py | grep -c test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches` -> 0) -- and NOT the PR head, which is self-referential and goes stale on the next commit.",
+    "swapped_file": "deploy/policies/omnipods_policies.py",
+    "swapped_from_sha": "6b52252ff8c4975ffc30a59b3142ae6b86a90875",
+    "swapped_into": "the same path of a clean checkout of test_source_sha (a real file in a full repo-shaped tree; see trap_o_nofollow)",
+    "extraction_command": "git show 6b52252ff8c4975ffc30a59b3142ae6b86a90875:deploy/policies/omnipods_policies.py > <tree>/deploy/policies/omnipods_policies.py",
+    "reproduce": [
+      "git worktree add --detach /tmp/rt16anc 801262bb0ecea298cd9830090ecdacd5a72941a9",
+      "git show 6b52252ff8c4975ffc30a59b3142ae6b86a90875:deploy/policies/omnipods_policies.py > /tmp/rt16anc/deploy/policies/omnipods_policies.py",
+      "cd /tmp/rt16anc/tests && python3 -m unittest -v <the four node ids in `command` above>",
+      "# expect: Ran 4 tests, FAILED (failures=4), exit 1, errors=0, no setUp/import/loader error",
+      "# traceback file paths in RT-16.txt reflect whichever tree the capture was taken in; only the four assertions, the counters and the exit code are part of the expected output"
+    ],
+    "trap_o_nofollow": "The CURRENT deploy/policies/omnipods_policies.py calls _load_attested_controller() at import time, opening Path(__file__).resolve().parents[2]/bin/nightshift-ctl with O_RDONLY|O_CLOEXEC|O_NOFOLLOW. A symlinked bin/nightshift-ctl, or a bare directory holding only the policy file, therefore fails with \"ImportError: cannot open admission controller: <path>\" before any test runs. The 6b52252 policy has NO such loader (it imports only os, re, sqlite3, time), so swapping TO the ancestor works -- but only inside a full repo-shaped tree with a real bin/nightshift-ctl file. Swapping the other way, or symlinking, does not.",
+    "expected": {
+      "testsRun": 4,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0
+    },
+    "setup_failure_discriminator": "unittest reports a property miss as a FAILURE and a setUp/import/loader/CLI-init/fixture collapse as an ERROR. This capture must show failures=4, errors=0, and its text must contain no 'in setUp', 'ImportError', 'ModuleNotFoundError', 'AttributeError: module', or '_FailedTest' occurrence. Verified on capture: none present. The third and fourth nodes' recorded reasons are the ancestor evaluator's own args.slot_id refusal, which is itself proof that the database and CLI fixture completed before the policy was consulted.",
+    "negative_control": {
+      "what": "Running baseline_sha + command with NO swap -- i.e. a PURE 6b52252 checkout, which is what a reader who takes the two recorded fields at face value would do.",
+      "command": "git worktree add --detach /tmp/pure6b 6b52252ff8c4975ffc30a59b3142ae6b86a90875 && cd /tmp/pure6b/tests && python3 -m unittest -v <the four node ids above>",
+      "measured": "FAILED (errors=4), exit 1. ImportError / ModuleNotFoundError: No module named 'test_admission_derivation' -- the file does not exist at 6b52252 at all. testsRun=4, failures=0, errors=4.",
+      "why_it_matters": "Same exit code (1) as the real capture, for an entirely different reason: nothing was tested. This is precisely staff finding F-8's point, and it is why the swap procedure above is load-bearing rather than incidental. The FAILURE-vs-ERROR counters separate the two unambiguously: the real capture is failures=4/errors=0, this one is failures=0/errors=4. A reviewer re-running the bare (baseline_sha, command) pair and seeing exit 1 must not read that as corroboration.",
+      "note_on_the_spec": "docs/specs/506-step2-manifest-binding.md item 5 criterion 3 describes this negative control as reproducing 'exit 1, failures=3' with the third failure in setUp ('AssertionError: 2 != 0', the ancestor CLI rejecting today's argv). That is not what this file/SHA pair produces -- tests/test_admission_derivation.py was added long after 6b52252, so the module cannot even be imported and no test body runs. The measurement above is recorded in preference to the spec's description; flagged to pm."
+    },
+    "expected_failure_per_node": {
+      "test_session_create_is_not_an_authorized_dispatch_form": "AssertionError: 'ALLOW' != 'DENY' -- the ancestor does not treat sys_session_create as a non-dispatch form",
+      "test_opaque_session_id_cannot_prove_the_target": "AssertionError: 'ALLOW' != 'DENY' -- the ancestor admits an opaque session_id send",
+      "test_live_bound_slot_allows_once_and_records_dispatch": "AssertionError: 'DENY' != 'ALLOW' -- the ancestor requires caller-supplied args.slot_id instead of deriving the live slot",
+      "test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches": "AssertionError: 'DENY' != 'ALLOW' -- same ancestor args.slot_id refusal, at this node's FIRST assertion (see note: mutation kill at HEAD, not ancestor regression evidence)"
+    }
+  },
+  "mutations": [
+    {
+      "id": "RT-16.M1",
+      "target_path": "the three `dispatched_at IS NULL` sites in worker_semaphore (derivation SELECT, oncall one-use CAS, generation-guarded one-use CAS)",
+      "patch_path": "docs/audit/baseline/RT-16.mutant.patch",
+      "mutation": "delete `dispatched_at IS NULL` from all three sites, so a consumed slot becomes a derivation candidate again",
+      "rationale": "Issue #608. A consumed slot must never be re-derived. Under this mutant the index-sanctioned identity-reuse path becomes a two-row `ambiguous dispatch identity` denial, which the fourth node detects on persisted worker_slots columns with no dependence on any reason string (issue #607).",
+      "command": "cd tests && python3 -m unittest -v test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_session_create_is_not_an_authorized_dispatch_form test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_opaque_session_id_cannot_prove_the_target test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches",
+      "exit_code": 1,
+      "output_path": "docs/audit/baseline/RT-16.mutation.txt",
+      "applied_to_sha": "801262bb0ecea298cd9830090ecdacd5a72941a9",
+      "committed_to_branch": false,
+      "observed": "FAILED (failures=2): the pre-existing positive control (via its reason-string assertion) and the new consumed-slot exclusion node (via `second['result']` and its persisted-state assertions). The two fixture-free bypass nodes are unaffected, as expected.",
+      "not_validated_by_dod_validate": "RT-16 is a `regression`-kind record, and tests/dod_validate.py's validate_rt_baseline only invokes _validate_mutation when derived_kind == 'preservation'. This mutations array is therefore audit evidence for #608 and is NOT mechanically checked by the validator; it does not gate D06's flip. Claim no validator coverage for it.",
+      "applied_to_sha_note": "Moved from c34d23b93b7bb7e84f9919ccf9555ffa65114bd3 for the same reason as capture.test_source_sha above, and in the same commit that re-took this capture: RT-16.mutation.txt echoes the test docstrings, so it must name the tree it was actually captured in. The patch itself is unchanged and deploy/policies/omnipods_policies.py is byte-identical at both SHAs, so the mutation is identical either way -- only the capture's provenance moves. Verified: the patch applies cleanly at this SHA."
+    }
+  ]
+}

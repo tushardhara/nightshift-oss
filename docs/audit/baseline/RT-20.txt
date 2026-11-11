@@ -1,0 +1,83 @@
+test_fresh_database_has_the_fencing_columns (test_fencing.FencingMigrationTest.test_fresh_database_has_the_fencing_columns) ... FAIL
+test_generation_defaults_are_present_and_do_not_enforce (test_fencing.FencingMigrationTest.test_generation_defaults_are_present_and_do_not_enforce)
+Columns carry a value; nothing is refused on account of it. ... ERROR
+test_migration_is_additive_on_a_pre_existing_database (test_fencing.FencingMigrationTest.test_migration_is_additive_on_a_pre_existing_database)
+The dispatched_at pattern (bin/nightshift-ctl ensure_schema): an ... ERROR
+test_a_genuinely_different_schema_error_still_propagates (test_fencing.MigrationConcurrencyTest.test_a_genuinely_different_schema_error_still_propagates)
+Swallowing every OperationalError would turn this fix into a much ... ERROR
+test_losing_the_add_column_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_add_column_race_is_not_an_error)
+The loser's PRAGMA snapshot said the column was missing; by the time ... FAIL
+test_losing_the_rename_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_rename_race_is_not_an_error)
+The pod -> crew RENAME loop is the same race in the same function. ... ERROR
+test_parallel_invocations_against_a_pre_migration_db_never_crash (test_fencing.MigrationConcurrencyTest.test_parallel_invocations_against_a_pre_migration_db_never_crash)
+Integration guard, PROBABILISTIC by nature: whether the losers ... ERROR
+
+======================================================================
+ERROR: test_generation_defaults_are_present_and_do_not_enforce (test_fencing.FencingMigrationTest.test_generation_defaults_are_present_and_do_not_enforce)
+Columns carry a value; nothing is refused on account of it.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_fencing.py", line 81, in test_generation_defaults_are_present_and_do_not_enforce
+    row = cx.execute("SELECT generation FROM worker_slots WHERE id=?",
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: generation
+
+======================================================================
+ERROR: test_migration_is_additive_on_a_pre_existing_database (test_fencing.FencingMigrationTest.test_migration_is_additive_on_a_pre_existing_database)
+The dispatched_at pattern (bin/nightshift-ctl ensure_schema): an
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_fencing.py", line 53, in test_migration_is_additive_on_a_pre_existing_database
+    cx.execute(f"ALTER TABLE {table} DROP COLUMN {col}")
+sqlite3.OperationalError: no such column: "generation"
+
+======================================================================
+ERROR: test_a_genuinely_different_schema_error_still_propagates (test_fencing.MigrationConcurrencyTest.test_a_genuinely_different_schema_error_still_propagates)
+Swallowing every OperationalError would turn this fix into a much
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_fencing.py", line 151, in test_a_genuinely_different_schema_error_still_propagates
+    ctl.add_column(cx, "no_such_table_at_all", "x", "TEXT")
+    ^^^^^^^^^^^^^^
+AttributeError: module 'nsctl' has no attribute 'add_column'
+
+======================================================================
+ERROR: test_losing_the_rename_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_rename_race_is_not_an_error)
+The pod -> crew RENAME loop is the same race in the same function.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_fencing.py", line 164, in test_losing_the_rename_race_is_not_an_error
+    ctl.rename_column(cx, "worker_slots", "pod", "crew")   # must not raise
+    ^^^^^^^^^^^^^^^^^
+AttributeError: module 'nsctl' has no attribute 'rename_column'
+
+======================================================================
+ERROR: test_parallel_invocations_against_a_pre_migration_db_never_crash (test_fencing.MigrationConcurrencyTest.test_parallel_invocations_against_a_pre_migration_db_never_crash)
+Integration guard, PROBABILISTIC by nature: whether the losers
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_fencing.py", line 179, in test_parallel_invocations_against_a_pre_migration_db_never_crash
+    cx.execute(f"ALTER TABLE {table} DROP COLUMN {col}")
+sqlite3.OperationalError: no such column: "generation"
+
+======================================================================
+FAIL: test_fresh_database_has_the_fencing_columns (test_fencing.FencingMigrationTest.test_fresh_database_has_the_fencing_columns)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_fencing.py", line 39, in test_fresh_database_has_the_fencing_columns
+    self.assertIn(col, have, f"{table}.{col}")
+AssertionError: 'generation' not found in {'expires_at', 'state', 'dispatched_at', 'bound_title', 'acquired_at', 'bound_agent', 'crew', 'kind', 'released_at', 'holder', 'task_id', 'id'} : worker_slots.generation
+
+======================================================================
+FAIL: test_losing_the_add_column_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_add_column_race_is_not_an_error)
+The loser's PRAGMA snapshot said the column was missing; by the time
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/recap-base/tests/test_fencing.py", line 136, in test_losing_the_add_column_race_is_not_an_error
+    self.assertIn("generation", cols(c.db, "worker_slots"))
+AssertionError: 'generation' not found in {'expires_at', 'state', 'dispatched_at', 'bound_title', 'acquired_at', 'bound_agent', 'crew', 'kind', 'released_at', 'holder', 'task_id', 'id'}
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.666s
+
+FAILED (failures=2, errors=5)

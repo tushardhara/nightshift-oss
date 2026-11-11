@@ -1,0 +1,43 @@
+#cloud-config
+# EC2 user-data for the Nightshift box — the THIN AWS layer. All real
+# provisioning lives in deploy/provision-ubuntu.sh (provider-neutral); this
+# file only prepares a fresh instance to receive the bundle and run it.
+#
+#   AMI:      Ubuntu 24.04 LTS (arm64 for m8g/t4g, amd64 for m7i)
+#   Type:     m7i.xlarge (4 vCPU / 16 GB) or m8g.xlarge (arm64, cheaper)
+#   Storage:  100 GB gp3
+#   SG:       NO inbound rules at all. Access arrives over Tailscale.
+#             (Use SSM or a temporary port-22 rule for the first session.)
+#   IAM role: none required (add only if the project itself needs AWS)
+#   Metadata: --metadata-options HttpTokens=required,HttpPutResponseHopLimit=1
+#             (IMDSv2 only); disable IMDS after first boot if no role
+#
+# Credentials and the agent bundle are NOT provisioned here on purpose — they
+# need one interactive SSH session (see deploy/README.md).
+#
+# Older boxes: instances launched from the previous fat cloud-init ran as
+# `ubuntu`, which has NOPASSWD sudo; preflight FAILs on that. Migrate them to
+# the `nightshift` user (providers/aws/README.md).
+
+package_update: true
+package_upgrade: true
+
+# Just enough to fetch and run the generic provisioning script.
+packages:
+  - git
+  - curl
+  - ca-certificates
+
+final_message: |
+  Base instance ready. Now, from your laptop (as the default `ubuntu`
+  login user, or via SSM):
+    1. copy the bundle:   rsync -a ~/.nightshift/ ubuntu@<ip>:/tmp/nightshift/
+    2. provision:         sudo NIGHTSHIFT_USER=nightshift /tmp/nightshift/deploy/provision-ubuntu.sh
+                          # creates the `nightshift` runtime user, /srv/nightshift,
+                          # /srv/project, docker, node 22, tailscale, ...
+    3. move the bundle:   sudo rsync -a --chown=root:root /tmp/nightshift/ /srv/nightshift/
+    4. join the tailnet:  sudo tailscale up --ssh
+    5. UI:                loopback only (ssh -L 6767:127.0.0.1:6767); tailnet serve is
+                          opt-in with an ACL: deploy/README.md "Control API"
+    6. continue as the runtime user per deploy/README.md
+  AWS specifics (SG posture, EBS snapshots, recovery tiers): deploy/providers/aws/README.md

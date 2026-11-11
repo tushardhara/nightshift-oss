@@ -1,0 +1,21 @@
+{
+  "_comment": "Issue #442 / ADR-0086. RULES layer: declared, frozen, versioned -- BINDING. Deliberately generic: no language, framework, build tool or runner is named here. bin/nightshift_conformance.py derives what is PERMITTED from this file's rule KINDS plus the base contract's own FACTS, never from a hardcoded stack list -- issue #439's core-portability guardrail scans bin/, deploy/, program/ for exactly the tokens a hardcoded list would need, and this file must need none of them. A waiver requires an 'adr' reference and permits ONLY the exact {kind, value} pair it names -- e.g. migrating an e2e suite from one framework to another routes through an ADR, supersedes the contract for that one value, and only then is the new framework permitted.",
+  "schema_version": 1,
+  "rules": [
+    {
+      "id": "R-001",
+      "kind": "no_undeclared_language",
+      "binding": true,
+      "violation": "undeclared_language",
+      "contract_fields": ["languages"]
+    },
+    {
+      "id": "R-002",
+      "kind": "no_undeclared_test_framework",
+      "binding": true,
+      "violation": "undeclared_test_framework",
+      "contract_fields": ["test", "integration", "e2e"]
+    }
+  ],
+  "waivers": []
+}

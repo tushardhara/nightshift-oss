@@ -1,0 +1,14 @@
+test_rt14_working_bwrap_reports_the_functional_probe_ok (tests.test_bwrap_probe.RT14ProbeSuccessRaisesNothing.test_rt14_working_bwrap_reports_the_functional_probe_ok) ... FAIL
+
+======================================================================
+FAIL: test_rt14_working_bwrap_reports_the_functional_probe_ok (tests.test_bwrap_probe.RT14ProbeSuccessRaisesNothing.test_rt14_working_bwrap_reports_the_functional_probe_ok)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-12/tests/test_bwrap_probe.py", line 207, in test_rt14_working_bwrap_reports_the_functional_probe_ok
+    self.assertTrue(
+AssertionError: False is not true : the ok line must record that bwrap was EXECUTED, not merely found: ['ok   bwrap -> /usr/bin/bwrap']
+
+----------------------------------------------------------------------
+Ran 1 test in 2.995s
+
+FAILED (failures=1)

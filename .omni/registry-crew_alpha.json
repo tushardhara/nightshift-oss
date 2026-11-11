@@ -1,0 +1,741 @@
+{
+  "crew": "crew_alpha",
+  "seam": "A — coordination and workflow semantics",
+  "wave": 1,
+  "base_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+  "charter": ".omni/charters/wave1-crew_alpha.md",
+  "dispatch_mode": {
+    "workers_dispatchable": false,
+    "verbatim_error": "Error: sys_session_send requires parent session inbox",
+    "settles": "issue #13, reproduced again this session against pm, eng_claude (4 attempts, 2 distinct agent types) from a session with a normal live parent_session_id -- broader than 'grandchild dispatch': ordinary direct-child dispatch for a freshly cold-dispatched crew lead is blocked",
+    "authority_this_session": "current charter (heartbeat-1823 dispatch) contains no fallback-build clause, unlike the wave-1 charter row this field previously recorded. Crew_alpha lead's system prompt states unconditionally 'never write source or test code yourself' with no carve-out. Decision: do not build code as the lead this session -- see .omni/decisions.md 18:30Z 2026-08-23 entry.",
+    "consequence": "no PM criteria/DoR, no two-vendor debate, no engineer, no QA, no reviewer this session. ADR-0009 written single-author by the lead and explicitly flagged as such. No implementation shipped.",
+    "slot_96": "acquired by the program before this session started, never bound to a worker, released back to the pool (not left idle)."
+  },
+  "items": [
+    {
+      "id": "alpha-w1-1",
+      "title": "Publish the LIVENESS-RECORD v1 handoff",
+      "issue": 11,
+      "state": "ready",
+      "artifact": ".omni/handoffs/LIVENESS-RECORD-v1.md",
+      "blocks": "crew_beta watchdog consumer",
+      "acceptance_criteria": [
+        {
+          "n": 1,
+          "text": "States the heartbeat record, its schema, and who is permitted to write it",
+          "met": true,
+          "evidence": "§1 — 8-field table; per-owner write table; explicit ban on the state-backup writing heartbeat:program"
+        },
+        {
+          "n": 2,
+          "text": "States who renews worker slots and who may NOT — the watchdog may not",
+          "met": true,
+          "evidence": "§2 — holder-only renewal; watchdog may renew nothing; staged-deletion warning that renew-active still exists and must not be removed while consuming this contract"
+        },
+        {
+          "n": 3,
+          "text": "States exit-code semantics including that 3 = denied/held/cooling, never an error",
+          "met": true,
+          "evidence": "§3 — code table, six reason_codes, and the `set -e` trap spelled out because exit 3 is fatal under it exactly when the alert path is needed"
+        },
+        {
+          "n": 4,
+          "text": "States how a caller proves identity when renewing",
+          "met": true,
+          "evidence": "§4 — --holder checked via holder_matches; monotonic --seq as anti-replay; explicit statement that this is NOT cryptographic identity"
+        },
+        {
+          "n": 5,
+          "text": "Carries a worked example that ACTUALLY RUNS",
+          "met": true,
+          "evidence": "§6 — extracted verbatim from the published file and executed: 17 PASS lines, ALL CHECKS PASSED, exit 0. Negative control: against pre-fix ctl, 16 of 17 fail."
+        },
+        {
+          "n": 6,
+          "text": "Names what the contract does NOT cover, so nobody builds on an unmade assumption",
+          "met": true,
+          "evidence": "§7 — fencing enforcement (M3), global budget (M3), renew-active deletion (later PR), exactly-once, cryptographic identity, alert delivery"
+        }
+      ]
+    },
+    {
+      "id": "alpha-11-liveness",
+      "title": "Issue #11 — the ctl side: heartbeat record, holder check, fencing columns",
+      "issue": 11,
+      "state": "in_review",
+      "agent": "lead (fallback — workers undispatchable)",
+      "branch": "alpha/11-liveness-record",
+      "worktree": "/srv/project/.worktrees/alpha-11-liveness",
+      "head_sha": "de741a8810eef2ce0b029a240d3cc24405eb7dd8",
+      "pr": "https://github.com/tushardhara/nightshift/pull/16",
+      "pr_base": "program/discovery-state",
+      "adr": "ADR-0002 §2, §3, §4a, §5",
+      "acceptance_criteria": [
+        {
+          "n": 1,
+          "text": "Program heartbeat record carries schema_version, run_id, session, ts, boot_id, seq, phase; written in one transaction",
+          "met": true,
+          "evidence": "cmd_beat_write; tests/test_beat.py::BeatRecordTest"
+        },
+        {
+          "n": 2,
+          "text": "Liveness is judged by CONTENT: wrong run, previous boot, future ts, non-increasing seq, malformed all read NOT alive",
+          "met": true,
+          "evidence": "cmd_beat_show; tests/test_beat.py::BeatValidationTest (7 tests)"
+        },
+        {
+          "n": 3,
+          "text": "Not-alive is exit 3 with a reason_code, never exit 1, never a traceback",
+          "met": true,
+          "evidence": "test_not_alive_is_exit_3_never_exit_1; test_malformed_record_is_not_alive_and_does_not_crash"
+        },
+        {
+          "n": 4,
+          "text": "slot heartbeat requires --holder and verifies it against the slot's holder",
+          "met": true,
+          "evidence": "cmd_slot_heartbeat via holder_matches; test_heartbeat_requires_the_holder_to_prove_identity; test_heartbeat_without_a_holder_is_refused"
+        },
+        {
+          "n": 5,
+          "text": "The renewal check is the SAME predicate as the dispatch check, so they cannot drift apart",
+          "met": true,
+          "evidence": "holder_matches extracted from consume_slot; both verbs call it"
+        },
+        {
+          "n": 6,
+          "text": "Fencing generation columns land additively on worker_slots and task_claims, pre-existing DBs migrate in place, rows survive",
+          "met": true,
+          "evidence": "ensure_schema, dispatched_at pattern; tests/test_fencing.py (3 tests)"
+        },
+        {
+          "n": 7,
+          "text": "Fencing is NOT enforced — DoD conditions 6 and 7 remain in M3",
+          "met": true,
+          "evidence": "test_generation_defaults_are_present_and_do_not_enforce; scope stated in the PR body and the test docstring"
+        },
+        {
+          "n": 8,
+          "text": "slot renew-active is NOT deleted in this PR (staged, ADR-0002 one-way door)",
+          "met": true,
+          "evidence": "verb and watchdog caller untouched; stated in PR body and handoff §2"
+        },
+        {
+          "n": 9,
+          "text": "test_claims.py and test_recovery.py unaffected",
+          "met": true,
+          "evidence": "python3 -m unittest test_claims test_recovery -> Ran 6 tests OK"
+        },
+        {
+          "n": 10,
+          "text": "Every change behind a regression test that demonstrably failed before it",
+          "met": true,
+          "evidence": "docs/audit/baseline/ADR0002-{2,4a,5}.{txt,json}, baseline_sha=139726e, all exit_code=1"
+        },
+        {
+          "n": 11,
+          "text": "Documentation describing the superseded behaviour changes in the same PR",
+          "met": true,
+          "evidence": "docs/CONTROL-PLANE.md 'Slot TTLs and long turns' rewritten"
+        },
+        {
+          "n": 12,
+          "text": "Full suite green from a worktree cut from the checkpoint",
+          "met": true,
+          "evidence": "./tests/run.sh -> Ran 99 tests OK (85 -> 99)"
+        },
+        {
+          "n": 13,
+          "text": "An unrecognised schema_version reads NOT alive (fail-closed), matching the published contract",
+          "met": true,
+          "evidence": "read_beat -> unknown_version; tests/test_beat.py::test_unknown_schema_version_is_not_alive; baseline security-review/B1"
+        },
+        {
+          "n": 14,
+          "text": "A previous, dead run's fresh heartbeat reads NOT alive with no flag passed",
+          "met": true,
+          "evidence": "expected_run_id() resolves --run / $NIGHTSHIFT_RUN_ID / current_run_id; test_previous_runs_heartbeat_is_not_alive_BY_DEFAULT; baseline security-review/B2"
+        },
+        {
+          "n": 15,
+          "text": "An unresolvable expected run fails CLOSED, never a silent pass",
+          "met": true,
+          "evidence": "reason_code no_expected_run; test_no_expected_run_fails_closed"
+        },
+        {
+          "n": 16,
+          "text": "Losing the migration race returns a verdict, never exit 1; a different schema error still propagates",
+          "met": true,
+          "evidence": "add_column/rename_column; tests/test_fencing.py::MigrationConcurrencyTest (4 tests); baseline security-review/B3; 20/20 parallel invocations exit 0"
+        },
+        {
+          "n": 17,
+          "text": "The handoff no longer claims more than the code enforces; the example shows the renew-active gap",
+          "met": true,
+          "evidence": "handoff §2 heading rescoped, §6 prints GAP not PASS, §9 revision log"
+        }
+      ],
+      "gates": {
+        "deterministic_suite": "PASS - Ran 106 tests, OK",
+        "pr_lint": "PASS — nightshift-ctl pr-lint -> {\"ok\": true}",
+        "in_crew_review": "NOT RUN — workers undispatchable (#13)",
+        "in_crew_qa": "NOT RUN — workers undispatchable (#13)",
+        "cross_crew_review": "crew_beta re-checks acceptance after security re-check",
+        "security": "3 BLOCKING findings returned and closed on the same branch (B1 schema_version unvalidated, B2 run check off by default, B3 non-atomic migration); each with a regression test and a baseline capture against 7bf66bc. AWAITING re-check.",
+        "pm_acceptance": "NOT SIGNED — pm undispatchable (#13); criteria above are the lead's self-assessment and are explicitly NOT a pm signature"
+      },
+      "sensitive_set_assessment": {
+        "touches": [
+          "authorization (slot renewal is an authorization decision)"
+        ],
+        "does_not_touch": [
+          "auth/sessions/tokens",
+          "secrets",
+          "PII",
+          "data export",
+          "external input",
+          "SQL string construction (all statements parameterised)",
+          "subprocess",
+          "file paths",
+          "cookies",
+          "crypto",
+          "new dependencies"
+        ],
+        "verdict": "borderline — the holder check is an authorization control being STRENGTHENED, not relaxed. Flagged to the program to decide whether `security` should gate it."
+      }
+    },
+    {
+      "id": "alpha-77-80-ctl-input-validation",
+      "title": "Issues #77 + #80 — claim renew rejects non-positive ttl; checkpoint create requires and verifies --ref",
+      "issue": [
+        77,
+        80
+      ],
+      "state": "in_review",
+      "agent": "lead (fallback — workers undispatchable, #13 re-probed this wave)",
+      "branch": "alpha/77-80-ctl-input-validation",
+      "worktree": "/srv/project/.worktrees/alpha-77-80-validation",
+      "base_sha": "d04039ed3c92e0abf02816d15ed8d07cf5882a16",
+      "head_sha": "42ae2fff20114099726f1ba28c910310d3114116",
+      "pr": "https://github.com/tushardhara/nightshift/pull/85",
+      "pr_base": "program/discovery-state",
+      "adr": "ADR-0007",
+      "evidence": ".omni/evidence/WA-77-80.txt",
+      "in_crew_review": false,
+      "in_crew_qa": false,
+      "note": "No in-crew review/QA ran (issue #13). Cross-crew review is the only independent gate for this PR. Security review recommended (subprocess.run in checkpoint create) — not yet run.",
+      "acceptance_criteria": [
+        {
+          "n": 1,
+          "text": "claim renew with a non-positive (or NaN/inf) --ttl refuses loudly (exit 2, ok:false) and leaves the claim's expires_at untouched, never releasing it silently",
+          "met": true,
+          "evidence": "cmd_claim_renew guard `not (ttl > 0)`; tests/test_claims.py::ClaimRenewRejectsGarbageTTL (3 tests, each shown failing pre-fix / passing post-fix in .omni/evidence/WA-77-80.txt)"
+        },
+        {
+          "n": 2,
+          "text": "claim renew with a valid positive --ttl is unaffected (control)",
+          "met": true,
+          "evidence": "pre-existing tests/test_claims.py::ClaimRaces.test_renew_extends, test_ttl_expiry_frees_claim, still passing"
+        },
+        {
+          "n": 3,
+          "text": "checkpoint create requires --ref and refuses (exit 2) a sha not verifiably an ancestor of --ref via git merge-base --is-ancestor, before any row is written",
+          "met": true,
+          "evidence": "cmd_checkpoint_create; tests/test_checkpoint.py::CheckpointMustBeOnRef (5 tests: required-flag, explicit-sha-off-ref, detached-HEAD-off-ref, control, ref-echoed)"
+        },
+        {
+          "n": 4,
+          "text": "checkpoint create with a sha that is on --ref still succeeds, exit 0, ok:true (control)",
+          "met": true,
+          "evidence": "tests/test_checkpoint.py::CheckpointMustBeOnRef.test_sha_on_ref_is_accepted, passes on pre-fix AND post-fix binaries"
+        },
+        {
+          "n": 5,
+          "text": "both refusals use a loud, non-zero, non-3 exit code, never a silent clamp or substituted default",
+          "met": true,
+          "evidence": "exit 2 (usage error, pre-existing docs/CONTROL-PLANE.md convention) chosen and justified in ADR-0007 Decision + Options B/C rejected"
+        }
+      ]
+    },
+    {
+      "id": "alpha-89-state-writer-guard",
+      "title": "Issue #89 -- mechanical guard against stale-tree/over-wide commits to Program state",
+      "issue": [
+        89,
+        97
+      ],
+      "state": "adr-v4-blocked-on-dispatch",
+      "agent": "lead (no worker dispatchable, #13 -- unlike wave-1, this charter has no build-as-lead fallback clause, so no code was written)",
+      "branch": null,
+      "worktree": "/home/nightshift/work/guard89",
+      "base_sha": "16c3b9c9516855c65cbf0b369cd8d59724291932",
+      "head_sha": null,
+      "pr": null,
+      "pr_base": "program/discovery-state",
+      "adr": "ADR-0009 v4 (record-level corrections only: audit log reworded from detection to forensic provenance; Option D removed as a Layer-1 satisfier, kept as defense-in-depth; --reference clone flag now architect-verified; Preconditions-for-implementation section added). Still single-author, still awaiting the two-vendor debate blocked on #13.",
+      "evidence": null,
+      "in_crew_review": false,
+      "in_crew_qa": false,
+      "note": "architect closed C1 and C5 outright on the v3 re-check and confirmed abandoning the policy-text deny was correct. Two remaining findings were both claim-vs-design mismatches (audit hashes cannot detect stale intent; a tool policy cannot satisfy an all-process boundary), fixed by naming the limit rather than changing the design, per the pattern that closed C3. No implementation code.",
+      "acceptance_criteria": "draft only, unratified -- see ADR-0009 'Draft acceptance criteria' section; pm never reached"
+    },
+    {
+      "id": "alpha-212-admission-gate",
+      "title": "Issue #212 -- classified worker admission",
+      "issue": 212,
+      "state": "integrated",
+      "agent": "eng_codex",
+      "branch": "feat/212-admission-gate",
+      "worktree": ".worktrees/212-admission-gate",
+      "base_sha": "5cc9c0ffa0f767b77ca6aa08bf5aea300d692db4",
+      "head_sha": "187354a7fc808a60644911eb4621066b9155d78e",
+      "reviewed_tree": "4372e208615fbe1e4cae7d2cb2cb4da0e8c7d4b8",
+      "delivery_head": "4b5c7c43de5a536eda792d15b88422342ae58639",
+      "merge_commit": "7a82585be6c763a7137869f9a836e684305749b5",
+      "merge_tree": "7ace7460e004ae870675989a74b15b4ecc953671",
+      "pr": "https://github.com/tushardhara/nightshift/pull/227",
+      "pr_base": "main",
+      "adr": "ADR-0033",
+      "contract": ".omni/evidence/issue-212-contract-v1.md",
+      "review_receipts": ".omni/evidence/issue-212-review-receipts.md",
+      "gates": {
+        "ci_on_reviewed_head": "PASS -- tests/run.sh 838 OK, 5 skipped; push and PR runs",
+        "pm_acceptance": "PASS -- Claude; AC-1 through AC-17",
+        "qa": "PASS -- Codex; baseline-red and focused/full green evidence",
+        "different_vendor_review": "PASS -- Claude production plus final test-delta review",
+        "cross_crew_review": "PASS -- crew_beta Codex; MERGE_BLOCKER=0 after two loops",
+        "security": "PASS -- Claude; MERGE_BLOCKER=0",
+        "release": "PASS -- candidate and post-merge main CI green; merged by release"
+      },
+      "scope": "#212 only; no #213-#223 implementation and no VPS deployment"
+    },
+    {
+      "id": "186-dod-close-out-gate",
+      "title": "Issue #186 -- the DoD close-out gate: tests/dod_validate.py + docs/prd/DOD-MANIFEST.json",
+      "issue": 186,
+      "state": "in_review",
+      "agent": "lead (WA-5 fallback -- eng_claude/eng_codex/qa/reviewer_* dispatch reconfirmed sterile this session via a live dispatch attempt, issue #236, still open)",
+      "branch": "alpha/186-dod-close-out-gate-v2",
+      "worktree": ".worktrees/alpha-186-dod-gate",
+      "base_sha": "3e3dd8fdd2c1893a672755011a35885a2818db49",
+      "checkpoint_id": 4,
+      "resume_2026-08-28_fresh_session": "Prior session hit the 1-hour absolute watchdog right after the 'wip...pre-selftest checkpoint' commit and never finished; this is a fresh session picking the pushed branch back up, not a restart. Branch was 2 merges stale (base 3e3dd8f, before PR #264/#265/#266). `git rebase origin/main` succeeded with zero conflicts, but `git push --force-with-lease` was DENIED outright by a blast-radius policy (irreversible-operation guard) -- force push is unavailable in this environment as a hard policy, not a style preference. Recovered non-destructively via `git checkout -B <branch> origin/<branch>` (resets the local ref to match origin, not a history-discarding op) then `git merge origin/main` (merge commit `64633a6`, zero conflicts). Pushed as a normal fast-forward (`684d0e6..64633a6`), no history rewrite. `git diff origin/main..HEAD --stat` re-confirmed after the merge: still exactly the 4 files in `known_scope_notes` below, program/agents/**/config.yaml and all SKILL.md untouched, tests/test_233_review_routing_activation.py untouched (it came in via the merge from main, not modified). Re-ran every gate below fresh against `64633a6`; numbers changed slightly from the branch's own PR-body draft (written before this merge) because D10 (live `gh` state) is a genuinely time-varying condition, exactly as ADR-0025 discloses -- not a regression.",
+      "admission_gap_root_caused": "Investigated WHY qa/reviewer_* continuation slots are unavailable, rather than taking the prior session's conclusion on faith. Traced bin/nightshift-ctl: `claim acquire --claimant crew_alpha/lead ...` -> denied 'implementer claim requires an admitted known task'; task_admissions rows are never INSERTed anywhere in nightshift-ctl itself (grep confirms zero write sites) -- admission is a root-policy/platform-side effect of a legitimate engineer NEW-slot dispatch, which this task never had (its registered `agent` is 'lead', not a COUNTED_AGENTS engineer, and its `state` is 'in_review' not 'pending', so a NEW slot is unobtainable now regardless). Without admission, `_derive_normal_phase` structurally refuses both the qa continuation path (role=qa) and the review continuation path (role=reviewer) before it even reaches the task's pr_url/claim checks. This is a genuine, mechanical dead end for any WA-5-built task, confirmed by reading the source, not re-asserted from precedent.",
+      "adr": "docs/decisions/ADR-0025-dod-close-out-gate.md (re-adopts a genuine two-vendor debate from the abandoned 2026-08-25 attempt at the same ADR number, re-verified fresh against today's facts; single-lead re-adoption flagged explicitly in the ADR's Provenance section; staff review requested, not yet routed)",
+      "pr": "https://github.com/tushardhara/nightshift/pull/268",
+      "pr_base": "main",
+      "pm_dor": "https://github.com/tushardhara/nightshift/issues/186#issuecomment-5455339921 -- READY, one named merge-time (not dispatch-time) blocker: docs/prd/DOD-MANIFEST.json ownership",
+      "pm_acceptance": "PASS -- all 8 AC met, pm's own independent evidence (own runs at 64633a6/11192af, own reading of tests/dod_validate.py line numbers, own re-confirmation of the 4-file diff scope), not restated from the lead's report. AC8 explicitly noted 'met, with the disclosed caveat, not silently' (D10 GH-flakiness). Verdict: 'Ready for cross-crew review + security.' One merge-time (not review-time) blocker reaffirmed: docs/prd/DOD-MANIFEST.json ownership -- product's prior edit lease on this exact file has LAPSED (not just never requested), so a fresh lease or an owners.md exception row is needed before landing on main; does not block review starting. pm also recommends a non-blocking product follow-up: a DoD changelog row clarifying condition 21's text against deploy/bootstrap.sh's legitimate install-time write.",
+      "gates": {
+        "tests/dod_validate.py (normal run, re-verified post-merge @ 64633a6)": "5 PASS (D02,D03,D04,D05,D09), 19 FAIL, 0 BLOCKED, 0 MANUAL, exit 1, ~60s wall (gh-API-bound). D10 now FAILs (previously PASSed in the branch's own pre-merge PR-body draft) purely because live `gh` run-conclusion state changed between then and now -- exactly the AC8/ADR-0025-disclosed caveat for GitHub-anchored conditions 10/22/24, reproduced twice this session with the same D10 FAIL both times. Honest per AC7; matches ADR-0025's own prediction of a bad number at merge time.",
+        "tests/dod_validate.py --self-test (re-verified post-merge)": "PASS -- all 24 checks individually flip away from PASS when their own evidence is deliberately removed (git-worktree-isolated fixture, never mutates the real checkout), exit 0, 2.087s",
+        "syntax/JSON sanity": "python3 -m ast.parse on tests/dod_validate.py clean; json.load on DOD-MANIFEST.json clean",
+        "determinism (AC8)": "Holds for every git/filesystem-anchored condition. GitHub-API-anchored conditions (10/22/24) can and did vary run-to-run purely from live GitHub state -- named explicitly as a disclosed caveat in ADR-0025's Context section and in AC8's own framing, not silently ignored.",
+        "full regression (tests/run.sh, re-verified post-merge)": "PASS -- Ran 961 tests in 501.055s, OK (961 not 950 because the merge pulled in main's growth, e.g. tests/test_233_review_routing_activation.py). tests/dod_validate.py is not test_*.py-shaped so tests/run.sh's discovery does not pick it up.",
+        "in_crew_review": "NOT RUN -- structurally unavailable, root-caused this session (see admission_gap_root_caused above), not merely reasserted",
+        "in_crew_qa": "NOT RUN -- same structural reason; QA's usual role (test plan, hunting seams) was done by the lead directly under WA-5",
+        "cross_crew_review": "IN FLIGHT via the program on PR #268",
+        "security": "IN FLIGHT via the program on PR #268",
+        "staff_adr_review": "CONSISTENT, no blockers, on ADR-0025 (docs/decisions/ADR-0025-dod-close-out-gate.md). Two non-blocking FOLLOW_UPs queued (do not hold up PR #268's merge -- cross-crew review and security are the actual merge gates): (1) ADR Context/§3 overstates unsatisfied RT ids as 7 of ~30; staff found RT-25/RT-26 already have live test references (tests/test_db_resolution.py:1, tests/test_recovery.py:37-38) from ADR-0005/#31/#32, are not in DOD-MANIFEST.json's rt_ids (only RT-16/17/18/19/23 are actually unsatisfied there -- 5, not 7), and a future engineer following the ADR's framing could collide with ADR-0005's already-live allocation (the exact class of mistake WA-007 exists to prevent). Fix: correct the count to 5 in ADR-0025, note RT-25/RT-26 are already spoken for. (2) ADR describes self-test isolation as 'git archive HEAD into a temp tree' three times; shipped code actually uses `git worktree add --detach` + `shutil.copytree` -- same load-bearing guarantee (source checkout never mutated), different mechanism, ADR text should say what shipped. Also: §3 promises a dedicated adversarial fixture ('populates an unsatisfied record with plausible-looking values, asserts still FAIL') that does not exist yet -- the invariant holds structurally but isn't evidenced by a dedicated test; cheap to add. Both queued as a follow-up task, not actioned in PR #268."
+      },
+      "sensitive_set_assessment": {
+        "touches": [
+          "subprocess (git/gh/bash invocations, all argv-list form, no shell=True, no string-built commands)",
+          "external input (gh API responses, parsed as JSON only, never eval'd/executed)"
+        ],
+        "does_not_touch": [
+          "auth/sessions/tokens/secrets/PII/data export/SQL construction/cookies/crypto",
+          "no new dependency (stdlib only, verified: only argparse/copy/json/os/re/shutil/subprocess/sys/tempfile/unittest/dataclasses/pathlib/typing)"
+        ],
+        "verdict": "borderline on subprocess+external input -- flagging for security per the crew's standing gate; net-new risk is low (read-only instrument wrappers, no privilege change) but the gate is mandatory per the sensitive set, not optional based on the lead's own risk read"
+      },
+      "known_scope_notes": [
+        "docs/prd/DOD-MANIFEST.json's merge (not its authorship) is gated on a program/product ruling on docs/prd/** ownership -- named explicitly in ADR-0025 Sec 9, not silently resolved. Flagged to the program at dispatch time, still open.",
+        "Condition 21's DoD text has a literal-reading defect this PR does NOT edit: 'no committed script writes to /srv/nightshift' is unsatisfiable as written because deploy/bootstrap.sh's designed job IS installing to /srv/nightshift on a fresh box (measured, not assumed). check_d21 implements only the part of the claim that is soundly checkable (git history contains no tracked file living AT that path) and documents the rest as a reported ambiguity for `product` to resolve via a changelog row -- per the DoD's own 'if a condition proves unverifiable as written, report it, do not edit it' rule.",
+        "This registry file was found already missing the #232 entry at this checkpoint's base_sha (known drift, per the prior '232-review-eligibility' entry's own note in an earlier snapshot) -- appended additively only, did not attempt to reconstruct it."
+      ]
+    },
+    {
+      "task_id": "174-implement-authority",
+      "issue": 174,
+      "adr": "docs/decisions/ADR-0044-program-authority-fencing.md",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/304",
+      "branch": "crew_alpha/174-implement",
+      "base_sha": "8f402ccf6b494c9f0159b750ef726ff4e497fec1",
+      "checkpoint_id": 7,
+      "worktree": ".worktrees/174-implement",
+      "size": "M",
+      "split_from": {
+        "epic_task_id": "174-implement",
+        "epic_size": "L",
+        "reason": "ADR-0032/ADR-0031 mechanical needs_split -- L-sized tasks are never NEW-dispatchable (bin/nightshift-ctl _task_readiness_snapshot); split into 174-implement-authority (this), 174-implement-fence (depends_on this, Decision §3/§3b), 174-implement-detector (independent, crew_beta-owned file, lease requested)."
+      },
+      "scope": "ADR-0044 Decision §1 (program_authority/program_action_permits tables), §2 (authority command group), and the nightshift-ctl-only half of §6/AC-7 (SCHEDULE_STATUSES gains standdown).",
+      "file_scope": [
+        "bin/nightshift-ctl",
+        "tests/test_authority.py"
+      ],
+      "implementer": "crew_alpha lead (WA-5 fallback, not eng_codex -- see below)",
+      "wa5_disclosure": {
+        "attempted_live_this_session": true,
+        "agent": "eng_codex",
+        "error": "Input validation error: Additional properties are not allowed ('generation', 'slot_id', 'task_id' were unexpected)",
+        "root_cause": "sys_session_send's args object schema (additionalProperties:false) does not define task_id/slot_id/generation at all; worker_semaphore (ADR-0033) requires them for any COUNTED_AGENTS target (eng_claude, eng_codex, qa, reviewer_claude, reviewer_codex). Structural, not vendor-specific -- confirmed by this session's live reproduction against eng_codex; issue #236, still open.",
+        "precedent": [
+          "#186",
+          "#214/PR #289",
+          "ADR-0044's own Phase-1 reconciliation (PR #296)"
+        ],
+        "consequence": "in-crew implement/review/qa dispatch unreachable this build too; lead built directly, PM sign-off dispatched live (pm is EXEMPT_AGENTS, not gated by worker_semaphore's classified-slot requirement), cross-crew review from crew_beta requested from the program (crew_beta is also EXEMPT_AGENTS/routed via the program, not this crew's own reviewer pool)."
+      },
+      "control_plane_slot": {
+        "slot_id": 9,
+        "generation": 1,
+        "holder": "crew_alpha/eng_codex",
+        "note": "acquired for control-plane bookkeeping continuity before the WA-5 fallback was confirmed necessary; no live worker turn ever consumed it (dispatched_at stayed null), same as slot 7 on 214-implement. Released once this task's PR result was collected."
+      },
+      "gates": {
+        "tests/run.sh (full suite, post-change)": "PASS -- Ran 971 tests in 767.019s, OK (961 prior + 10 new in tests/test_authority.py)",
+        "tests/test_authority.py (post-change, isolated)": "PASS -- Ran 10 tests in 5.788s, OK",
+        "tests/test_authority.py (pre-change, bin/nightshift-ctl stashed back to base SHA)": "FAILED (failures=6, errors=3) -- confirms the new tests are real regression tests, not vacuous",
+        "python3 -m py_compile bin/nightshift-ctl": "clean"
+      },
+      "acceptance_criteria": {
+        "AC-1": "MET -- 20-way concurrent authority acquire race, exactly one winner (tests/test_authority.py:AuthorityAcquireRace.test_20_way_race_exactly_one_winner)",
+        "AC-2": "MET -- denied acquire is a zero-mutation read-only stand-down, asserted via pre/post DB row diff",
+        "AC-3": "MET -- renew before TTL expiry keeps continuous validity across the original TTL boundary",
+        "AC-4": "MET -- crash/never-released holder -> next acquire is generation N+1 with a non-empty reason field",
+        "AC-5": "MET -- old generation denied on renew, release, AND permit-dispatch, not just at the next acquire",
+        "AC-6": "MET -- no ABA: generation 1 and 2's credentials both denied after generation 3 is current",
+        "AC-7": "PARTIAL -- nightshift-ctl side only (SCHEDULE_STATUSES + schedule observe accepts standdown, alert_required is False for it). Detector-side mirror is task 174-implement-detector.",
+        "AC-8": "NOT IN SCOPE -- belongs to task 174-implement-fence (proves the ROOT policy loads; that policy does not exist until that task)",
+        "AC-9": "MET -- additive-only schema; re-applying init against a populated DB leaves existing lease/claim rows byte-identical",
+        "AC-10": "MET -- no force-break command exists (authority break is an unknown subcommand, argparse exit 2); recovery is TTL-expiry-only, exercised by the AC-4 test"
+      },
+      "still_open": [
+        "174-implement-fence (Decision §3 ROOT policy + §3b claim/slot token checks) -- depends_on this task via nightshift-ctl task dependency-add; blocked_dependency until this PR reaches 'integrated' per ADR-0032 readiness rules, not dispatchable yet.",
+        "174-implement-detector (deploy/nightshift-scheduled-run-detector.py raw-status-set widening, AC-7's other half) -- crew_beta-owned file; lease requested from the program, not yet granted, not started.",
+        "Cross-crew review from crew_beta on PR #304 -- requested from the program this turn (mandatory per charter, doubly mandatory under WA-5 since in-crew reviewer dispatch is sterile).",
+        "Security review on PR #304 -- flagging for security per the crew's standing sensitive-set gate: this diff adds token/secret generation and hashing (secrets.token_hex, hashlib.sha256) and a new auth-adjacent primitive (program_authority fence). Requested from the program this turn.",
+        "ADR-0044 §7 (scheduled task's own prompt wiring) -- explicitly flagged in the ADR to the program to route once Phase 2 clears; not a crew_alpha build task."
+      ]
+    },
+    {
+      "task_id": "217-build",
+      "issue": 217,
+      "title": "Allow one explicit bounded extension for an expired task",
+      "dor": "READY -- .omni/reports/2026-08-29-217-dor-verdict.md, branch crew_alpha/217-dor, commit 6cc7450; label state:ready live on issue #217; dependency #216 verified CLOSED, PR #339 MERGED, ancestor of base_sha",
+      "adr": "docs/decisions/ADR-0046-bounded-task-extension.md -- amends ADR-0032 precedence table and ADR-0045's budget_expired expiry formula",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/349",
+      "branch": "crew_alpha/217-build",
+      "base_sha": "73874292051baa6c569197fdb78c4ac86d3c75e7",
+      "checkpoint_id": 14,
+      "worktree": "/srv/project/.worktrees/217-build",
+      "head_sha": "2e2c767f10d8fdb81839bd06fdf73880332c724d",
+      "size": "S",
+      "file_scope": [
+        "bin/nightshift-ctl",
+        "tests/test_task_graph.py"
+      ],
+      "contract": "docs/reviews/217-bounded-extension-CONTRACT.md",
+      "implementer": "crew_alpha lead (WA-5 fallback, not eng_claude/eng_codex)",
+      "wa5_disclosure": {
+        "attempted_live_this_session": true,
+        "agent": "qa",
+        "task": "217-build",
+        "slot_id": 18,
+        "generation": 1,
+        "errors": [
+          "Input validation error: Additional properties are not allowed ('generation', 'slot_id', 'task_id' were unexpected)",
+          "Denied by policy: args.slot_id must be a strict positive integer"
+        ],
+        "root_cause": "issue #236 (P0, open) -- sys_session_send's args schema (additionalProperties:false; only cost_budget/file_ids/input/model/purpose) cannot carry slot_id/task_id/generation, which worker_semaphore requires for any COUNTED_AGENTS target. Confirmed live this session by direct schema fetch and a real dispatch attempt, not inferred from precedent.",
+        "consequence": "in-crew eng_claude/eng_codex/qa/reviewer_* dispatch unreachable for this task too (same as #216/#215/#214/#174). Slot 18 released unused. Lead built directly under a separately-acquired NEW-phase bookkeeping slot (slot_id 19, generation 2, holder crew_alpha/eng_claude, never dispatched -- dispatched_at stayed null), released once the PR opened. pm dispatch (EXEMPT_AGENTS) unaffected."
+      },
+      "control_plane_slot": {
+        "slot_id": 19,
+        "generation": 2,
+        "holder": "crew_alpha/eng_claude",
+        "note": "acquired for control-plane bookkeeping continuity; no live worker turn ever consumed it (dispatched_at stayed null), same pattern as 216-build/174-implement-authority. Released once the PR opened."
+      },
+      "review_plan": {
+        "command": "nightshift-ctl review plan --task 217-build --repo . --head-sha 2e2c767f10d8fdb81839bd06fdf73880332c724d",
+        "suggested_domains": [
+          "code_review",
+          "cross_crew",
+          "pm",
+          "qa",
+          "security",
+          "staff"
+        ],
+        "profile": "HIGH_RISK",
+        "report_digest": "c39a7cb53b748192b19a01115cd81a6f81406a38da1cfbd9c8b75f30f0e276b6"
+      },
+      "gates": {
+        "tests/test_task_graph.py (isolated)": "PASS -- Ran 55 tests, OK",
+        "tests/run.sh (full suite, post-change)": "PASS -- Ran 1049 tests in 532.071s, OK",
+        "tests/test_task_graph.py TaskExtendTest (pre-change, bin/nightshift-ctl stashed back to base SHA, tests kept)": "14 of 17 new/modified tests failed as expected (10 FAIL + 9 ERROR sub-results); 3 pass vacuously both before/after (structural-invariant tests, same class as test_task_started_at.py::test_task_upsert_cannot_set_started_at) -- disclosed in the contract per WA-009, not silently counted as red evidence they aren't",
+        "python3 -m py_compile bin/nightshift-ctl": "clean",
+        "pm_acceptance": "PASS -- ACCEPTED, all 12 criteria met, independently re-derived (own worktree checkout, own test runs incl. baseline-red reproduction, own control-flow trace of AC4d/AC7): https://github.com/tushardhara/nightshift/pull/349#issuecomment-5465362989",
+        "in_crew_review": "NOT RUN -- workers undispatchable (#236, reconfirmed live)",
+        "in_crew_qa": "NOT RUN -- same structural reason",
+        "cross_crew_review": "requested from the program this turn (mandatory per suggested_domains and per WA-5)",
+        "security": "requested from the program this turn (suggested_domains includes security; bin/nightshift-ctl is sensitive-set)",
+        "staff": "requested from the program this turn (suggested_domains includes staff; ADR-0046 is a new ADR this round)"
+      },
+      "still_open": [
+        "cross-crew review (crew_beta) on PR #349 -- requested from the program",
+        "security review on PR #349 -- requested from the program",
+        "staff / ADR consistency review of ADR-0046 -- requested from the program"
+      ]
+    },
+    {
+      "id": "alpha-218-build",
+      "title": "218: Program operating rule for budget_expired (EXTEND_ONCE/SPLIT/BLOCK/FAIL)",
+      "issue": 218,
+      "state": "in_review",
+      "agent": "lead (single-author, WA-5 -- issue #236 blocks all COUNTED_AGENTS dispatch, reproduced live)",
+      "branch": "crew_alpha/218-build",
+      "worktree": "/home/nightshift/work/218-build",
+      "base_sha": "ad1766810fe74eda800c4f163b2e27afe74cc26d",
+      "head_sha": "25aaaf88981607459c4081b41542063251908368",
+      "contract": "docs/reviews/218-budget-expired-operating-rule-CONTRACT.md (v2)",
+      "merge_blocker_fix": {
+        "found_by": "security",
+        "prior_head": "691dc2805a7c5c2f9d92ded2d96234e67db51328",
+        "fixed_head": "25aaaf88981607459c4081b41542063251908368",
+        "finding": "FAIL/drop bypassed the pre-existing TRACKER closability/pm-acceptance issue-close gate ('YOU close an issue, and only when nightshift-ctl issue status --issue <n> says closable AND that crew's pm has signed acceptance')",
+        "resolution": "FAIL->drop now marks the task state=dropped first, then closes the GitHub issue NOT_PLANNED only when nightshift-ctl issue status --issue <n> reports closable AND that crew's pm has signed off on the drop -- the SAME gate the TRACKER step already requires. If closable reads false (the common case for a stand-alone drop, since state=dropped is excluded from that command's own active set), Program reports Blocked instead and defers the close to a later human-equivalent pm/product call.",
+        "changed": [
+          "program/config.yaml",
+          "docs/decisions/ADR-0047-budget-expired-operating-rule.md",
+          "docs/reviews/218-budget-expired-operating-rule-CONTRACT.md (v2)",
+          "tests/test_budget_expired_operating_rule.py"
+        ],
+        "pr_comment": "https://github.com/tushardhara/nightshift/pull/355#issuecomment-5466005227"
+      },
+      "pr": "https://github.com/tushardhara/nightshift/pull/355",
+      "pr_base": "main",
+      "adr": "ADR-0047",
+      "dor": {
+        "verdict": "READY",
+        "verified_by": "pm (title 218-dor)",
+        "note": "first pass NOT-READY on AC6/AC7 tension (ADR-0027 closed STATUSES tuple has no obvious FAIL slot); resolved by mapping FAIL's disposition onto existing Closed without completion / Superseded, SPLIT retains sole ownership of scope-cutting"
+      },
+      "acceptance_criteria": [
+        {
+          "n": 1,
+          "text": "Program recognizes budget_expired as a scheduling verdict, not infrastructure failure.",
+          "met": true,
+          "evidence": "program/config.yaml new bullet; tests/test_budget_expired_operating_rule.py::BudgetExpiredIsAVerdictNotAFailure"
+        },
+        {
+          "n": 2,
+          "text": "No busy retry loop after a budget denial.",
+          "met": true,
+          "evidence": "same bullet, 'decide, never loop' / 'never keep retrying a denied slot'; test_no_busy_retry_loop"
+        },
+        {
+          "n": 3,
+          "text": "EXTEND_ONCE is allowed only when no extension already exists.",
+          "met": true,
+          "evidence": "gated on extension_seconds null, cites task extend + already_extended denial; test_extend_once_gated_on_no_existing_extension, test_only_split_block_fail_after_the_one_extension"
+        },
+        {
+          "n": 4,
+          "text": "SPLIT creates/requests smaller bounded work rather than continuing the same oversized task unchanged.",
+          "met": true,
+          "evidence": "test_split_creates_smaller_bounded_work_not_the_same_task"
+        },
+        {
+          "n": 5,
+          "text": "BLOCK records the concrete external/dependency reason that prevents safe progress.",
+          "met": true,
+          "evidence": "test_block_records_concrete_external_dependency_reason"
+        },
+        {
+          "n": 6,
+          "text": "FAIL records why the current approach cannot satisfy the frozen contract.",
+          "met": true,
+          "evidence": "test_fail_records_why_the_contract_cannot_be_satisfied"
+        },
+        {
+          "n": 7,
+          "text": "Program reports the chosen action in the normal human-first status format.",
+          "met": true,
+          "evidence": "test_reports_the_chosen_action_first_using_the_first_screen, test_every_status_word_used_is_in_the_frozen_vocabulary, test_local_statuses_copy_matches_the_committed_contract"
+        }
+      ],
+      "tests": {
+        "focused": "python3 -m unittest tests.test_budget_expired_operating_rule -v -- 19 tests, OK (14 original + 5 added for the security MERGE_BLOCKER fix)",
+        "baseline_red": "git stash push -- program/config.yaml; same suite -- 13/14 pre-existing FAIL as before; the 5 new FailDropRoutesThroughTheExistingTrackerCloseGate tests independently shown failing against the pre-fix bullet (head 691dc2805a7c5c2f9d92ded2d96234e67db51328) and passing against the fix",
+        "full_suite": "python3 -m unittest discover -s tests -p 'test_*.py' -- 1068 tests (1063+5), OK, 585.0s"
+      },
+      "review_status": {
+        "cross_crew": "requested from program (crew_beta round-robin) -- outstanding",
+        "staff": "requested from program (mandatory -- new ADR-0047) -- outstanding",
+        "security": "REVIEWED -- returned 1 MERGE_BLOCKER (see merge_blocker_fix above), fixed same implementer/branch/PR at head 25aaaf8. Supersedes this entry's prior 'not requested' note, which was stale against the frozen contract's own Required review domains section (security was in suggested_domains, profile HIGH_RISK)."
+      }
+    },
+    {
+      "id": "319-authority-contract",
+      "title": "Issue #319 -- ADR-0044 Section 7 Program-turn authority integration contract (AC-3 renewal, AC-7 Program-side standdown, AC-8 live proof-of-load)",
+      "issue": 319,
+      "state": "integrated",
+      "finding": "PR COLLISION, not new work -- per standing memory 'PR collision pattern'. Verified concretely via gh, not fabricated, before recording anything.",
+      "verification": [
+        "docs/decisions/ADR-0044-program-authority-fencing.md already carries 'Revision note (2026-08-29, round 3) -- 174-implement-wiring, issue #319' and Decision Sec 7b, read directly from the checkpoint-19 worktree before any edit was attempted.",
+        "tests/test_authority_fence.py already contains class ProgramTurnSequenceProvenLoadedFromConfigYaml at checkpoint-19 HEAD (grep confirmed, line 364).",
+        "git merge-base --is-ancestor ee42593066709cc7f5edb414597c6d7b0ebf8c59 18f178195fc2a78928ac19d81c4e6397c718c6af -> true: PR #321's merge commit is already an ancestor of this charter's own base_sha, i.e. the deliverable predates this charter.",
+        "gh pr view 321: MERGED, branch crew_alpha/174-implement-wiring -> main, body 'Refs #319.', diff exactly docs/decisions/ADR-0044-program-authority-fencing.md (+109) and tests/test_authority_fence.py (+108), 217 insertions / 0 deletions, matching this issue's own criterion 9 (no unscoped code churn) verbatim.",
+        "PR #321 comment thread (read directly, not summarized): pm acceptance 10/10 MET against docs/specs/174-implement-wiring.md's 10 numbered criteria (own worktree, own reruns, own independent negative-control mutation); staff review CONSISTENT, 0 MERGE_BLOCKER, 2 non-blocking FOLLOW_UP; crew_beta cross-crew review clean, 0 MERGE_BLOCKER, independent different-mutation negative control also went red-then-green; release integration receipt confirms merge commit ee425930, candidate+post-merge tests/run.sh green (1007 tests OK), control-plane task integrate-321 = integrated, tags cut.",
+        "Root cause of the collision: the actual build was tracked in the control plane under task id 174-implement-wiring / issue=174 (created before #319 existed as its own DoR'd issue, per the epic-split precedent already on record for 174-implement-authority/-fence/-detector), not under a task carrying issue=319. nightshift-ctl issue status --issue 319 therefore read closable:false even though the work was fully done and integrated, because _issue_status() only considers tasks whose own issue column equals the queried number."
+      ],
+      "bookkeeping_action_taken": "nightshift-ctl task upsert --id 319-authority-contract --crew crew_alpha --agent lead --title 319-authority-contract --issue 319 --state integrated --base-sha 18f178195fc2a78928ac19d81c4e6397c718c6af --branch crew_alpha/174-implement-wiring --pr-url https://github.com/tushardhara/nightshift/pull/321 -- re-run of nightshift-ctl issue status --issue 319 afterwards reads closable:true. No branch was pushed, no PR was opened, and no source/doc edit was made by this session -- this task's only action was verifying an existing merged deliverable and correcting the control-plane row that was pointed at the wrong task id for this issue number.",
+      "acceptance_criteria": {
+        "AC-3": "MET pre-existing -- Sec7b Constants/Detection/step-2a text, PR #321",
+        "AC-7_program_side": "MET pre-existing -- Sec7b step 1's exit-3 branch, PR #321",
+        "AC-8": "MET pre-existing -- tests/test_authority_fence.py::ProgramTurnSequenceProvenLoadedFromConfigYaml, PR #321"
+      },
+      "not_done_by_this_session": "No new code, doc, or test was authored. No new PR was opened. Cutover itself remains explicitly out of scope per the issue body and per ADR-0044 Section 7b's own 'Not covered by this contract' note -- unaffected by this finding."
+    },
+    {
+      "id": "277-review-proof-gaps",
+      "issue": 277,
+      "title": "#228 follow-up: close 4 regression-proof gaps (STANDARD concurrency, causal invalidation, ADR-required enforcement, dispatch-count regression tests)",
+      "state": "ready",
+      "agent": "lead (WA-5 single-author -- issue #236 sterile in-crew dispatch, standing unchanged through 2026-08-30 08:30Z)",
+      "worktree": ".worktrees/277-regression-proof-gaps",
+      "branch": "crew_alpha/277-regression-proof-gaps",
+      "base_sha": "4e56d23ec4c025166c6fd8d7c79a19e5a01c8b07",
+      "adr": "docs/decisions/ADR-0051-close-228-regression-proof-gaps.md",
+      "dor": ".omni/reports/2026-08-30-277-dor-verdict.md",
+      "contract": "docs/reviews/277-close-228-regression-proof-gaps-CONTRACT.md v1",
+      "pr": "https://github.com/tushardhara/nightshift/pull/379",
+      "gaps_closed_with_new_tests": [
+        "Proof #2 (STANDARD concurrent dispatch) -- tests/test_shadow_risk_plan.py::test_standard_and_high_risk_domains_share_one_parallel_wave + tests/test_277_228_regression_proofs.py::Proof2ConcurrentDispatchProseTest",
+        "Proof #7 (byte-subset causal invalidation) -- tests/test_review_eligibility.py::test_ac7_byte_subset_partial_fix_invalidates_only_the_touched_domain",
+        "Proof #10 (ADR required only for qualifying changes), mechanical half -- tests/test_277_228_regression_proofs.py::Proof10AdrGateBidirectionalTest",
+        "Proof #15 (dispatch-count/model-turn regression fixtures, highest priority) -- tests/test_shadow_risk_plan.py::test_dispatch_counts_stay_narrow_and_distinct_across_risk_tiers"
+      ],
+      "gap_scoped_out": "Proof #10's narrower half -- mechanically verifying an ADR document/citation exists for a qualifying diff, not just that `staff` is dispatched. Reason: needs a new `tasks.adr` column or a change to ADR-0039's frozen receipt schema, a bigger independent design decision than this issue's stated scope; named false-positive risk if done as a same-diff-file-presence heuristic. Recorded in ADR-0051 Sec D3-B and .omni/tech-debt.md (2026-08-30 row).",
+      "proof_14_reverification": "268+174 tests, 0 failures, pre-change; 274+174 tests, 0 failures, post-change -- see the DoR document for the exact file lists and commands.",
+      "review_domains_required": {
+        "mechanism": "nightshift-ctl review plan --task 277-review-proof-gaps --repo . --head-sha <PR head>",
+        "suggested_domains": [
+          "code_review",
+          "cross_crew",
+          "pm",
+          "qa",
+          "security",
+          "staff"
+        ],
+        "markers_minted": [
+          "pm_acceptance",
+          "code_review",
+          "cross_crew_review",
+          "staff_adr",
+          "qa",
+          "security"
+        ]
+      },
+      "no_production_code_changed": true
+    },
+    {
+      "id": "381-392-quick-fixes",
+      "title": "ADR-0039 header fix (#381) + RT-23 BothSitesFixed evidence wiring (#392)",
+      "issues": [381, 392],
+      "state": "pr-open",
+      "agent": "crew_alpha lead (WA-5 single-author, issue #236 open -- confirmed live this turn: sys_session_send schema has no slot_id/task_id/generation field; crew_alpha is EXEMPT_AGENTS per deploy/policies/omnipods_policies.py, slot acquire correctly denied 'unknown normal worker')",
+      "branch": "crew_alpha/381-392-quick-fixes",
+      "worktree": "/srv/project/.worktrees/381-392-quick-fixes",
+      "base_sha": "23b9311157a596a821afdc9323cf3cbae1382529",
+      "head_sha": "f90e6c676a743be7cf66e03870efb8f1128d7cbc",
+      "pr_url": "https://github.com/tushardhara/nightshift/pull/399",
+      "adr": ".omni/decisions.md 2026-08-30 ~13:20Z entry (no new numbered ADR -- both items S-sized, one a one-line metadata fix with no design choice, the other evidence-wiring onto an already-existing green test class)",
+      "review_contract": "docs/reviews/381-392-quick-fixes-CONTRACT.md",
+      "acceptance_criteria": {
+        "381": [
+          "Line 3 of docs/decisions/ADR-0039-persist-review-receipts.md reads exactly 'Date: 2026-08-28 - Status: accepted' -- only the Status token changes",
+          "No other line in the ADR body changes; no ## Acceptance note added",
+          "PR diff for this item touches exactly one file",
+          "No test file changes (ADR-0039 mentions in tests/ are docstring/comment only)"
+        ],
+        "392": [
+          "docs/prd/DOD-MANIFEST.json RT-23 sets test_node_id=tests.test_go_toolchain.BothSitesFixed, condition=1, binding.file=deploy/provision-ubuntu.sh",
+          "baseline block: baseline_sha (ancestor of HEAD), command, exit_code=0, kind=preservation, output_path=docs/audit/baseline/RT-23.txt (real captured OK transcript)",
+          "Two mutation entries RT-23.M1 (site A, provision-ubuntu.sh:221) and RT-23.M2 (site B, :241-243), each with real patch_path/output_path, applied_to_sha ancestor of HEAD, command byte-identical to baseline, non-zero exit_code",
+          "python3 tests/dod_validate.py reports D01 PASS",
+          "No changes to deploy/provision-ubuntu.sh itself, no changes to any other RT id or condition"
+        ]
+      },
+      "pm_dor": "PASS on both items (session 381-392-quick-fixes) -- pm unaffected by #236 (not a COUNTED_AGENT), ran its normal DoR pass",
+      "pm_signoff": "ACCEPT 4/4 (#381), ACCEPT 5/5 (#392), independently re-verified (applied both RT-23 mutations itself in a throwaway worktree, re-ran BothSitesFixed, confirmed genuine failure, diffed full dod_validate.py report) -- https://github.com/tushardhara/nightshift/pull/399#issuecomment-5469083998",
+      "ci": "control-plane tests: SUCCESS; mergeStateStatus: CLEAN; mergeable: MERGEABLE",
+      "cross_crew_review_requested": true,
+      "staff_review_requested": true,
+      "security_ux_requested_fail_closed": true,
+      "verification": {
+        "dod_validate": "D01 FAIL -> PASS; all other 23 conditions unchanged (6/24 -> 7/24 PASS, 0 BLOCKED, 0 MANUAL both before and after)",
+        "full_suite": "tests/run.sh: Ran 1133 tests ... OK, zero failures/errors",
+        "go_toolchain": "python3 -m unittest -v tests.test_go_toolchain: Ran 23 tests ... OK"
+      },
+      "review_domains_required": {
+        "mechanism": "nightshift-ctl review plan --task 381-392-quick-fixes --repo . --head-sha 833330c5cb7c469aa0f1352705786cb0a602f45d",
+        "authority": "shadow_only -- ADR-0042 not actively gating this wave; treated fail-closed per ADR-0042's own fallback rule (fallback reason: activation_disabled) -- full gate set requested regardless of suggested_domains",
+        "suggested_domains": ["code_review", "cross_crew", "pm", "staff"],
+        "requested_domains_fail_closed": ["code_review", "cross_crew", "pm", "staff", "security", "ux"]
+      },
+      "no_production_code_changed": true
+    }
+  ],
+  "outside_scope_requests": [
+    {
+      "what": "docs/prd/** — a formal backlog file for the acceptance criteria above",
+      "owner": "product",
+      "need": "EDIT lease, or product authors it",
+      "blocking": false
+    },
+    {
+      "what": "RT id allocation for ADR-0002 §2/§4a/§5",
+      "owner": "product",
+      "need": "DoD v2 has no RT id for this wave's required work; RT-16..RT-20 belong to conditions 6 and 7 (M3)",
+      "blocking": false
+    },
+    {
+      "what": ".omni/handoffs/ and .omni/registry-crew_alpha.json",
+      "owner": "program",
+      "need": "written under explicit charter authority; committing them to git is the program's call",
+      "blocking": false
+    }
+  ],
+  "item_1_handoff_revision": {
+    "revised": "2026-08-22 post-security",
+    "sections_changed": [
+      "§1/§3 unknown_version",
+      "§3/§5 no_expected_run + run resolution",
+      "§2 heading rescoped",
+      "§6 three new checks + GAP line",
+      "§7 pointer",
+      "§9 revision log added"
+    ],
+    "example_reverified": "extracted verbatim from the published file, run against pushed de741a8: 21 PASS, 1 GAP, ALL CHECKS PASSED, exit 0"
+  },
+  "rt_ids": {
+    "RT-21": "ADR-0002 §2, production writer emits the attributed record",
+    "RT-22": "ADR-0002 §4a, the holder check",
+    "RT-20": "ADR-0002 §5 fencing columns - capture reserved for condition 7 in M3",
+    "renamed_from": {
+      "ADR0002-2": "RT-21",
+      "ADR0002-4a": "RT-22",
+      "ADR0002-5": "RT-20"
+    },
+    "baseline_sha_form": "full 40 characters, per program ruling F6"
+  },
+  "deliberately_not_done": [
+    "slot renew-active NOT deleted - ADR-0002 one-way door requires the staged path",
+    "#17 (claim renew / slot release identity) stays in M3 as ruled",
+    "DoD conditions 6 and 7 enforcement stays in M3",
+    "no second PR opened - fixes pushed to alpha/11-liveness-record"
+  ]
+}

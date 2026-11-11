@@ -1,0 +1,87 @@
+test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) ... 
+  test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='wrong_boot') ... FAIL
+  test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='future') ... FAIL
+  test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='malformed') ... FAIL
+  test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='missing') ... FAIL
+  test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='wrong_run') ... FAIL
+test_rt08_an_unreadable_control_plane_still_alerts (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_an_unreadable_control_plane_still_alerts) ... FAIL
+test_rt08_backup_writes_do_not_suppress_the_alert (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_backup_writes_do_not_suppress_the_alert) ... FAIL
+test_rt08_liveness_is_never_decided_from_mtime (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_liveness_is_never_decided_from_mtime) ... FAIL
+test_rt08_the_alert_carries_the_reason_code (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_the_alert_carries_the_reason_code) ... FAIL
+
+======================================================================
+FAIL: test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='wrong_boot')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 240, in test_rt08_a_previous_boot_record_does_not_suppress
+    self.assertEqual(b.alert_count(), 1,
+AssertionError: 0 != 1 : wrong_boot must not read as alive
+
+======================================================================
+FAIL: test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='future')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 240, in test_rt08_a_previous_boot_record_does_not_suppress
+    self.assertEqual(b.alert_count(), 1,
+AssertionError: 0 != 1 : future must not read as alive
+
+======================================================================
+FAIL: test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='malformed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 240, in test_rt08_a_previous_boot_record_does_not_suppress
+    self.assertEqual(b.alert_count(), 1,
+AssertionError: 0 != 1 : malformed must not read as alive
+
+======================================================================
+FAIL: test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 240, in test_rt08_a_previous_boot_record_does_not_suppress
+    self.assertEqual(b.alert_count(), 1,
+AssertionError: 0 != 1 : missing must not read as alive
+
+======================================================================
+FAIL: test_rt08_a_previous_boot_record_does_not_suppress (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_a_previous_boot_record_does_not_suppress) (reason='wrong_run')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 240, in test_rt08_a_previous_boot_record_does_not_suppress
+    self.assertEqual(b.alert_count(), 1,
+AssertionError: 0 != 1 : wrong_run must not read as alive
+
+======================================================================
+FAIL: test_rt08_an_unreadable_control_plane_still_alerts (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_an_unreadable_control_plane_still_alerts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 254, in test_rt08_an_unreadable_control_plane_still_alerts
+    self.assertEqual(b.alert_count(), 1,
+AssertionError: 0 != 1 : an unreadable control plane must alert, not go quiet
+
+======================================================================
+FAIL: test_rt08_backup_writes_do_not_suppress_the_alert (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_backup_writes_do_not_suppress_the_alert)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 206, in test_rt08_backup_writes_do_not_suppress_the_alert
+    self.assertEqual(b.alert_count(), 1,
+AssertionError: 0 != 1 : a dead Program with a fresh backup file read healthy — this is the exact bug (mtime instead of content)
+
+======================================================================
+FAIL: test_rt08_liveness_is_never_decided_from_mtime (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_liveness_is_never_decided_from_mtime)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 231, in test_rt08_liveness_is_never_decided_from_mtime
+    self.assertEqual(b2.alert_count(), 1, "dead heartbeat must alert")
+AssertionError: 0 != 1 : dead heartbeat must alert
+
+======================================================================
+FAIL: test_rt08_the_alert_carries_the_reason_code (tests.test_watchdog.RT08StaleDespiteBackupNoise.test_rt08_the_alert_carries_the_reason_code)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 216, in test_rt08_the_alert_carries_the_reason_code
+    self.assertIn("stale", gh, f"reason_code must reach the operator: {gh}")
+AssertionError: 'stale' not found in '' : reason_code must reach the operator: 
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.191s
+
+FAILED (failures=9)

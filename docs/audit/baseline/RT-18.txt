@@ -1,0 +1,6 @@
+test_second_claimant_denied_first_claim_untouched (test_claims.RT18DispatchDeniedForForeignActiveClaim.test_second_claimant_denied_first_claim_untouched) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.856s
+
+OK

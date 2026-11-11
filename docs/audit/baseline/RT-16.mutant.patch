@@ -1,0 +1,33 @@
+diff --git a/deploy/policies/omnipods_policies.py b/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/mut/deploy/policies/omnipods_policies.py
+index 8c29f52..157d888 100644
+--- a/deploy/policies/omnipods_policies.py
++++ b/deploy/policies/omnipods_policies.py
+@@ -285,7 +285,7 @@ def worker_semaphore(
+                 # above on why this is provably unreachable post-migration).
+                 rows = cx.execute(
+                     "SELECT * FROM worker_slots WHERE state='active' AND "
+-                    "dispatched_at IS NULL AND kind=? AND expected_agent=? "
++                    "kind=? AND expected_agent=? "
+                     "AND expected_title=? AND expected_purpose=?",
+                     (slot_kind, agent, title, purpose),
+                 ).fetchall()
+@@ -316,8 +316,7 @@ def worker_semaphore(
+                     # enforced by the query, not re-asserted here.
+                     cur = cx.execute(
+                         "UPDATE worker_slots SET dispatched_at=?,bound_agent=?,"
+-                        "bound_title=? WHERE id=? AND state='active' AND "
+-                        "dispatched_at IS NULL",
++                        "bound_title=? WHERE id=? AND state='active'",
+                         (now, agent, title, slot),
+                     )
+                     if cur.rowcount != 1:
+@@ -445,8 +444,7 @@ def worker_semaphore(
+ 
+                 cur = cx.execute(
+                     "UPDATE worker_slots SET dispatched_at=?,bound_agent=?,"
+-                    "bound_title=? WHERE id=? AND state='active' AND "
+-                    "dispatched_at IS NULL AND generation=?",
++                    "bound_title=? WHERE id=? AND state='active' AND generation=?",
+                     (now, agent, title, slot, generation),
+                 )
+                 if cur.rowcount != 1:

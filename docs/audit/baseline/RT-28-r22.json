@@ -1,0 +1,9 @@
+{
+  "baseline_sha": "2fd113252e649dbfbe9290807b0ba0477aed8cde",
+  "command": "python3 -m unittest -v tests.test_watchdog.RT28GraceNeedsPositiveEvidence tests.test_watchdog.RT28BootstrapWritesTheAttestation",
+  "exit_code": 1,
+  "output_path": "docs/audit/baseline/RT-28-r22.txt",
+  "issue": 34,
+  "decision": "R-22",
+  "note": "Extension of RT-28 for decision R-22 (staff review of ADR-0004). Pre-fix state for THIS increment is 2fd1132 -- the bounded but still ABSENCE-keyed grace -- captured with deploy/ reverted to 2fd1132 (git diff --name-only 2fd1132 -- deploy/ was empty at capture time) and only tests/ carrying the new cases. exit_code 1 => derived kind 'regression'. 11 failures of 10 test methods (subTests inflate the count). The methods passing pre-fix are the behaviour R-22 must PRESERVE: a freshly bootstrapped box is still graced, a 23h-old box is still graced, the watchdog still never writes the attestation, and a recorded run still alerts regardless."
+}

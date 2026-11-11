@@ -1,0 +1,12 @@
+diff --git a/deploy/provision-ubuntu.sh b/deploy/provision-ubuntu.sh
+index fcbc2c7..4938dd5 100755
+--- a/deploy/provision-ubuntu.sh
++++ b/deploy/provision-ubuntu.sh
+@@ -262,6 +262,7 @@ else
+   # Bug 1 site B — the SAME defect, second site, found by the Codex architect.
+   # Fixing only site A ships a half-fix that fails identically on the next box.
+   go_sha=""
++  go_sha_regression="$(curl -fsSL 'https://go.dev/dl/?mode=json&include=all' | jq -r '.[0].files[0].sha256' | head -1)"
+   nightshift_go_checksum "$go_file" curl > "$go_tmp/sha" 2>/dev/null || true
+   go_sha="$(cat "$go_tmp/sha" 2>/dev/null || true)"
+   if [ -z "$go_sha" ]; then

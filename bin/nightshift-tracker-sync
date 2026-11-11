@@ -1,0 +1,892 @@
+#!/usr/bin/env python3
+"""Project the durable Nightshift control state onto one GitHub Project.
+
+Outcome issues are the cards. Worker sessions are facts shown on those cards,
+never cards of their own. The default is a read-only plan; only --apply writes,
+and its write surface is limited to Project items and their fields.
+
+--intake and --issue are the sanctioned READ paths for issue text. On a public
+repository anyone can file an issue, so an issue's labels route work, and its
+text reaches a seat, only when its author is trusted (OWNER, MEMBER or
+COLLABORATOR by default, see `nightshift_github.author_trust_policy`). An
+untrusted author's labels are ignored and their text is withheld.
+"""
+
+import argparse
+import contextlib
+import fcntl
+import json
+import re
+import subprocess
+import sys
+import time
+import unicodedata
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import nightshift_github as github_trust  # noqa: E402
+
+
+STAGES = ("Shape", "Ready", "Doing", "Checking", "Finished")
+LANES = ("Program/shared", "crew_alpha", "crew_beta", "Cross-lane/Unassigned")
+FIELD_ORDER = (
+    "Delivery stage", "Lane", "Activity", "Active roles", "Current action",
+)
+FIELD_KEYS = {
+    "Delivery stage": ("delivery stage", "deliveryStage", "Delivery stage"),
+    "Lane": ("lane", "Lane"),
+    "Activity": ("activity", "Activity"),
+    "Active roles": ("active roles", "activeRoles", "Active roles"),
+    "Current action": ("current action", "currentAction", "Current action"),
+}
+STATE_STAGE = {
+    "pending": "Shape",
+    "backlog": "Shape",
+    "design": "Shape",
+    # Fanout writes `ready` after the task's PR opens, so this is review work.
+    "ready": "Checking",
+    "building": "Doing",
+    "in_progress": "Doing",
+    "in-progress": "Doing",
+    "fixing": "Doing",
+    "blocked": "Doing",
+    "review": "Checking",
+    "in_review": "Checking",
+    "in-review": "Checking",
+    "testing": "Checking",
+    "qa": "Checking",
+    "checking": "Checking",
+    "in-crew-review": "Checking",
+    "cross-crew-review": "Checking",
+    "ready-for-review": "Checking",
+    "ready-for-cross-crew-review": "Checking",
+    "ready-for-security-recheck": "Checking",
+    "integrating": "Checking",
+    "published": "Checking",
+    "integrated": "Checking",
+    "done": "Checking",
+    "merged": "Checking",
+    "dropped": "Checking",
+    "superseded": "Checking",
+}
+TERMINAL_STATES = frozenset(
+    {"integrated", "done", "merged", "dropped", "superseded"}
+)
+PRIORITIES = ("P0", "P1", "P2", "P3")
+REST_HEADERS = (
+    "-H", "Accept: application/vnd.github+json",
+    "-H", "X-GitHub-Api-Version: 2022-11-28",
+)
+UNTRUSTED_ACTION = (
+    "Untrusted author: labels ignored. A maintainer must restate it as a new "
+    "issue before any lane acts on it."
+)
+
+
+class Refusal(Exception):
+    pass
+
+
+def emit(payload, code=0):
+    print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+    return code
+
+
+class GitHub:
+    def __init__(self, repo):
+        self.repo = str(repo)
+
+    def run(self, *args):
+        try:
+            completed = subprocess.run(
+                ["gh", *args], cwd=self.repo, text=True, capture_output=True,
+                timeout=60, check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise Refusal("GitHub command could not run: %s" % exc) from exc
+        if completed.returncode:
+            detail = completed.stderr.strip() or completed.stdout.strip()
+            raise Refusal("GitHub command failed: gh %s: %s" % (
+                " ".join(args), detail[:500]
+            ))
+        return completed.stdout
+
+    def json(self, *args):
+        output = self.run(*args)
+        try:
+            return json.loads(output or "{}")
+        except json.JSONDecodeError as exc:
+            raise Refusal("GitHub returned invalid JSON for gh %s" % " ".join(args)) from exc
+
+    def json_lines(self, *args):
+        rows = []
+        for line_number, line in enumerate(self.run(*args).splitlines(), 1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise Refusal(
+                    "GitHub returned malformed JSON line %d for gh %s" % (
+                        line_number, " ".join(args)
+                    )
+                ) from exc
+            if not isinstance(row, dict):
+                raise Refusal(
+                    "GitHub returned non-object JSON line %d for gh %s" % (
+                        line_number, " ".join(args)
+                    )
+                )
+            rows.append(row)
+        return rows
+
+
+def load_config(repo):
+    path = repo / ".omni" / "tracker.json"
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise Refusal("cannot read .omni/tracker.json: %s" % exc) from exc
+    for key in ("owner", "repo", "project_number"):
+        if not config.get(key):
+            raise Refusal("tracker.json is missing %s" % key)
+    if not isinstance(config["project_number"], int):
+        raise Refusal("tracker.json project_number must be an integer")
+    return config
+
+
+def trust_policy(config):
+    try:
+        return github_trust.author_trust_policy(config)
+    except github_trust.AuthorTrustError as exc:
+        raise Refusal("tracker.json author trust is invalid: %s" % exc) from exc
+
+
+def load_control(db_path, explicit):
+    if not db_path.exists():
+        if explicit:
+            raise Refusal("control database does not exist: %s" % db_path)
+        return {"tasks": [], "agent_runs": [], "slots": [], "generated_at": time.time()}
+    controller = Path(__file__).resolve().with_name("nightshift-ctl")
+    try:
+        completed = subprocess.run(
+            [str(controller), "--db", str(db_path), "project-snapshot"],
+            text=True, capture_output=True, timeout=60, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise Refusal("nightshift-ctl project-snapshot could not run: %s" % exc) from exc
+    if completed.returncode:
+        detail = completed.stderr.strip() or completed.stdout.strip()
+        raise Refusal("nightshift-ctl project-snapshot failed: %s" % detail[:500])
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise Refusal("nightshift-ctl project-snapshot returned invalid JSON") from exc
+    for key in ("tasks", "agent_runs", "slots", "generated_at", "current_run_id"):
+        if key not in payload:
+            raise Refusal("nightshift-ctl project-snapshot is missing %s" % key)
+    return payload
+
+
+def raw_labels(issue):
+    result = set()
+    values = issue.get("labels")
+    for value in values if isinstance(values, list) else []:
+        name = value.get("name") if isinstance(value, dict) else value
+        if isinstance(name, str):
+            result.add(name)
+    return result
+
+
+def labels(issue):
+    """The labels allowed to route this issue: none unless its author is
+    trusted. A label on a stranger's issue was applied by a template or by
+    someone triaging it; either way the text underneath is still theirs."""
+    return raw_labels(issue) if issue.get("trusted") is True else set()
+
+
+def clean_text(value, limit=240):
+    rendered = "".join(
+        " " if char.isspace() else char
+        for char in str(value)
+        if char.isspace() or unicodedata.category(char) not in {"Cc", "Cf"}
+    )
+    rendered = re.sub(r"\s+", " ", rendered).strip()
+    if len(rendered) > limit:
+        rendered = rendered[:limit - 1].rstrip() + "…"
+    return rendered
+
+
+def issue_stage(issue, issue_tasks):
+    if str(issue.get("state") or "").lower() == "closed":
+        return "Finished" if issue.get("stateReason") == "COMPLETED" else "Checking"
+    names = labels(issue)
+    if not issue_tasks:
+        if "incident" in names:
+            return "Doing"
+        if "state:ready" in names:
+            return "Ready"
+        return "Shape"
+    active_stages = []
+    terminal = 0
+    for task in issue_tasks:
+        state = task.get("state")
+        if state not in STATE_STAGE:
+            raise Refusal(
+                "issue #%s has unknown active task state %r on %s" % (
+                    issue["number"], state, task.get("id")
+                )
+            )
+        if state in TERMINAL_STATES:
+            terminal += 1
+        else:
+            active_stages.append(STATE_STAGE[state])
+    if not active_stages and terminal:
+        return "Checking"
+    if "Doing" in active_stages:
+        return "Doing"
+    if "Checking" in active_stages:
+        return "Checking"
+    if "Ready" in active_stages:
+        return "Ready"
+    return "Shape"
+
+
+def issue_lane(issue, issue_tasks):
+    names = labels(issue)
+    labelled = sorted(names.intersection({"crew_alpha", "crew_beta"}))
+    if len(labelled) > 1:
+        return "Cross-lane/Unassigned"
+    active = [task for task in issue_tasks if task.get("state") not in TERMINAL_STATES]
+    owned = {task.get("crew") for task in active or issue_tasks}
+    owned.discard(None)
+    if labelled and owned and owned != {labelled[0]}:
+        return "Cross-lane/Unassigned"
+    if len(labelled) == 1:
+        return labelled[0]
+    if "needs-owner" in names:
+        return "Program/shared"
+    if len(owned) == 1:
+        owner = next(iter(owned))
+        return owner if owner in {"crew_alpha", "crew_beta"} else "Program/shared"
+    if owned:
+        return "Cross-lane/Unassigned"
+    if names.intersection({"from-owner", "incident"}):
+        return "Program/shared"
+    return "Cross-lane/Unassigned"
+
+
+def active_runs(issue_tasks, runs_by_task):
+    found = []
+    for task in issue_tasks:
+        found.extend(runs_by_task.get(task.get("id"), ()))
+    return sorted(found, key=lambda row: (
+        row.get("agent") or "", row.get("title") or "", row.get("id") or 0
+    ))
+
+
+def bind_live_runs(control, tasks_by_id, issues_by_number):
+    generated_at = float(control["generated_at"])
+    current_run_id = control.get("current_run_id")
+    slots = {slot.get("id"): slot for slot in control["slots"]}
+    mapped = {}
+    diagnostics = []
+    for run in sorted(control["agent_runs"], key=lambda row: row.get("id") or 0):
+        if run.get("state") != "running":
+            continue
+        slot = slots.get(run.get("slot_id"))
+        reason = None
+        if slot is None:
+            reason = "slot missing"
+        elif slot.get("state") != "active" or slot.get("released_at") is not None:
+            reason = "slot not active"
+        elif slot.get("expires_at") is None or float(slot["expires_at"]) < generated_at:
+            reason = "slot expired"
+        elif slot.get("dispatched_at") is None:
+            reason = "slot was not dispatched"
+        elif slot.get("bound_agent") != run.get("agent"):
+            reason = "slot agent binding differs"
+        elif slot.get("bound_title") != run.get("title"):
+            reason = "slot title binding differs"
+        elif slot.get("task_id") != run.get("task_id"):
+            reason = "slot task binding differs"
+        elif not current_run_id or slot.get("run_id") != current_run_id:
+            reason = "slot is not bound to the current Program run"
+        if reason:
+            diagnostics.append({
+                "agent_run": run.get("id"), "included": False, "reason": reason,
+            })
+            continue
+        task_id = run.get("task_id")
+        task = tasks_by_id.get(task_id)
+        if task is None or task.get("issue") is None:
+            raise Refusal("active run %s is not mapped to an outcome issue" % run.get("id"))
+        if task.get("state") in TERMINAL_STATES:
+            diagnostics.append({
+                "agent_run": run.get("id"), "included": False,
+                "reason": "task is terminal",
+            })
+            continue
+        issue_number = int(task["issue"])
+        if issue_number not in issues_by_number:
+            raise Refusal(
+                "active run %s maps to unknown outcome issue #%s" % (
+                    run.get("id"), issue_number
+                )
+            )
+        mapped.setdefault(task_id, []).append(run)
+    return mapped, diagnostics
+
+
+def issue_values(issue, issue_tasks, runs_by_task):
+    stage = issue_stage(issue, issue_tasks)
+    lane = issue_lane(issue, issue_tasks)
+    running = active_runs(issue_tasks, runs_by_task)
+    agents = sorted({
+        cleaned for row in running
+        if (cleaned := clean_text(row.get("agent")))
+    })
+    roles = clean_text(", ".join(agents)) if agents else "No agent running"
+    activity = "Active" if running else "Idle"
+    names = labels(issue)
+    if str(issue.get("state") or "").lower() == "closed" and \
+            issue.get("stateReason") == "NOT_PLANNED":
+        now = "Outcome closed as not planned; Program: reopen or supersede it."
+    elif str(issue.get("state") or "").lower() == "closed" and \
+            issue.get("stateReason") != "COMPLETED":
+        now = "Outcome closure reason is unknown; Program: inspect it before finishing."
+    elif issue.get("trusted") is not True:
+        now = UNTRUSTED_ACTION
+    elif "needs-owner" in names:
+        now = "Owner: answer the open decision."
+    elif "state:blocked" in names or any(
+        name.startswith("blocked-by:") for name in names
+    ):
+        now = "Program: clear the named blocker."
+    elif running:
+        work = []
+        for row in running:
+            name = clean_text(row.get("agent"), 80) or "agent"
+            title = clean_text(
+                row.get("title") or "assigned work", 120
+            ) or "assigned work"
+            work.append("%s: %s" % (name, title))
+        now = clean_text("Running — " + "; ".join(dict.fromkeys(work)))
+    else:
+        now = {
+            "Shape": "PM: make the outcome ready.",
+            "Ready": "Program: dispatch the next task.",
+            "Doing": "Program: resume the active task.",
+            "Checking": "Review owner: finish the gates.",
+            "Finished": "No action; the outcome issue is closed.",
+        }[stage]
+    return {
+        "Delivery stage": stage,
+        "Lane": lane,
+        "Activity": activity,
+        "Active roles": roles,
+        "Current action": now,
+    }
+
+
+def field_type(field):
+    value = str(field.get("type") or field.get("dataType") or "").upper()
+    if "SINGLESELECT" in value.replace("_", ""):
+        return "SINGLE_SELECT"
+    if value in {"TEXT", "PROJECTV2FIELD"} or value.endswith("FIELD"):
+        return "TEXT"
+    return value
+
+
+def discover_fields(payload):
+    rows = payload.get("fields", [])
+    required = {
+        "Delivery stage": ("SINGLE_SELECT", STAGES),
+        "Lane": ("SINGLE_SELECT", LANES),
+        "Activity": ("SINGLE_SELECT", ("Active", "Idle")),
+        "Active roles": ("TEXT", ()),
+        "Current action": ("TEXT", ()),
+    }
+    fields = {}
+    for name in required:
+        matches = [field for field in rows if field.get("name") == name]
+        if len(matches) > 1:
+            raise Refusal("project has duplicate required field %r" % name)
+        if matches:
+            fields[name] = matches[0]
+    for name, (wanted_type, wanted_options) in required.items():
+        field = fields.get(name)
+        if not field:
+            raise Refusal("project is missing required field %r" % name)
+        if field_type(field) != wanted_type:
+            raise Refusal("project field %r has incompatible type" % name)
+        if not field.get("id"):
+            raise Refusal("project field %r has no id" % name)
+        if wanted_options:
+            options = {option.get("name"): option.get("id")
+                       for option in field.get("options", [])}
+            missing = [value for value in wanted_options if not options.get(value)]
+            if missing:
+                raise Refusal("project field %r is missing options: %s" % (
+                    name, ", ".join(missing)
+                ))
+            field["option_ids"] = options
+    return {name: fields[name] for name in required}
+
+
+def repository_name(value):
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        if value.get("nameWithOwner"):
+            return value["nameWithOwner"]
+        owner = value.get("owner") or {}
+        login = owner.get("login") if isinstance(owner, dict) else owner
+        if login and value.get("name"):
+            return "%s/%s" % (login, value["name"])
+    return None
+
+
+def same_repository(actual, expected):
+    return isinstance(actual, str) and actual.casefold() == expected.casefold()
+
+
+def list_issues(gh, repository, policy):
+    rows = gh.json_lines(
+        "api", "--paginate", *REST_HEADERS,
+        "repos/%s/issues?state=all&per_page=100" % repository,
+        "--jq", ".[] | tojson",
+    )
+    issues = []
+    seen = set()
+    for row in rows:
+        # GitHub's REST issues endpoint also returns pull requests.
+        if "pull_request" in row:
+            continue
+        number = row.get("number")
+        title = row.get("title")
+        url = row.get("html_url")
+        state = row.get("state")
+        reason = row.get("state_reason")
+        raw_labels = row.get("labels")
+        if isinstance(number, bool) or not isinstance(number, int) or number <= 0:
+            raise Refusal("GitHub issue REST output has an invalid number")
+        if number in seen:
+            raise Refusal("GitHub issue REST pagination repeated issue #%s" % number)
+        if not isinstance(title, str) or not isinstance(url, str):
+            raise Refusal("GitHub issue #%s REST output is missing title or URL" % number)
+        match = re.fullmatch(
+            r"https://github\.com/([^/]+/[^/]+)/issues/(\d+)/?", url
+        )
+        if not match or not same_repository(match.group(1), repository) or \
+                int(match.group(2)) != number:
+            raise Refusal("GitHub issue #%s has a mismatched REST URL" % number)
+        if not isinstance(state, str) or state.lower() not in {"open", "closed"}:
+            raise Refusal("GitHub issue #%s REST output has an invalid state" % number)
+        if reason is not None and not isinstance(reason, str):
+            raise Refusal("GitHub issue #%s REST output has an invalid state_reason" % number)
+        if isinstance(reason, str) and not reason.strip():
+            raise Refusal("GitHub issue #%s REST output has an invalid state_reason" % number)
+        if not isinstance(raw_labels, list) or any(
+            not isinstance(label, dict) or not isinstance(label.get("name"), str)
+            or not label["name"].strip()
+            for label in raw_labels
+        ):
+            raise Refusal("GitHub issue #%s REST output has invalid labels" % number)
+        seen.add(number)
+        issues.append({
+            "number": number,
+            "title": title,
+            "url": url,
+            "labels": raw_labels,
+            "state": state.upper(),
+            "stateReason": reason.upper() if reason is not None else None,
+            **author_facts(row, policy),
+        })
+    return issues
+
+
+def author_facts(row, policy):
+    return {
+        "author": github_trust.author_login(row),
+        "association": github_trust.author_association(row),
+        "trusted": github_trust.author_trusted(row, policy),
+    }
+
+
+def item_issue_number(item, repository):
+    content = item.get("content") or {}
+    content_type = content.get("type")
+    if content_type not in (None, "Issue"):
+        return None
+    url = content.get("url") or item.get("url") or ""
+    if content_type is None and not url and content.get("number") is None:
+        return None
+    item_repo = repository_name(content.get("repository"))
+    if item_repo and not same_repository(item_repo, repository):
+        raise Refusal("project contains an issue card from foreign repository %s" % item_repo)
+    match = re.fullmatch(r"https://github\.com/([^/]+/[^/]+)/issues/(\d+)/?", url)
+    if match:
+        if not same_repository(match.group(1), repository):
+            raise Refusal("project contains a foreign issue URL: %s" % url)
+        return int(match.group(2))
+    if url:
+        raise Refusal("project issue card has an unrecognized URL: %s" % url)
+    number = content.get("number")
+    if isinstance(number, int) and same_repository(item_repo, repository):
+        return number
+    raise Refusal("project issue card has no verifiable repository identity")
+
+
+def current_value(item, name):
+    for key in FIELD_KEYS[name]:
+        if key in item:
+            value = item[key]
+            if isinstance(value, dict):
+                return value.get("name") or value.get("text")
+            return value
+    return None
+
+
+def edit_field(gh, project_id, item_id, field, name, value):
+    args = [
+        "project", "item-edit", "--id", item_id,
+        "--project-id", project_id, "--field-id", field["id"],
+    ]
+    if name in ("Delivery stage", "Lane", "Activity"):
+        args += ["--single-select-option-id", field["option_ids"][value]]
+    else:
+        args += ["--text", value]
+    gh.json(*args, "--format", "json")
+
+
+def list_items(gh, number, owner):
+    return gh.json(
+        "project", "item-list", number, "--owner", owner,
+        "--limit", "1000", "--format", "json",
+    )
+
+
+def index_items(payload, repository):
+    items = {}
+    for item in payload.get("items", []):
+        issue_number = item_issue_number(item, repository)
+        if issue_number is not None:
+            if issue_number in items:
+                raise Refusal("project has duplicate cards for issue #%s" % issue_number)
+            items[issue_number] = item
+    return items
+
+
+def project_owner(project):
+    owner = project.get("owner")
+    if isinstance(owner, dict):
+        return owner.get("login")
+    return owner
+
+
+@contextlib.contextmanager
+def apply_lock(db_path):
+    lock_path = db_path.with_name(db_path.name + ".tracker-sync.lock")
+    try:
+        handle = open(lock_path, "a+", encoding="utf-8")
+    except OSError as exc:
+        raise Refusal("cannot open tracker apply lock: %s" % exc) from exc
+    with handle:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise Refusal("another tracker apply holds %s" % lock_path) from exc
+        except OSError as exc:
+            raise Refusal("cannot acquire tracker apply lock: %s" % exc) from exc
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def checked_repository(repo):
+    config = load_config(repo)
+    policy = trust_policy(config)
+    repository = "%s/%s" % (config["owner"], config["repo"])
+    gh = GitHub(repo)
+    repo_view = gh.json("repo", "view", "--json", "nameWithOwner")
+    if not same_repository(repo_view.get("nameWithOwner"), repository):
+        raise Refusal("repository identity does not match tracker config")
+    return config, policy, repository, gh
+
+
+def reconcile(args, db_path):
+    repo = Path(args.repo).resolve()
+    config, policy, repository, gh = checked_repository(repo)
+    owner = config["owner"]
+    number = str(config["project_number"])
+    project = gh.json("project", "view", number, "--owner", owner, "--format", "json")
+    project_id = project.get("id")
+    if not project_id:
+        raise Refusal("GitHub project has no node id")
+    if not same_repository(project_owner(project), owner):
+        raise Refusal("GitHub project owner does not match tracker config")
+    if project.get("number") != int(number):
+        raise Refusal("GitHub project number does not match tracker config")
+    fields = discover_fields(gh.json(
+        "project", "field-list", number, "--owner", owner,
+        "--limit", "100", "--format", "json",
+    ))
+    item_payload = list_items(gh, number, owner)
+    issues = list_issues(gh, repository, policy)
+    control = load_control(db_path, args.db is not None)
+    tasks = control["tasks"]
+    issues_by_number = {int(issue["number"]): issue for issue in issues}
+    tasks_by_issue = {}
+    for task in tasks:
+        if task.get("issue") is not None:
+            tasks_by_issue.setdefault(int(task["issue"]), []).append(task)
+    tasks_by_id = {task.get("id"): task for task in tasks if task.get("id")}
+    runs_by_task, diagnostics = bind_live_runs(
+        control, tasks_by_id, issues_by_number
+    )
+    items = index_items(item_payload, repository)
+
+    target_numbers = {
+        number for number, issue in issues_by_number.items()
+        if str(issue.get("state") or "").lower() == "open"
+        and issue.get("title") != "Program status"
+    }
+    target_numbers.update(
+        number for number in items
+        if number in issues_by_number
+        and issues_by_number[number].get("title") != "Program status"
+    )
+    changes = []
+    desired_by_issue = {}
+    for issue_number in sorted(target_numbers):
+        issue = issues_by_number[issue_number]
+        issue_tasks = sorted(tasks_by_issue.get(issue_number, []), key=lambda row: row["id"])
+        desired = issue_values(issue, issue_tasks, runs_by_task)
+        desired_by_issue[issue_number] = desired
+        item = items.get(issue_number)
+        if item is None and str(issue.get("state") or "").lower() == "open":
+            changes.append({
+                "action": "add_card", "issue": issue_number,
+                "url": issue["url"],
+            })
+            current = {}
+        else:
+            current = {name: current_value(item, name) for name in FIELD_ORDER}
+        for name in FIELD_ORDER:
+            if current.get(name) != desired[name]:
+                changes.append({
+                    "action": "set_field", "field": name,
+                    "from": current.get(name), "issue": issue_number,
+                    "to": desired[name],
+                })
+
+    applied = 0
+    if args.apply:
+        # Add missing outcome cards first, then re-read the board. This closes
+        # the add/edit race and makes a second --apply issue zero writes.
+        for issue_number in sorted(desired_by_issue):
+            item = items.get(issue_number)
+            issue = issues_by_number[issue_number]
+            if item is None and str(issue.get("state") or "").lower() == "open":
+                added = gh.json(
+                    "project", "item-add", number, "--owner", owner,
+                    "--url", issues_by_number[issue_number]["url"], "--format", "json",
+                )
+                if not (added.get("id") or (added.get("item") or {}).get("id")):
+                    raise Refusal("added issue #%s but GitHub returned no item id" % issue_number)
+                applied += 1
+        items = index_items(list_items(gh, number, owner), repository)
+        for issue_number in sorted(desired_by_issue):
+            item = items.get(issue_number)
+            if item is None:
+                raise Refusal("outcome issue #%s has no Project card after add" % issue_number)
+            item_id = item.get("id")
+            if not item_id:
+                raise Refusal("project item for issue #%s has no id" % issue_number)
+            desired = desired_by_issue[issue_number]
+            for name in FIELD_ORDER:
+                if current_value(item, name) != desired[name]:
+                    edit_field(gh, project_id, item_id, fields[name], name, desired[name])
+                    item[FIELD_KEYS[name][0]] = desired[name]
+                    applied += 1
+        # A whole-command rerun is safe and idempotent if GitHub has not exposed
+        # a just-written value yet. Do not hide that state with an internal loop.
+        verified = index_items(list_items(gh, number, owner), repository)
+        for issue_number, desired in desired_by_issue.items():
+            item = verified.get(issue_number)
+            if item is None:
+                raise Refusal("Project verification lost issue #%s" % issue_number)
+            drift = {
+                name: {"want": desired[name], "got": current_value(item, name)}
+                for name in FIELD_ORDER
+                if current_value(item, name) != desired[name]
+            }
+            if drift:
+                raise Refusal(
+                    "Project verification failed for issue #%s: %s" % (
+                        issue_number, json.dumps(drift, sort_keys=True)
+                    )
+                )
+
+    return {
+        "ok": True,
+        "mode": "apply" if args.apply else "dry-run",
+        "project": {"id": project_id, "number": int(number), "owner": owner},
+        "open_issues": sum(
+            str(issue.get("state") or "").lower() == "open" for issue in issues
+        ),
+        "changes": changes,
+        "change_count": len(changes),
+        "applied_operations": applied,
+        "agent_run_diagnostics": diagnostics,
+        "untrusted_issues": sorted(
+            issue["number"] for issue in issues
+            if issue["state"] == "OPEN" and not issue["trusted"]
+        ),
+    }
+
+
+def sync(args):
+    repo = Path(args.repo).resolve()
+    if args.apply and not args.db:
+        raise Refusal("--apply requires an explicit existing --db")
+    raw_db_path = Path(args.db).expanduser() if args.db else None
+    if args.apply:
+        expected_db = repo / ".omni" / "control.db"
+        if (repo / ".omni").is_symlink():
+            raise Refusal("--apply refuses a symlink .omni directory")
+        if raw_db_path.is_symlink():
+            raise Refusal("--apply refuses a symlink --db")
+        db_path = raw_db_path.resolve()
+        if db_path != expected_db:
+            raise Refusal("--apply --db must be exactly <resolved --repo>/.omni/control.db")
+        if not db_path.is_file():
+            raise Refusal("--apply requires an explicit existing --db")
+        with apply_lock(db_path):
+            return reconcile(args, db_path)
+    db_path = raw_db_path.resolve() if raw_db_path else repo / ".omni" / "control.db"
+    return reconcile(args, db_path)
+
+
+def priority_rank(issue):
+    names = labels(issue)
+    return next((rank for rank, name in enumerate(PRIORITIES) if name in names),
+                len(PRIORITIES))
+
+
+def intake(args):
+    """Trusted open issues per lane. Untrusted ones are listed by number and
+    author only: their title and body never reach the caller."""
+    _, policy, repository, gh = checked_repository(Path(args.repo).resolve())
+    open_issues = [
+        issue for issue in list_issues(gh, repository, policy)
+        if issue["state"] == "OPEN"
+        and not (issue["trusted"] and issue["title"] == "Program status")
+    ]
+    trusted = [issue for issue in open_issues if issue["trusted"]]
+
+    def summary(issue):
+        return {
+            "number": issue["number"], "title": issue["title"], "url": issue["url"],
+            "labels": sorted(labels(issue)), "author": issue["author"],
+            "association": issue["association"],
+        }
+
+    def lane(label):
+        return [summary(issue) for issue in trusted if label in labels(issue)]
+
+    ready = sorted(
+        (issue for issue in trusted if "state:ready" in labels(issue)),
+        key=lambda issue: (priority_rank(issue), issue["number"]),
+    )
+    return {
+        "ok": True, "mode": "intake", "repository": repository,
+        "trust": {"associations": sorted(policy["associations"]),
+                  "logins": sorted(policy["logins"])},
+        "incident": lane("incident"),
+        "ready": [summary(issue) for issue in ready],
+        "owner_requests": lane("from-owner"),
+        "trusted": [summary(issue) for issue in trusted],
+        "untrusted": [{
+            "number": issue["number"], "url": issue["url"],
+            "author": issue["author"], "association": issue["association"],
+            "ignored_labels": sorted(raw_labels(issue)),
+        } for issue in open_issues if not issue["trusted"]],
+    }
+
+
+def issue_view(args):
+    """One issue (or pull request conversation) with its comments, carrying
+    text only where the author is trusted."""
+    _, policy, repository, gh = checked_repository(Path(args.repo).resolve())
+    number = args.issue
+    row = gh.json("api", *REST_HEADERS, "repos/%s/issues/%d" % (repository, number))
+    url = row.get("html_url")
+    match = re.fullmatch(
+        r"https://github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)/?", url or ""
+    )
+    if row.get("number") != number or not match or \
+            not same_repository(match.group(1), repository) or \
+            int(match.group(3)) != number:
+        raise Refusal("GitHub issue #%s has a mismatched REST identity" % number)
+    facts = author_facts(row, policy)
+    trusted = facts["trusted"]
+    issue = {"number": number, "url": url, "state": str(row.get("state") or "").upper(),
+             "pull_request": "pull_request" in row, **facts,
+             "labels": sorted(labels({**facts, "labels": row.get("labels")}))}
+    if trusted:
+        issue.update(title=row.get("title"), body=row.get("body") or "")
+    else:
+        issue.update(title=None, body=None, withheld="untrusted_author",
+                     ignored_labels=sorted(raw_labels(row)))
+    comments = []
+    for comment in gh.json_lines(
+            "api", "--paginate", *REST_HEADERS,
+            "repos/%s/issues/%d/comments?per_page=100" % (repository, number),
+            "--jq", ".[] | tojson"):
+        facts = author_facts(comment, policy)
+        entry = {"id": comment.get("id"), "url": comment.get("html_url"),
+                 "created_at": comment.get("created_at"), **facts}
+        if facts["trusted"]:
+            entry["body"] = comment.get("body") or ""
+        else:
+            entry.update(body=None, withheld="untrusted_author")
+        comments.append(entry)
+    return {"ok": True, "mode": "issue", "repository": repository,
+            "issue": issue, "comments": comments,
+            "withheld": sum(1 for entry in [issue, *comments] if entry["body"] is None)}
+
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser(
+        description="Plan or apply Nightshift outcome-issue Project fields"
+    )
+    parser.add_argument("--repo", default=".", help="repository root (default: cwd)")
+    parser.add_argument("--db", help="read this control.db instead of .omni/control.db")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--apply", action="store_true", help="apply Project-only changes")
+    mode.add_argument("--intake", action="store_true",
+                      help="list trusted open issues per lane (read-only)")
+    mode.add_argument("--issue", type=int,
+                      help="read one issue and its comments, trusted text only")
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    try:
+        args = parse_args(argv)
+        if args.intake:
+            return emit(intake(args))
+        if args.issue is not None:
+            if args.issue <= 0:
+                raise Refusal("--issue must be a positive issue number")
+            return emit(issue_view(args))
+        return emit(sync(args))
+    except Refusal as exc:
+        return emit({"ok": False, "reason": str(exc)}, 3)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

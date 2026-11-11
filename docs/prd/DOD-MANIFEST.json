@@ -1,0 +1,1461 @@
+{
+  "_notes": "Data, not the fixed point (docs/prd/DEFINITION-OF-DONE.md 'Requirement IDs, not test names'). Bound and validated by tests/dod_validate.py; see docs/decisions/ADR-0025-dod-close-out-gate.md. This file's ownership sits under docs/prd/**, which docs/owners.md assigns to `product` -- built here per MILESTONES.md:131 ('crews propose rows through their PRs'); merge into main is gated on a separate program/product ruling per issue #186's PM Definition-of-Ready pass, not on anything in this file.",
+  "schema_version": 1,
+  "required_ci_jobs": [
+    "tests"
+  ],
+  "changes": [
+    1,
+    2,
+    7,
+    14,
+    15,
+    16,
+    18,
+    22,
+    24,
+    25,
+    35,
+    37,
+    39,
+    63,
+    69,
+    70,
+    71,
+    78,
+    85,
+    90,
+    94,
+    97,
+    99,
+    104,
+    106,
+    111,
+    113,
+    114,
+    117,
+    119,
+    122,
+    123,
+    125,
+    127,
+    128,
+    130,
+    133,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140,
+    142,
+    144,
+    145,
+    168,
+    189,
+    199,
+    200,
+    202,
+    204,
+    206,
+    207,
+    208,
+    209,
+    224,
+    225,
+    226,
+    227,
+    230,
+    234,
+    235,
+    237,
+    239,
+    241,
+    243,
+    246,
+    247,
+    248,
+    249,
+    250,
+    252,
+    254,
+    255,
+    256,
+    257,
+    259,
+    260,
+    261,
+    263,
+    264,
+    265,
+    266,
+    267,
+    268,
+    269,
+    270,
+    271,
+    272,
+    273,
+    274,
+    275,
+    276,
+    278,
+    279,
+    280,
+    281,
+    282,
+    283,
+    284,
+    285,
+    287,
+    288,
+    289,
+    290,
+    291,
+    292,
+    293,
+    294,
+    295,
+    296,
+    297,
+    298,
+    299,
+    300,
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308,
+    309,
+    310,
+    311,
+    312,
+    313,
+    314,
+    315,
+    316,
+    317,
+    318,
+    320,
+    321,
+    322,
+    323,
+    324,
+    326,
+    327,
+    328,
+    329,
+    330,
+    331,
+    332,
+    333,
+    334,
+    335,
+    337,
+    339,
+    340,
+    341,
+    342,
+    343,
+    344,
+    346,
+    347,
+    348,
+    349,
+    350,
+    351,
+    352,
+    354,
+    355,
+    356,
+    357,
+    358,
+    359,
+    360,
+    361,
+    362,
+    363,
+    364,
+    365,
+    366,
+    367,
+    368,
+    370,
+    371,
+    372,
+    373,
+    374,
+    375,
+    376,
+    377,
+    378,
+    379,
+    380,
+    382,
+    383,
+    384,
+    385,
+    386,
+    387,
+    389,
+    391,
+    394,
+    396,
+    397,
+    399,
+    401,
+    402,
+    404,
+    405,
+    406,
+    407,
+    408,
+    409,
+    410,
+    412,
+    414,
+    416,
+    419,
+    420,
+    435,
+    436,
+    440,
+    441,
+    444,
+    445,
+    446,
+    447,
+    448,
+    450,
+    451,
+    452,
+    453,
+    461,
+    462,
+    464,
+    466,
+    473,
+    487,
+    493,
+    494,
+    496,
+    497,
+    499,
+    500,
+    502,
+    505,
+    506,
+    511,
+    512,
+    513,
+    514,
+    515,
+    517,
+    519,
+    523,
+    526,
+    529,
+    530,
+    532,
+    533,
+    535
+  ],
+  "conditions": {
+    "1": {
+      "kind": "auto"
+    },
+    "2": {
+      "kind": "auto"
+    },
+    "3": {
+      "kind": "auto"
+    },
+    "4": {
+      "kind": "auto"
+    },
+    "5": {
+      "kind": "auto"
+    },
+    "6": {
+      "kind": "auto"
+    },
+    "7": {
+      "kind": "auto"
+    },
+    "8": {
+      "kind": "manual",
+      "reviewed_by": "crew_beta lead (cross-crew review, task 509-manifest-d08-review): round 1 (PR #530, commit 6075e6f) FAILed RT-18/19/20/21/22/32/33/34 for file-alone binding on bin/nightshift-ctl (162 addressable symbols; ADR-0068 §5 itself commits to file:symbol); round 2 (PR #538, commit 50b0397) verified each of the 8 binding.symbol values independently against current source (not from the PR's table) -- see https://github.com/tushardhara/nightshift/pull/538#issuecomment-5505088689 -- confirmed metadata-only diff (bin/nightshift-ctl byte-identical to origin/main) and all 55 declared RT-node tests green."
+    },
+    "9": {
+      "kind": "auto"
+    },
+    "10": {
+      "kind": "auto"
+    },
+    "11": {
+      "kind": "auto"
+    },
+    "12": {
+      "kind": "auto"
+    },
+    "13": {
+      "kind": "auto"
+    },
+    "14": {
+      "kind": "auto"
+    },
+    "15": {
+      "kind": "auto"
+    },
+    "16": {
+      "kind": "auto"
+    },
+    "17": {
+      "kind": "auto"
+    },
+    "18": {
+      "kind": "auto"
+    },
+    "19": {
+      "kind": "auto"
+    },
+    "20": {
+      "kind": "auto"
+    },
+    "21": {
+      "kind": "manual",
+      "frozen_path_control": "docs/audit/FROZEN-PATH-CONTROL.md"
+    },
+    "22": {
+      "kind": "auto"
+    },
+    "23": {
+      "kind": "auto"
+    },
+    "24": {
+      "kind": "auto"
+    }
+  },
+  "rt_ids": {
+    "RT-01": {
+      "condition": 1,
+      "test_node_id": "tests.test_go_toolchain.RT01VersionDiscoverySurvivesPipefail",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/provision-ubuntu.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_go_toolchain.RT01VersionDiscoverySurvivesPipefail",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-01.txt"
+      }
+    },
+    "RT-02": {
+      "condition": 1,
+      "test_node_id": "tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/provision-ubuntu.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_go_toolchain.RT02ChecksumLookupSurvivesPipefail",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-02.txt"
+      }
+    },
+    "RT-03": {
+      "condition": 2,
+      "test_node_id": "tests.test_go_toolchain.RT03MissingGoIsANormalState",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/provision-ubuntu.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_go_toolchain.RT03MissingGoIsANormalState",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-03.txt"
+      }
+    },
+    "RT-04": {
+      "condition": 2,
+      "test_node_id": "tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/provision-ubuntu.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_go_toolchain.RT04UnresolvableVersionFailsLoudly",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-04.txt"
+      }
+    },
+    "RT-05": {
+      "condition": 3,
+      "test_node_id": "tests.test_user_manager.RT05CapabilityAbsentButObtainable",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/bootstrap.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_user_manager.RT05CapabilityAbsentButObtainable",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-05.txt"
+      }
+    },
+    "RT-06": {
+      "condition": 3,
+      "test_node_id": "tests.test_user_manager.RT06CapabilityUnobtainable",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/bootstrap.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_user_manager.RT06CapabilityUnobtainable",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-06.txt"
+      }
+    },
+    "RT-07": {
+      "condition": 3,
+      "test_node_id": "tests.test_user_manager.RT07Idempotent",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/bootstrap.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_user_manager.RT07Idempotent",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-07.txt"
+      }
+    },
+    "RT-08": {
+      "condition": 4,
+      "test_node_id": "tests.test_watchdog.RT08StaleDespiteBackupNoise",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/nightshift-watchdog.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_watchdog.RT08StaleDespiteBackupNoise",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-08.txt"
+      }
+    },
+    "RT-09": {
+      "condition": 4,
+      "test_node_id": "tests.test_watchdog.RT09ValidRecordIsAlive",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/nightshift-watchdog.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_watchdog.RT09ValidRecordIsAlive",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-09.txt"
+      }
+    },
+    "RT-10": {
+      "condition": 4,
+      "test_node_id": "tests.test_watchdog.RT10NoSlotRenewal",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/nightshift-watchdog.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_watchdog.RT10NoSlotRenewal",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-10.txt"
+      }
+    },
+    "RT-11": {
+      "condition": 4,
+      "test_node_id": "tests.test_watchdog.RT11NoServiceMutation",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/nightshift-watchdog.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_watchdog.RT11NoServiceMutation",
+        "exit_code": 0,
+        "kind": "preservation",
+        "output_path": "docs/audit/baseline/RT-11.txt",
+        "mutations": [
+          {
+            "id": "RT-11.M1",
+            "target_path": "alert path (reached when the Program is NOT alive)",
+            "patch_path": "docs/audit/baseline/RT-11.mutant.patch",
+            "mutation": "insert `systemctl --user restart omnigent-server` before the read-only is-active diagnostics",
+            "command": "python3 -m unittest -v tests.test_watchdog.RT11NoServiceMutation",
+            "exit_code": 1,
+            "output_path": "docs/audit/baseline/RT-11.mutation.txt",
+            "applied_to_sha": "bdcdcfc1f3f4da0077f09fcfdc6588cff242e617",
+            "committed_to_branch": false
+          },
+          {
+            "id": "RT-11.M2",
+            "target_path": "alive path (early return when the Program IS alive)",
+            "patch_path": "docs/audit/baseline/RT-11.mutant-alive.patch",
+            "mutation": "insert `systemctl --user restart omnigent-host` into the alive branch before its exit 0",
+            "command": "python3 -m unittest -v tests.test_watchdog.RT11NoServiceMutation",
+            "exit_code": 1,
+            "output_path": "docs/audit/baseline/RT-11.mutation-alive.txt",
+            "applied_to_sha": "bdcdcfc1f3f4da0077f09fcfdc6588cff242e617",
+            "committed_to_branch": false
+          }
+        ]
+      }
+    },
+    "RT-12": {
+      "condition": 4,
+      "test_node_id": "tests.test_watchdog.RT12AlertRateLimitAndRearm",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/nightshift-watchdog.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_watchdog.RT12AlertRateLimitAndRearm",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-12.txt"
+      }
+    },
+    "RT-13": {
+      "condition": 5,
+      "test_node_id": "tests.test_bwrap_probe.RT13ProbeFailureFailsPreflight",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/preflight.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_bwrap_probe.RT13ProbeFailureFailsPreflight",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-13.txt"
+      }
+    },
+    "RT-14": {
+      "condition": 5,
+      "test_node_id": "tests.test_bwrap_probe.RT14ProbeSuccessRaisesNothing",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/preflight.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_bwrap_probe.RT14ProbeSuccessRaisesNothing",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-14.txt"
+      }
+    },
+    "RT-15": {
+      "condition": 5,
+      "test_node_id": "tests.test_bwrap_probe.RT15NoPresenceOnlyCheckSurvives",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/preflight.sh"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "python3 -m unittest -v tests.test_bwrap_probe.RT15NoPresenceOnlyCheckSurvives",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-15.txt"
+      }
+    },
+    "RT-16": {
+      "condition": 6,
+      "test_node_id": [
+        "test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_session_create_is_not_an_authorized_dispatch_form",
+        "test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_opaque_session_id_cannot_prove_the_target",
+        "test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch",
+        "test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches"
+      ],
+      "cwd": "tests",
+      "binding": {
+        "file": "deploy/policies/omnipods_policies.py",
+        "symbol": "worker_semaphore"
+      },
+      "baseline": {
+        "baseline_sha": "6b52252ff8c4975ffc30a59b3142ae6b86a90875",
+        "command": "cd tests && python3 -m unittest -v test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_session_create_is_not_an_authorized_dispatch_form test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_opaque_session_id_cannot_prove_the_target test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches",
+        "exit_code": 1,
+        "kind": "regression",
+        "output_path": "docs/audit/baseline/RT-16.txt",
+        "note": "ADR-0069 regression capture, extended by ADR-0074 with a fourth node. Two fixture-free bypass denials fail because the ancestor returns ALLOW; the positive control and the consumed-slot exclusion node fail because the ancestor requires caller-supplied args.slot_id instead of deriving and consuming the matching slot. Fixture setup completes before every property assertion. SCOPE OF THE F-1 CLAIM (ADR-0074 decision 2, verbatim): \"F-1 makes a consumed slot a derivation candidate; the observable consequence is a false ambiguity denial on the index-sanctioned reuse path, asserted on persisted worker_slots columns. F-1 cannot produce a duplicate dispatch: the one-use compare-and-set independently forecloses it.\" The kill is on the LIVENESS face, not the safety face; a reviewer who expects \"the mutant lets a bad dispatch through\" is right to reject that framing, because no such scenario exists. Additionally: at ancestor 6b52252 the new node fails at its FIRST assertion for the same reason the existing positive control does (args.slot_id required), so it contributes a MUTATION KILL AT HEAD, NOT INDEPENDENT ANCESTOR REGRESSION EVIDENCE.",
+        "mutations": [
+          {
+            "id": "RT-16.M1",
+            "target_path": "the three `dispatched_at IS NULL` sites in worker_semaphore (derivation SELECT, oncall one-use CAS, generation-guarded one-use CAS)",
+            "patch_path": "docs/audit/baseline/RT-16.mutant.patch",
+            "mutation": "delete `dispatched_at IS NULL` from all three sites, so a consumed slot becomes a derivation candidate again",
+            "rationale": "Issue #608. A consumed slot must never be re-derived. Under this mutant the index-sanctioned identity-reuse path becomes a two-row `ambiguous dispatch identity` denial, which the fourth node detects on persisted worker_slots columns with no dependence on any reason string (issue #607).",
+            "command": "cd tests && python3 -m unittest -v test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_session_create_is_not_an_authorized_dispatch_form test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_opaque_session_id_cannot_prove_the_target test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches",
+            "exit_code": 1,
+            "output_path": "docs/audit/baseline/RT-16.mutation.txt",
+            "applied_to_sha": "c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+            "committed_to_branch": false,
+            "observed": "FAILED (failures=2): the pre-existing positive control (via its reason-string assertion) and the new consumed-slot exclusion node (via `second['result']` and its persisted-state assertions). The two fixture-free bypass nodes are unaffected, as expected.",
+            "not_validated_by_dod_validate": "RT-16 is a `regression`-kind record, and tests/dod_validate.py's validate_rt_baseline only invokes _validate_mutation when derived_kind == 'preservation'. This mutations array is therefore audit evidence for #608 and is NOT mechanically checked by the validator; it does not gate D06's flip. Claim no validator coverage for it."
+          }
+        ]
+      }
+    },
+    "RT-17": {
+      "condition": 6,
+      "test_node_id": [
+        "test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling",
+        "test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token",
+        "test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation"
+      ],
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": "cmd_slot_acquire"
+      },
+      "baseline": {
+        "baseline_sha": "c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+        "command": "cd tests && python3 -m unittest -v test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation",
+        "exit_code": 0,
+        "kind": "preservation",
+        "output_path": "docs/audit/baseline/RT-17.txt",
+        "note": "ADR-0069 preservation capture, extended by ADR-0074 with a third node. 14 independently produced normal acquires across two crews converge on explicit hermetic capacity 7/2; the Program-authority gate refuses missing and wrong tokens for oncall reserve acquires; and an oncall acquire presenting a token from a FENCED-OUT generation is refused. The third node is what earns the 'live, current-generation' clause of RT-17's amended id text -- product made binding it a condition of D06 going green (DEFINITION-OF-DONE.md D06 changelog, 2026-09-02, PR #611). No third mutant is authored: M2 already kills it.",
+        "mutations": [
+          {
+            "id": "RT-17.M1",
+            "target_path": "normal worker ceiling in cmd_slot_acquire",
+            "patch_path": "docs/audit/baseline/RT-17.mutant.patch",
+            "mutation": "remove reserve_for_oncall from the normal-slot ceiling",
+            "rationale": "A normal acquire must never consume the on-call reserve.",
+            "command": "cd tests && python3 -m unittest -v test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation",
+            "exit_code": 1,
+            "output_path": "docs/audit/baseline/RT-17.mutation.txt",
+            "applied_to_sha": "c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+            "committed_to_branch": false,
+            "observed": "FAILED (failures=1): the ceiling node only (7 != 5). The token node and the fenced-out-generation node both pass, as expected -- M1 does not touch the authority gate."
+          },
+          {
+            "id": "RT-17.M2",
+            "target_path": "Program authority-token predicate in cmd_slot_acquire",
+            "patch_path": "docs/audit/baseline/RT-17.authority-mutant.patch",
+            "mutation": "bypass the oncall authority-token rejection branch",
+            "rationale": "An oncall reserve acquire without a live, current-generation Program authority token must be denied with exit 3. The same _authority_token_matches predicate carries both the missing/wrong-token refusal and the fenced-out-generation refusal, which is why one mutant kills both nodes and no third mutant is needed.",
+            "command": "cd tests && python3 -m unittest -v test_slots.RT17ConcurrentAcquiresShareOneBudget.test_concurrent_acquires_converge_on_one_normal_worker_ceiling test_slots.RT17ConcurrentAcquiresShareOneBudget.test_oncall_reserve_rejects_missing_and_wrong_authority_token test_authority_fence.SlotAcquireOncallTokenGate.test_denied_for_a_fenced_out_generation",
+            "exit_code": 1,
+            "output_path": "docs/audit/baseline/RT-17.authority-mutation.txt",
+            "applied_to_sha": "c34d23b93b7bb7e84f9919ccf9555ffa65114bd3",
+            "committed_to_branch": false,
+            "observed": "FAILED (failures=2): the missing/wrong-token node AND the fenced-out-generation node. The ceiling node passes, as expected."
+          }
+        ]
+      }
+    },
+    "RT-18": {
+      "condition": 7,
+      "test_node_id": "test_claims.RT18DispatchDeniedForForeignActiveClaim.test_second_claimant_denied_first_claim_untouched",
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": "cmd_claim_acquire"
+      },
+      "baseline": {
+        "baseline_sha": "2d1813fe8945461c96a863963904ee38c3d4e877",
+        "command": "cd tests && python3 -m unittest -v test_claims.RT18DispatchDeniedForForeignActiveClaim",
+        "exit_code": 0,
+        "kind": "preservation",
+        "output_path": "docs/audit/baseline/RT-18.txt",
+        "note": "This property (task_claims' one_active_claim unique index denying a second claimant while one is active) pre-dates this PR -- the baseline PASSES at the checkpoint, per WA-008 this is a preservation record, not a fix-introduces-pass record. D07 previously FAILed on 'no test class exists' for this id, not on the underlying behaviour; this PR supplies the missing test class, ADR-0068 (issue #508).",
+        "mutations": [
+          {
+            "id": "RT-18.M1",
+            "target_path": "cmd_claim_acquire's IntegrityError handler (bin/nightshift-ctl:1739)",
+            "patch_path": "docs/audit/baseline/RT-18.mutant.patch",
+            "mutation": "narrow the except clause from sqlite3.IntegrityError to sqlite3.OperationalError, so the one_active_claim unique-index violation on a second claimant is no longer caught and turned into a clean denial",
+            "command": "cd tests && python3 -m unittest -v test_claims.RT18DispatchDeniedForForeignActiveClaim",
+            "exit_code": 1,
+            "output_path": "docs/audit/baseline/RT-18.mutation.txt",
+            "applied_to_sha": "2d1813fe8945461c96a863963904ee38c3d4e877",
+            "committed_to_branch": false
+          }
+        ]
+      }
+    },
+    "RT-19": {
+      "condition": 7,
+      "test_node_id": [
+        "test_claims.ClaimReleaseRenewRequireRealClaimant.test_release_wrong_claimant_denied_row_untouched",
+        "test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_wrong_claimant_denied_expiry_untouched",
+        "test_claims.ClaimReleaseRenewRequireRealClaimant.test_release_real_claimant_succeeds",
+        "test_claims.ClaimReleaseRenewRequireRealClaimant.test_renew_real_claimant_succeeds"
+      ],
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": [
+          "cmd_claim_release",
+          "cmd_claim_renew"
+        ]
+      },
+      "baseline": {
+        "baseline_sha": "2d1813fe8945461c96a863963904ee38c3d4e877",
+        "command": "cd tests && python3 -m unittest -v test_claims.ClaimReleaseRenewRequireRealClaimant",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-19.txt",
+        "note": "6 failures + 1 error pre-fix (claim release/renew took no --claimant at all); ADR-0068, issue #508."
+      }
+    },
+    "RT-34": {
+      "condition": 7,
+      "test_node_id": [
+        "test_claims.RT34RecoveryTransitionRequiredForSequentialReexecution.test_refused_without_any_recovery_transition",
+        "test_claims.RT34RecoveryTransitionRequiredForSequentialReexecution.test_permitted_after_authorized_release_generation_recorded",
+        "test_claims.RT34RecoveryTransitionRequiredForSequentialReexecution.test_permitted_after_ttl_expiry_generation_recorded"
+      ],
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": "cmd_claim_acquire"
+      },
+      "baseline": {
+        "baseline_sha": "2d1813fe8945461c96a863963904ee38c3d4e877",
+        "command": "cd tests && python3 -m unittest -v test_claims.RT34RecoveryTransitionRequiredForSequentialReexecution",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-34.txt",
+        "note": "Freshly allocated id, NOT RT-20 -- staff's dedicated, concurrent, authoritative ruling on issue #518 (task 518-rt20-binding-decision) narrows RT-20 to test_fencing.py's FencingMigrationTest and mints RT-31 for MigrationConcurrencyTest; RT-20 is untouched by this PR. See ADR-0068's correction note. Covers condition 7's 'sequential re-execution without a recorded recovery generation is refused' property, issue #508."
+      }
+    },
+    "RT-20": {
+      "condition": 7,
+      "test_node_id": "test_fencing",
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": [
+          "ensure_schema",
+          "add_column",
+          "rename_column"
+        ]
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "cd tests && python3 -m unittest -v test_fencing",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-20.txt"
+      }
+    },
+    "RT-32": {
+      "condition": 18,
+      "test_node_id": [
+        "test_slots.RT32UnauthenticatedReleaseCannotDuplicateDispatch.test_slot_release_wrong_holder_denied_no_duplicate_row",
+        "test_slots.RT32UnauthenticatedReleaseCannotDuplicateDispatch.test_lease_release_wrong_holder_denied_no_duplicate_grant"
+      ],
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": [
+          "cmd_slot_release",
+          "cmd_lease_release"
+        ]
+      },
+      "baseline": {
+        "baseline_sha": "2d1813fe8945461c96a863963904ee38c3d4e877",
+        "command": "cd tests && python3 -m unittest -v test_slots.RT32UnauthenticatedReleaseCannotDuplicateDispatch",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-32.txt",
+        "note": "Closes docs/audit/FINDINGS.md F-1 (issue #503) -- reproduces docs/audit/CONCURRENCY.md Q1/Q3's two-simultaneous-ALLOW scenario end-to-end and asserts it is now refused. Originally mis-allocated RT-24 by this ADR's own earlier draft; RT-24 (and RT-25..RT-30) are already occupied per staff's concurrent finding on issue #518 ('real captures already occupy 24-30, unfolded') -- renumbered RT-32 (the first free id after staff's own RT-31) before this PR opened. ADR-0068, issue #503."
+      }
+    },
+    "RT-33": {
+      "condition": 18,
+      "test_node_id": "test_admission_gate.SharedFunctionAdmissionSeed.test_reviewer_continuation_succeeds_qa_continuation_still_denied",
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": "_seed_shared_admission"
+      },
+      "baseline": {
+        "baseline_sha": "2d1813fe8945461c96a863963904ee38c3d4e877",
+        "command": "cd tests && python3 -m unittest -v test_admission_gate.SharedFunctionAdmissionSeed.test_reviewer_continuation_succeeds_qa_continuation_still_denied",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-33.txt",
+        "note": "Issue #488 (task_upsert-created shared-function tasks could never earn a task_admissions row, blocking cross-crew reviewer_*/beta_reviewer_* continuation) -- not a docs/audit/FINDINGS.md F-id closure (this defect surfaced live via crew_beta's cross-crew review of PR #526, after the F-1..F-171 audit sweep), tagged condition 18 as the nearest DoD home for 'confirmed operational gap now closed with evidence', not a claim that FINDINGS.md names it. ADR-0068 addendum, issue #488."
+      }
+    },
+    "RT-21": {
+      "condition": 4,
+      "test_node_id": "test_beat",
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": [
+          "cmd_beat_write",
+          "cmd_beat_progress",
+          "cmd_beat_show"
+        ]
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "cd tests && python3 -m unittest -v test_beat",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-21.txt"
+      }
+    },
+    "RT-22": {
+      "condition": 4,
+      "test_node_id": [
+        "test_slots.GlobalSemaphore.test_heartbeat_requires_the_holder_to_prove_identity",
+        "test_slots.GlobalSemaphore.test_heartbeat_without_a_holder_is_refused",
+        "test_slots.GlobalSemaphore.test_heartbeat_keeps_slot_alive"
+      ],
+      "cwd": "tests",
+      "binding": {
+        "file": "bin/nightshift-ctl",
+        "symbol": "cmd_slot_heartbeat"
+      },
+      "baseline": {
+        "baseline_sha": "139726e830effba227b7a50f6eb9573525aa5042",
+        "command": "cd tests && python3 -m unittest -v test_slots.GlobalSemaphore.test_heartbeat_requires_the_holder_to_prove_identity test_slots.GlobalSemaphore.test_heartbeat_without_a_holder_is_refused test_slots.GlobalSemaphore.test_heartbeat_keeps_slot_alive",
+        "exit_code": 1,
+        "output_path": "docs/audit/baseline/RT-22.txt"
+      }
+    },
+    "RT-23": {
+      "condition": 1,
+      "test_node_id": "tests.test_go_toolchain.BothSitesFixed",
+      "cwd": "root",
+      "binding": {
+        "file": "deploy/provision-ubuntu.sh"
+      },
+      "baseline": {
+        "baseline_sha": "23b9311157a596a821afdc9323cf3cbae1382529",
+        "command": "python3 -m unittest -v tests.test_go_toolchain.BothSitesFixed",
+        "exit_code": 0,
+        "kind": "preservation",
+        "output_path": "docs/audit/baseline/RT-23.txt",
+        "mutations": [
+          {
+            "id": "RT-23.M1",
+            "target_path": "site A — go version discovery (provision-ubuntu.sh:221 per .omni/goal.md defect #1)",
+            "patch_path": "docs/audit/baseline/RT-23.mutant-siteA.patch",
+            "mutation": "reintroduce a bare `curl ... | head -1` network-producer-feeds-an-early-closing-consumer pipeline next to the go_want discovery call",
+            "command": "python3 -m unittest -v tests.test_go_toolchain.BothSitesFixed",
+            "exit_code": 1,
+            "output_path": "docs/audit/baseline/RT-23.mutation-siteA.txt",
+            "applied_to_sha": "23b9311157a596a821afdc9323cf3cbae1382529",
+            "committed_to_branch": false
+          },
+          {
+            "id": "RT-23.M2",
+            "target_path": "site B — checksum pipeline (provision-ubuntu.sh:241-243 per .omni/goal.md defect #1)",
+            "patch_path": "docs/audit/baseline/RT-23.mutant-siteB.patch",
+            "mutation": "reintroduce a `curl ... | jq ... | head -1` network-producer-feeds-an-early-closing-consumer pipeline next to the checksum lookup call",
+            "command": "python3 -m unittest -v tests.test_go_toolchain.BothSitesFixed",
+            "exit_code": 1,
+            "output_path": "docs/audit/baseline/RT-23.mutation-siteB.txt",
+            "applied_to_sha": "23b9311157a596a821afdc9323cf3cbae1382529",
+            "committed_to_branch": false
+          }
+        ]
+      }
+    }
+  },
+  "rehearsal_ci_job": "tests",
+  "sentinel_test_node": "test_d20_credential_sentinels",
+  "sentinel_test_cwd": "tests",
+  "sentinel_sinks": [
+    "SINK-01",
+    "SINK-02",
+    "SINK-03",
+    "SINK-04",
+    "SINK-05",
+    "SINK-06"
+  ],
+  "preflight_checks": [
+    {
+      "id": "running as root — Nightshift (CLIs, services, Postgres access) must run as the non-root runtime user",
+      "severity": "FAIL",
+      "remediation": "Nightshift (CLIs, services, Postgres access) must run as the non-root runtime user",
+      "fixture_exempt_reason": "depends on the process's real effective uid; cannot be forced without actually running preflight as a different OS user"
+    },
+    {
+      "id": "runtime user $runtime_user can sudo without a password — every worker runs as this user, so that is root for any worker; as root, remove its NOPASSWD sudoers entry or run Nightshift as a dedicated user (deploy/providers/aws/README.md)",
+      "severity": "FAIL",
+      "remediation": "as root, delete the runtime user's NOPASSWD sudoers entry (on EC2, /etc/sudoers.d/90-cloud-init-users for `ubuntu`), or re-provision with NIGHTSHIFT_USER=nightshift so the runtime user has no sudo at all"
+    },
+    {
+      "id": "$b missing",
+      "severity": "FAIL",
+      "remediation": "install the missing binary -- deploy/provision-ubuntu.sh installs omnigent/claude/codex/node/tmux/git/gh/jq"
+    },
+    {
+      "id": "Omnigent runtime identity mismatch: ${identity:-verification could not run}",
+      "severity": "FAIL",
+      "remediation": "the installed omnigent runtime does not match the reviewed Git lock -- re-run bootstrap.sh, or update deploy/omnigent-runtime.lock.json after a reviewed upgrade",
+      "fixture_exempt_reason": "requires a stub `omnigent` binary plus a TEAMS_DIR-relative reviewed Git lock; deferred as a follow-up, not hermetic in this pass"
+    },
+    {
+      "id": "nightshift_bwrap_diagnosis",
+      "severity": "FAIL",
+      "remediation": "bwrap --ro-bind / / /bin/true; echo $? -- if non-zero, write /etc/apparmor.d/bwrap granting userns for /usr/bin/bwrap then apparmor_parser -r /etc/apparmor.d/bwrap (.omni/blocked.md)"
+    },
+    {
+      "id": "deploy/lib/deploy-lib.sh did not load - the bubblewrap functional check could not run",
+      "severity": "FAIL",
+      "remediation": "deploy/lib/deploy-lib.sh failed to source -- run bash -n deploy/lib/deploy-lib.sh to find the syntax error, or verify the file exists beside preflight.sh",
+      "fixture_exempt_reason": "requires breaking the script's own source line; every other hermetic fixture in this file already proves deploy-lib.sh loads in the common case"
+    },
+    {
+      "id": "rtk missing — Claude workers pay full token price for reads/tests/diffs (optional; https://www.rtk-ai.app/)",
+      "severity": "warn",
+      "remediation": "only reported when NIGHTSHIFT_RTK=1 opts in; install rtk (https://www.rtk-ai.app/) or unset NIGHTSHIFT_RTK",
+      "fixture_exempt_reason": "same PATH-hiding mechanism as the '$b missing' binaries-loop entry above; not independently fixture-tested in this pass to keep the fixture set reviewable"
+    },
+    {
+      "id": "floci missing — QA/eng prompts promise local AWS/Azure/GCP/OCI emulators; cloud code falls back to mocks",
+      "severity": "warn",
+      "remediation": "QA/eng prompts promise local AWS/Azure/GCP/OCI emulators; cloud code falls back to mocks",
+      "fixture_exempt_reason": "same PATH-hiding mechanism as the '$b missing' binaries-loop entry above; not independently fixture-tested in this pass"
+    },
+    {
+      "id": "$b missing — workers cannot build $b code (deploy/provision-ubuntu.sh installs it)",
+      "severity": "warn",
+      "remediation": "workers cannot build $b code (deploy/provision-ubuntu.sh installs it)",
+      "fixture_exempt_reason": "same PATH-hiding mechanism as the binaries-loop '$b missing' entry above; not independently fixture-tested in this pass"
+    },
+    {
+      "id": "codex writable_roots missing:$missing — add them to ~/.codex/config.toml",
+      "severity": "warn",
+      "remediation": "add them to ~/.codex/config.toml"
+    },
+    {
+      "id": "nightshift-ctl selftest failed — SQLite too old or filesystem refuses WAL",
+      "severity": "FAIL",
+      "remediation": "SQLite too old or filesystem refuses WAL"
+    },
+    {
+      "id": "nightshift-ctl not on PATH — worker semaphore, claims and leases are all prompt-only (re-run bootstrap.sh)",
+      "severity": "FAIL",
+      "remediation": "worker semaphore, claims and leases are all prompt-only (re-run bootstrap.sh)"
+    },
+    {
+      "id": "worker admission cutover needs migration/quiescence or reviewed legacy reconciliation",
+      "severity": "FAIL",
+      "remediation": "run the ADR-0033 migration against .omni/control.db, or quiesce (drain) legacy worker_slots rows with no phase before re-running preflight"
+    },
+    {
+      "id": ".omni/control.db missing — the semaphore FAILS CLOSED, so EVERY worker dispatch will be DENIED (run bin/nightshift-init.sh)",
+      "severity": "FAIL",
+      "remediation": "the semaphore FAILS CLOSED, so EVERY worker dispatch will be DENIED (run bin/nightshift-init.sh)"
+    },
+    {
+      "id": "fail-open escape hatch set: ${fail_open_hits%;} — every *_FAIL_OPEN is forbidden for a managed run",
+      "severity": "FAIL",
+      "remediation": "unset every listed *_FAIL_OPEN variable in the named place (environment, server.env, the omnigent user units and their drop-ins, the user manager environment), then restart the server"
+    },
+    {
+      "id": "omnipods_policies does not import in omnigent's python — the bundle will fail at spec load",
+      "severity": "FAIL",
+      "remediation": "the bundle will fail at spec load",
+      "fixture_exempt_reason": "requires a scratch TEAMS_DIR with its own deploy/policies tree; changing TEAMS_DIR ripples into unrelated checks in the same run (agent bundle, crews-configured), so it is not isolated hermetically in this pass"
+    },
+    {
+      "id": "root worker_semaphore is absent, duplicated, or did not deny nested crew probes",
+      "severity": "FAIL",
+      "remediation": "verify program/config.yaml declares worker_semaphore exactly once and no per-crew config.yaml redeclares it (re-run bootstrap.sh)",
+      "fixture_exempt_reason": "requires a scratch TEAMS_DIR program/ tree plus a working policies import in the same run; deploy/policies' own test suite (tests/test_policy.py) already covers worker_semaphore's fail-closed behavior directly"
+    },
+    {
+      "id": "server.env has no PYTHONPATH — systemd-started server cannot load the custom policies (as root: deploy/install-root-config.sh)",
+      "severity": "FAIL",
+      "remediation": "as root run deploy/install-root-config.sh --user <runtime user>; it writes PYTHONPATH into /etc/nightshift/server.env"
+    },
+    {
+      "id": "OMNIGENT_DATABASE_URI in server.env carries the database password — it becomes the server's argv, readable by every local user through ps; move the password to a PGPASSFILE (re-run bootstrap.sh)",
+      "severity": "FAIL",
+      "remediation": "drop the password from OMNIGENT_DATABASE_URI and put it in a 0600 libpq password file named by PGPASSFILE; bootstrap.sh does this for the bundled local Postgres"
+    },
+    {
+      "id": "a running process has the database password in its --database-uri argument — restart it from a server.env whose URI has no password",
+      "severity": "FAIL",
+      "remediation": "fix server.env as above, then restart omnigent-server, and rotate the Postgres password since it was readable through ps"
+    },
+    {
+      "id": "server environment $SERVER_ENV missing — omnigent-server will not start; as root run deploy/install-root-config.sh --user $runtime_user (bootstrap prints the full line)",
+      "severity": "FAIL",
+      "remediation": "as root run deploy/install-root-config.sh --user <runtime user> (plus --state-root/--repository-id once ownership is declared)"
+    },
+    {
+      "id": "$anchor_count fence-configuration path(s) writable by $runtime_user, first: $anchor_first — a worker can change what the next restart loads; as root run deploy/install-root-config.sh (--own-bundle), or run a root-sealed release",
+      "severity": "FAIL",
+      "remediation": "as root run deploy/install-root-config.sh --user <runtime user> --own-bundle, promote the registries with --state-root/--repository-id, and run exact-SHA releases only after nightshift-release seal"
+    },
+    {
+      "id": "user units load configuration other than $SERVER_ENV:$unit_problems — the runtime user can edit those; re-run bootstrap.sh and delete the drop-in directory",
+      "severity": "FAIL",
+      "remediation": "re-run bootstrap.sh to reinstall the omnigent user units and delete ~/.config/systemd/user/omnigent-*.service.d"
+    },
+    {
+      "id": "~/.config/omnigent/server.env is no longer read — move any custom line into $SERVER_ENV by hand, then delete it (it may hold the database password)",
+      "severity": "warn",
+      "remediation": "review the old file, copy any custom line into /etc/nightshift/server.env as root, then delete the old file"
+    },
+    {
+      "id": "~/.codex/config.toml missing approval_policy=\\\"never\\\" — Codex workers run yolo:false and WILL stall on their first approval (re-run bootstrap.sh)",
+      "severity": "FAIL",
+      "remediation": "Codex workers run yolo:false and WILL stall on their first approval (re-run bootstrap.sh)"
+    },
+    {
+      "id": "codex sandbox not workspace-write — workers run with whatever the CLI defaults to",
+      "severity": "warn",
+      "remediation": "workers run with whatever the CLI defaults to",
+      "fixture_exempt_reason": "same ~/.codex/config.toml HOME mechanism as the approval_policy entry above; not independently fixture-tested in this pass"
+    },
+    {
+      "id": "~/.aws/credentials exists — static AWS keys are readable by workers; use an instance role if the project needs AWS (docs/TRUST-BOUNDARY.md)",
+      "severity": "warn",
+      "remediation": "static AWS keys are readable by workers; use an instance role if the project needs AWS (docs/TRUST-BOUNDARY.md)"
+    },
+    {
+      "id": "~/.aws/credentials exists — static cloud keys are readable by workers; remove them unless the project itself needs them (docs/TRUST-BOUNDARY.md)",
+      "severity": "warn",
+      "remediation": "static cloud keys are readable by workers; remove them unless the project itself needs them (docs/TRUST-BOUNDARY.md)"
+    },
+    {
+      "id": "IMDSv1 answers on this instance — any worker can read instance-role credentials with one unauthenticated GET; require IMDSv2 with hop limit 1 (deploy/providers/aws/README.md)",
+      "severity": "FAIL",
+      "remediation": "aws ec2 modify-instance-metadata-options --instance-id <id> --http-tokens required --http-put-response-hop-limit 1 (or --http-endpoint disabled when no role is needed)"
+    },
+    {
+      "id": "instance role $imds_role is served by IMDS — every worker can read its credentials; scope it to exactly what the project needs, or detach it and disable IMDS (deploy/providers/aws/README.md)",
+      "severity": "warn",
+      "remediation": "scope the role to exactly what the project needs, or detach it and run aws ec2 modify-instance-metadata-options --http-endpoint disabled"
+    },
+    {
+      "id": "omnigent config list shows no credentials",
+      "severity": "FAIL",
+      "remediation": "run `omnigent config` (or the vendor login flow) to add at least one credential",
+      "fixture_exempt_reason": "depends on the real `omnigent` CLI's credential store; would need a full command stub, deferred as a follow-up"
+    },
+    {
+      "id": "no claude credential",
+      "severity": "FAIL",
+      "remediation": "add a Claude credential via `omnigent config` (subscription, API, or gateway)",
+      "fixture_exempt_reason": "depends on the real `omnigent config list` output"
+    },
+    {
+      "id": "no codex credential (cross-vendor review impossible)",
+      "severity": "FAIL",
+      "remediation": "add a Codex credential via `omnigent config` (subscription, API, or gateway) -- required for cross-vendor review",
+      "fixture_exempt_reason": "depends on the real `omnigent config list` output"
+    },
+    {
+      "id": "no origin remote in $PROJECT_DIR",
+      "severity": "FAIL",
+      "remediation": "run `git remote add origin <url>` in $PROJECT_DIR",
+      "fixture_exempt_reason": "reachable only after live `gh auth status` succeeds; not forced hermetically in this pass"
+    },
+    {
+      "id": "no branch protection on ${branch} — required status checks would stop a red merge without needing a human. Consider enabling just that.",
+      "severity": "warn",
+      "remediation": "required status checks would stop a red merge without needing a human. Consider enabling just that.",
+      "fixture_exempt_reason": "depends on a live `gh api` branch-protection response"
+    },
+    {
+      "id": "branch protection requires human approvals — the integrator has no approver and every merge will deadlock. Drop required reviews, keep required status checks.",
+      "severity": "FAIL",
+      "remediation": "the integrator has no approver and every merge will deadlock. Drop required reviews, keep required status checks.",
+      "fixture_exempt_reason": "depends on a live `gh api` branch-protection response"
+    },
+    {
+      "id": "token cannot push — the integrator cannot merge anything",
+      "severity": "FAIL",
+      "remediation": "the integrator cannot merge anything",
+      "fixture_exempt_reason": "depends on a live `gh api` repo-permissions response"
+    },
+    {
+      "id": "$PROJECT_DIR is not a git repo",
+      "severity": "FAIL",
+      "remediation": "run `git init` (or clone the real repo) at $PROJECT_DIR",
+      "fixture_exempt_reason": "reachable only after live `gh auth status` succeeds; the gh-auth precondition is not forced hermetically in this pass"
+    },
+    {
+      "id": "gh not authenticated (agents cannot open PRs)",
+      "severity": "FAIL",
+      "remediation": "run `gh auth login`",
+      "fixture_exempt_reason": "depends on live `gh auth status`"
+    },
+    {
+      "id": "gh token lacks 'project' scope — run: gh auth refresh -s project, then bin/nightshift-tracker-init.sh",
+      "severity": "FAIL",
+      "remediation": "run: gh auth refresh -s project, then bin/nightshift-tracker-init.sh",
+      "fixture_exempt_reason": "depends on live `gh auth status` token-scope output"
+    },
+    {
+      "id": "tracker.json has no project_number",
+      "severity": "FAIL",
+      "remediation": "run bin/nightshift-tracker-init.sh to populate .omni/tracker.json's project_number",
+      "fixture_exempt_reason": "same PROJECT_DIR tracker.json mechanism as the '.omni/tracker.json missing' entry above; not independently fixture-tested in this pass"
+    },
+    {
+      "id": "labels missing — run bin/nightshift-tracker-init.sh",
+      "severity": "FAIL",
+      "remediation": "run bin/nightshift-tracker-init.sh",
+      "fixture_exempt_reason": "depends on a live `gh label list`"
+    },
+    {
+      "id": "no pinned 'Program status' issue — reports will only hit files",
+      "severity": "warn",
+      "remediation": "reports will only hit files",
+      "fixture_exempt_reason": "depends on a live `gh issue list`"
+    },
+    {
+      "id": ".omni/tracker.json missing — run bin/nightshift-tracker-init.sh in the repo",
+      "severity": "FAIL",
+      "remediation": "run bin/nightshift-tracker-init.sh in the repo"
+    },
+    {
+      "id": "$f missing (run bin/nightshift-init.sh)",
+      "severity": "FAIL",
+      "remediation": "run bin/nightshift-init.sh to scaffold the missing project file"
+    },
+    {
+      "id": "brief.md is still the untouched template — write your brief and delete the TEMPLATE line",
+      "severity": "FAIL",
+      "remediation": "write your brief and delete the TEMPLATE line"
+    },
+    {
+      "id": "brief.md has only ${words} words of actual content — discovery needs something to work with",
+      "severity": "FAIL",
+      "remediation": "discovery needs something to work with"
+    },
+    {
+      "id": "no definition of done yet — the program's first act is the discovery skill",
+      "severity": "warn",
+      "remediation": "the program's first act is the discovery skill"
+    },
+    {
+      "id": ".worktrees not excluded (neither .gitignore nor .git/info/exclude)",
+      "severity": "warn",
+      "remediation": "add a `.worktrees/` line to $PROJECT_DIR/.git/info/exclude (nightshift-init.sh does this; .gitignore is tracked and belongs to the repository owner -- #744)"
+    },
+    {
+      "id": "agent specs do not parse",
+      "severity": "FAIL",
+      "remediation": "run the failing spec through the omnigent bundle parser directly to see the exact syntax error, then fix program/agents/**",
+      "fixture_exempt_reason": "requires a scratch TEAMS_DIR agent bundle; deferred as a follow-up"
+    },
+    {
+      "id": "$u $state",
+      "severity": "warn",
+      "remediation": "run `systemctl --user start $u` (and `systemctl --user enable $u` if it should survive a reboot)",
+      "fixture_exempt_reason": "depends on live `systemctl --user` unit state"
+    },
+    {
+      "id": "$u not enabled — a reboot silently ends the run (systemctl --user enable $u)",
+      "severity": "FAIL",
+      "remediation": "a reboot silently ends the run (systemctl --user enable $u)",
+      "fixture_exempt_reason": "depends on live `systemctl --user` unit state"
+    },
+    {
+      "id": "state-backup timer not running — losing this host's disk then loses .omni state since the last merge",
+      "severity": "warn",
+      "remediation": "losing this host's disk then loses .omni state since the last merge",
+      "fixture_exempt_reason": "depends on live `systemctl --user` unit state"
+    },
+    {
+      "id": "watchdog timer not running — a lost heartbeat task ends the run SILENTLY (systemctl --user enable --now nightshift-watchdog.timer)",
+      "severity": "warn",
+      "remediation": "a lost heartbeat task ends the run SILENTLY (systemctl --user enable --now nightshift-watchdog.timer)",
+      "fixture_exempt_reason": "depends on live `systemctl --user` unit state"
+    },
+    {
+      "id": "no omni/state branch on the nightshift-state remote yet — run deploy/nightshift-state-backup.sh once to verify the push works",
+      "severity": "warn",
+      "remediation": "run deploy/nightshift-state-backup.sh once to verify the push works",
+      "fixture_exempt_reason": "depends on a live network push/fetch against the configured state-backup remote"
+    },
+    {
+      "id": "no nightshift-state remote — .omni snapshots stay on this disk; add one that points at a PRIVATE repository (deploy/README.md, Machine or disk loss)",
+      "severity": "warn",
+      "remediation": "add a remote named nightshift-state in the project checkout that points at a private repository"
+    },
+    {
+      "id": "state-backup remote $backup_slug is not a private repository — the snapshot carries the control dump and incidents; point nightshift-state at a private repository",
+      "severity": "FAIL",
+      "remediation": "repoint the nightshift-state remote at a private repository, or make that repository private"
+    },
+    {
+      "id": "server not responding on :6767",
+      "severity": "warn",
+      "remediation": "run `systemctl --user status omnigent-host` and check its logs; restart with `systemctl --user restart omnigent-host` if needed",
+      "fixture_exempt_reason": "depends on a live TCP probe against 127.0.0.1:6767"
+    },
+    {
+      "id": "postgres not running",
+      "severity": "warn",
+      "remediation": "run `docker compose -f deploy/docker-compose.postgres.yml up -d`",
+      "fixture_exempt_reason": "depends on a live docker/postgres process check"
+    },
+    {
+      "id": "linger off — services die when your SSH session ends",
+      "severity": "FAIL",
+      "remediation": "services die when your SSH session ends",
+      "fixture_exempt_reason": "depends on live `loginctl show-user` state"
+    },
+    {
+      "id": "no crews found in the bundle",
+      "severity": "FAIL",
+      "remediation": "add at least one crew_* directory under $TEAMS_DIR/program/agents",
+      "fixture_exempt_reason": "depends on scanning the real TEAMS_DIR/program/agents directory; changing TEAMS_DIR ripples into unrelated checks in the same run"
+    },
+    {
+      "id": "only one crew — no cross-crew review is possible; say so in STATUS.md",
+      "severity": "warn",
+      "remediation": "no cross-crew review is possible; say so in STATUS.md",
+      "fixture_exempt_reason": "same TEAMS_DIR-ripple concern as the crews-configured check above"
+    },
+    {
+      "id": "budget ${budget} is high for two subscriptions; expect rate limits",
+      "severity": "warn",
+      "remediation": "lower max_concurrent_workers in .omni/capacity.json, or confirm both vendor subscriptions can sustain the configured budget",
+      "fixture_exempt_reason": "same PROJECT_DIR capacity.json mechanism as the 'no max_concurrent_workers' entry above; not independently fixture-tested in this pass"
+    },
+    {
+      "id": ".omni/capacity.json has no max_concurrent_workers",
+      "severity": "FAIL",
+      "remediation": "add a max_concurrent_workers integer to $PROJECT_DIR/.omni/capacity.json"
+    },
+    {
+      "id": "${mem}G RAM — 4 concurrent native workers wants 16G",
+      "severity": "warn",
+      "remediation": "4 concurrent native workers wants 16G",
+      "fixture_exempt_reason": "depends on live `free -g` host memory, not forced hermetically without stubbing coreutils"
+    },
+    {
+      "id": "omnigent-host.service still has the __MEMORY_MAX__ placeholder — re-run bootstrap.sh",
+      "severity": "FAIL",
+      "remediation": "re-run bootstrap.sh",
+      "fixture_exempt_reason": "reachable only when `nightshift_memory_limits` and a real host RAM reading are both available in the same run as the HOME-based unit file; not isolated hermetically in this pass"
+    },
+    {
+      "id": "omnigent-host MemoryMax=$unit_max but this ${total_gb}G box derives $expect — re-run bootstrap.sh (or keep your NIGHTSHIFT_MEMORY_MAX override)",
+      "severity": "warn",
+      "remediation": "re-run bootstrap.sh (or keep your NIGHTSHIFT_MEMORY_MAX override)",
+      "fixture_exempt_reason": "depends on live host RAM (`nightshift_mem_total_gb`) alongside the HOME-based unit file; the placeholder half is covered by the dedicated '__MEMORY_MAX__ placeholder' entry"
+    },
+    {
+      "id": "${disk}G free — worktrees and node_modules will fill this",
+      "severity": "FAIL",
+      "remediation": "worktrees and node_modules will fill this",
+      "fixture_exempt_reason": "depends on live `df` host disk, not forced hermetically without stubbing coreutils"
+    },
+    {
+      "id": "no swap: an OOM kill takes a worker mid-task",
+      "severity": "warn",
+      "remediation": "provision swap space on the host (e.g. `fallocate -l 4G /swapfile && mkswap /swapfile && swapon /swapfile`)",
+      "fixture_exempt_reason": "depends on live `free -g` host swap, not forced hermetically without stubbing coreutils"
+    },
+    {
+      "id": "server bound to a public interface — it holds your subscription credentials",
+      "severity": "FAIL",
+      "remediation": "it holds your subscription credentials",
+      "fixture_exempt_reason": "depends on a live `ss -ltn` listener scan"
+    },
+    {
+      "id": "Postgres bound to a public interface — must stay 127.0.0.1 (docker-compose.postgres.yml pins it)",
+      "severity": "FAIL",
+      "remediation": "must stay 127.0.0.1 (docker-compose.postgres.yml pins it)",
+      "fixture_exempt_reason": "depends on a live `ss -ltn` listener scan"
+    },
+    {
+      "id": "docker's default publish IP is not 127.0.0.1 — \\`floci start\\` will expose the emulator on 0.0.0.0 (re-run deploy/provision-ubuntu.sh)",
+      "severity": "FAIL",
+      "remediation": "\\`floci start\\` will expose the emulator on 0.0.0.0 (re-run deploy/provision-ubuntu.sh)",
+      "fixture_exempt_reason": "reads the live, root-owned /etc/docker/daemon.json; not safely mutable from a hermetic test fixture"
+    },
+    {
+      "id": "a floci emulator is bound to a public interface — emulators accept unauthenticated calls; bind 127.0.0.1",
+      "severity": "FAIL",
+      "remediation": "emulators accept unauthenticated calls; bind 127.0.0.1",
+      "fixture_exempt_reason": "depends on a live `ss -ltn` listener scan"
+    },
+    {
+      "id": "tailscale serve not proxying 6767 — no private UI path; FROM A ROOT SHELL run: tailscale serve --bg 6767 (never 'funnel')",
+      "severity": "warn",
+      "remediation": "only reported when NIGHTSHIFT_TAILSCALE_SERVE=1 opts in; FROM A ROOT SHELL run `tailscale serve --bg 6767` (never funnel), or unset NIGHTSHIFT_TAILSCALE_SERVE",
+      "fixture_exempt_reason": "depends on live `tailscale serve status`"
+    },
+    {
+      "id": "cannot read serve config as $runtime_user (expected — this user is not a tailscale operator, by design) and no listener on ${ts_ip:-<ts-ip>}:443; verify from a root shell: tailscale serve status",
+      "severity": "warn",
+      "remediation": "this user is not a tailscale operator, by design) and no listener on ${ts_ip:-<ts-ip>}:443; verify from a root shell: tailscale serve status",
+      "fixture_exempt_reason": "depends on live `tailscale serve status`"
+    },
+    {
+      "id": "could not determine serve config (tailscale serve status exit $serve_code) — verify from a root shell: tailscale serve status",
+      "severity": "warn",
+      "remediation": "verify from a root shell: tailscale serve status",
+      "fixture_exempt_reason": "depends on live `tailscale serve status`"
+    },
+    {
+      "id": "public sshd still listening on :22 — after verifying Tailscale SSH, lock it down (deploy/README.md 'Security posture')",
+      "severity": "warn",
+      "remediation": "after verifying Tailscale SSH, lock it down (deploy/README.md 'Security posture')",
+      "fixture_exempt_reason": "depends on a live `ss -ltn` listener scan"
+    },
+    {
+      "id": "cannot query tailscaled as $runtime_user — read-only status is normally allowed; verify from a root shell: tailscale status",
+      "severity": "warn",
+      "remediation": "read-only status is normally allowed; verify from a root shell: tailscale status",
+      "fixture_exempt_reason": "depends on live `tailscale status`"
+    },
+    {
+      "id": "tailscale installed but down (as root: tailscale up --ssh)",
+      "severity": "warn",
+      "remediation": "as root: `tailscale up --ssh`",
+      "fixture_exempt_reason": "depends on live `tailscale status`"
+    },
+    {
+      "id": "tailscale not installed — no private path for SSH or the UI (deploy/provision-ubuntu.sh installs it)",
+      "severity": "warn",
+      "remediation": "no private path for SSH or the UI (deploy/provision-ubuntu.sh installs it)",
+      "fixture_exempt_reason": "depends on a real host fact (`command -v tailscale`) this fixture set does not stub for the tailscale family"
+    },
+    {
+      "id": "no omnigent server running from a release checkout — drift checks skipped (start the run, then re-run preflight)",
+      "severity": "warn",
+      "remediation": "Start the run, then re-run preflight: these assertions read the running server's release SHA and cannot be evaluated on an idle box.",
+      "fixture_exempt_reason": "requires a live omnigent server process; a fixture cannot manufacture one without starting the real runtime"
+    },
+    {
+      "id": "no live worker to read PATH from — falling back to the release checkout",
+      "severity": "warn",
+      "remediation": "Dispatch one worker and re-run, or accept the fallback: without a live worker the check compares the release checkout against itself.",
+      "fixture_exempt_reason": "requires a live worker process whose /proc/<pid>/environ can be read"
+    },
+    {
+      "id": "workers have no nightshift-ctl on PATH — every control-plane call fails closed",
+      "severity": "FAIL",
+      "remediation": "Add the running release's checkout/bin to the worker PATH in the systemd user units and restart them; every control-plane call fails closed until it resolves.",
+      "fixture_exempt_reason": "requires a live worker whose PATH resolves no nightshift-ctl; /proc/<pid>/environ cannot be fabricated without starting a real worker"
+    },
+    {
+      "id": "running release has no bin/nightshift-ctl: $release_ctl",
+      "severity": "FAIL",
+      "remediation": "The release checkout is incomplete. Re-run the cutover for that SHA; do not hand-copy a binary into it."
+    },
+    {
+      "id": "workers resolve a DIFFERENT nightshift-ctl than the running release: $worker_ctl at $worker_lines lines vs $release_ctl at $release_lines lines",
+      "severity": "FAIL",
+      "remediation": "Workers are running a control plane from outside the released checkout. Remove the earlier PATH entry so the release checkout resolves first, then restart the units.",
+      "fixture_exempt_reason": "requires a live worker whose PATH resolves a binary outside the release checkout; without one the check compares the checkout against itself"
+    },
+    {
+      "id": "this shell resolves a different nightshift-ctl than workers do ($own_ctl) — trust the worker path above, not this one",
+      "severity": "warn",
+      "remediation": "Informational: preflight prepends $HOME/.local/bin, which may symlink an older copy. Trust the worker-resolved path this check prints.",
+      "fixture_exempt_reason": "the divergence reported is between two real PATHs on the host; forcing it in a fixture would re-test the comparison, not the condition"
+    },
+    {
+      "id": "installed nightshift-ctl is missing subcommands the charters call:$missing",
+      "severity": "FAIL",
+      "remediation": "The released charters call a subcommand its own binary does not define. Re-cut the release so bin/nightshift-ctl and program/ come from one SHA."
+    },
+    {
+      "id": "systemd units pin a release the server is not running — a restart silently changes capability:$unit_drift",
+      "severity": "FAIL",
+      "remediation": "Rewrite the offending unit to the running release SHA and run systemctl --user daemon-reload. Until then a restart silently swaps the control plane for an older one."
+    },
+    {
+      "id": "deployed policy differs from the running release's copy — dispatch admission may not match the reviewed code",
+      "severity": "FAIL",
+      "remediation": "deploy/policies/ has drifted from the release checkout. Re-run the cutover; a hand-edited policy means dispatch admission does not match reviewed code."
+    },
+    {
+      "id": "omnigent sys_session_send patch MISSING — counted-seat dispatch will fail with 'Additional properties are not allowed'. Fix: python3 deploy/patches/omnigent_session_send_args.py --apply, then restart BOTH the server and the omnigent host daemon",
+      "severity": "FAIL",
+      "remediation": "omnigent's SysSessionSendTool declares args with additionalProperties:false, so worker_semaphore's required slot_id/task_id/generation are rejected before any policy hook sees them and no counted engineer/QA/reviewer dispatch can succeed (#236). A hand edit to site-packages is erased by uv tool upgrade with no warning, and the symptom is indistinguishable from the original bug. Run deploy/patches/omnigent_session_send_args.py --apply, then restart the server AND the omnigent host daemon, which cache imports independently.",
+      "fixture_exempt_reason": "Exercising this check requires a real omnigent installation on the box: the check locates site-packages and inspects the installed spawn.py. A fixture would have to stand up a fake install tree, which would assert the fixture's own layout rather than the condition. The patch script itself is self-verifying instead -- --apply refuses on a moved anchor, refuses when the file is unchanged after writing, and self-reverts on a syntax error."
+    },
+    {
+      "id": "deploy/patches/omnigent_session_send_args.py not found — cannot verify the dispatch-metadata patch",
+      "severity": "warn",
+      "remediation": "The patch script is missing from the release checkout, so preflight cannot tell whether omnigent's sys_session_send schema accepts slot_id/task_id/generation. Restore deploy/patches/omnigent_session_send_args.py from the release, then re-run preflight."
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "id": "dispatch-without-slot-denied",
+      "category": "worker limits",
+      "denial_test_node": "test_policy.WorkerSemaphorePolicy.test_dispatch_without_slot_denied",
+      "cwd": "tests"
+    },
+    {
+      "id": "semaphore-fails-closed-no-db",
+      "category": "worker limits",
+      "denial_test_node": "test_policy.WorkerSemaphorePolicy.test_fails_closed_without_database",
+      "cwd": "tests"
+    },
+    {
+      "id": "non-holder-release-denied",
+      "category": "ownership leases",
+      "denial_test_node": "test_leases.Leases.test_wrong_holder_cannot_release",
+      "cwd": "tests"
+    },
+    {
+      "id": "concurrent-task-claim-denied",
+      "category": "task claims",
+      "denial_test_node": "test_claims.ClaimRaces.test_concurrent_claims_one_winner",
+      "cwd": "tests"
+    },
+    {
+      "id": "review-continuation-budget-denied",
+      "category": "review requirements",
+      "denial_test_node": "test_policy.ContinuationBudgetRecheckAtDispatch.test_review_continuation_dispatch_denied_when_budget_expires_after_slot_acquired",
+      "cwd": "tests"
+    },
+    {
+      "id": "reviewer-seat-read-only",
+      "category": "review requirements",
+      "denial_test_node": "tests.test_probe_per_seat_policy.TestClassify.test_deny_on_the_evaluate_path_is_denied",
+      "cwd": "root"
+    },
+    {
+      "id": "credential-env-not-crossed",
+      "category": "credential boundaries",
+      "denial_test_node": "tests.test_nightshift_publish.NightshiftPublishTests.test_hostile_ambient_path_and_auth_environment_are_not_used",
+      "cwd": "root"
+    },
+    {
+      "id": "sandbox-bwrap-probe-denied",
+      "category": "sandboxing",
+      "denial_test_node": "tests.test_bwrap_probe.RT13ProbeFailureFailsPreflight.test_rt13_broken_bwrap_is_a_preflight_failure_not_an_ok",
+      "cwd": "root"
+    },
+    {
+      "id": "only-release-writes-default-branch",
+      "category": "branch protections",
+      "denial_test_node": "test_rollback.BundleConsistency.test_no_reset_instruction_for_published_branch",
+      "cwd": "tests"
+    },
+    {
+      "id": "pr-closing-keyword-denied",
+      "category": "release gates",
+      "denial_test_node": "test_policy.PrCloseKeywordPolicy.test_inline_closing_keyword_denied",
+      "cwd": "tests"
+    }
+  ],
+  "protected_capabilities_count_at_v2_adoption": 10
+}

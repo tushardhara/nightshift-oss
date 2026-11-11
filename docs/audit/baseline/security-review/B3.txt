@@ -1,0 +1,59 @@
+test_a_genuinely_different_schema_error_still_propagates (test_fencing.MigrationConcurrencyTest.test_a_genuinely_different_schema_error_still_propagates)
+Swallowing every OperationalError would turn this fix into a much ... ERROR
+test_losing_the_add_column_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_add_column_race_is_not_an_error)
+The loser's PRAGMA snapshot said the column was missing; by the time ... ERROR
+test_losing_the_rename_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_rename_race_is_not_an_error)
+The pod -> crew RENAME loop is the same race in the same function. ... ERROR
+test_parallel_invocations_against_a_pre_migration_db_never_crash (test_fencing.MigrationConcurrencyTest.test_parallel_invocations_against_a_pre_migration_db_never_crash)
+Integration guard, PROBABILISTIC by nature: whether the losers ... FAIL
+
+======================================================================
+ERROR: test_a_genuinely_different_schema_error_still_propagates (test_fencing.MigrationConcurrencyTest.test_a_genuinely_different_schema_error_still_propagates)
+Swallowing every OperationalError would turn this fix into a much
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_fencing.py", line 151, in test_a_genuinely_different_schema_error_still_propagates
+    ctl.add_column(cx, "no_such_table_at_all", "x", "TEXT")
+    ^^^^^^^^^^^^^^
+AttributeError: module 'nsctl' has no attribute 'add_column'
+
+======================================================================
+ERROR: test_losing_the_add_column_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_add_column_race_is_not_an_error)
+The loser's PRAGMA snapshot said the column was missing; by the time
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_fencing.py", line 138, in test_losing_the_add_column_race_is_not_an_error
+    ctl.add_column(cx, "worker_slots", "generation",
+    ^^^^^^^^^^^^^^
+AttributeError: module 'nsctl' has no attribute 'add_column'
+
+======================================================================
+ERROR: test_losing_the_rename_race_is_not_an_error (test_fencing.MigrationConcurrencyTest.test_losing_the_rename_race_is_not_an_error)
+The pod -> crew RENAME loop is the same race in the same function.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_fencing.py", line 164, in test_losing_the_rename_race_is_not_an_error
+    ctl.rename_column(cx, "worker_slots", "pod", "crew")   # must not raise
+    ^^^^^^^^^^^^^^^^^
+AttributeError: module 'nsctl' has no attribute 'rename_column'
+
+======================================================================
+FAIL: test_parallel_invocations_against_a_pre_migration_db_never_crash (test_fencing.MigrationConcurrencyTest.test_parallel_invocations_against_a_pre_migration_db_never_crash)
+Integration guard, PROBABILISTIC by nature: whether the losers
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_fencing.py", line 185, in test_parallel_invocations_against_a_pre_migration_db_never_crash
+    self.assertEqual(
+AssertionError: Lists differ: [(1, None), (1, None), (1, None), (1, None), (1, None)] != []
+
+First list contains 5 additional elements.
+First extra element 0:
+(1, None)
+
+- [(1, None), (1, None), (1, None), (1, None), (1, None)]
++ [] : 5 of 24 concurrent invocations crashed instead of returning a verdict: [(1, None), (1, None), (1, None)]
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.158s
+
+FAILED (failures=1, errors=3)

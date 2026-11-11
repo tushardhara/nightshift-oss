@@ -1,0 +1,15 @@
+test_rt07_second_run_succeeds_with_the_same_end_state (tests.test_user_manager.RT07Idempotent.test_rt07_second_run_succeeds_with_the_same_end_state) ... FAIL
+
+======================================================================
+FAIL: test_rt07_second_run_succeeds_with_the_same_end_state (tests.test_user_manager.RT07Idempotent.test_rt07_second_run_succeeds_with_the_same_end_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-9/tests/test_user_manager.py", line 309, in test_rt07_second_run_succeeds_with_the_same_end_state
+    self.assertEqual(code1, 0, out1)
+AssertionError: 127 != 0 : bash: line 1: nightshift_install_user_units: command not found
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

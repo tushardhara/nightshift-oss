@@ -1,0 +1,37 @@
+# Postgres backing the Omnigent server's session history.
+# SQLite works, but a multi-day unattended run wants real durability and
+# concurrent writers: server + host daemon + every runner write at once.
+services:
+  db:
+    # Pinned by digest: a tag is mutable, so `17-alpine` could be re-pointed at
+    # any image and the next `compose up` would run it with the DB password.
+    # This is the multi-arch index digest (17.11, linux/amd64 manifest
+    # sha256:4717f90960a225c2d1c5dac50508c401230f693ff626e06e84e6db0a68ded508).
+    # Bump: `docker buildx imagetools inspect postgres:17-alpine`, copy Digest.
+    image: postgres:17.11-alpine3.24@sha256:e5d2edd28b1f8d40a0a6c0c9cdc545b19b56a0d5d88f94bc11a97d970d4700d0
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: omnigent
+      POSTGRES_USER: omnigent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    # Loopback only — nothing about this should be reachable off the box.
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omnigent -d omnigent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # A long run generates a lot of transcript rows; keep autovacuum aggressive
+    # and shared_buffers modest so the box stays available for the agents.
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c work_mem=16MB
+      -c max_connections=100
+      -c autovacuum_vacuum_scale_factor=0.05
+
+volumes:
+  pgdata:

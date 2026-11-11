@@ -1,0 +1,46 @@
+test_rt10_alive_does_not_renew_either (tests.test_watchdog.RT10NoSlotRenewal.test_rt10_alive_does_not_renew_either) ... FAIL
+test_rt10_stale_does_not_renew (tests.test_watchdog.RT10NoSlotRenewal.test_rt10_stale_does_not_renew) ... FAIL
+test_rt10_the_verb_itself_is_not_deleted_by_this_change (tests.test_watchdog.RT10NoSlotRenewal.test_rt10_the_verb_itself_is_not_deleted_by_this_change) ... FAIL
+
+======================================================================
+FAIL: test_rt10_alive_does_not_renew_either (tests.test_watchdog.RT10NoSlotRenewal.test_rt10_alive_does_not_renew_either)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 299, in test_rt10_alive_does_not_renew_either
+    self.assertEqual(b.renew_active_calls(), [],
+AssertionError: Lists differ: ['nightshift-ctl slot renew-active'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'nightshift-ctl slot renew-active'
+
+- ['nightshift-ctl slot renew-active']
++ [] : org-wide renewal on a Program-level signal is exactly the per-worker-lease-to-org-wide-lease defect
+
+======================================================================
+FAIL: test_rt10_stale_does_not_renew (tests.test_watchdog.RT10NoSlotRenewal.test_rt10_stale_does_not_renew)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 289, in test_rt10_stale_does_not_renew
+    self.assertEqual(b.renew_active_calls(), [])
+AssertionError: Lists differ: ['nightshift-ctl slot renew-active'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'nightshift-ctl slot renew-active'
+
+- ['nightshift-ctl slot renew-active']
++ []
+
+======================================================================
+FAIL: test_rt10_the_verb_itself_is_not_deleted_by_this_change (tests.test_watchdog.RT10NoSlotRenewal.test_rt10_the_verb_itself_is_not_deleted_by_this_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-10/tests/test_watchdog.py", line 309, in test_rt10_the_verb_itself_is_not_deleted_by_this_change
+    self.assertNotIn("renew-active", body.split("# STAGING NOTE")[0],
+AssertionError: 'renew-active' unexpectedly found in '#!/usr/bin/env bash\n# Liveness watchdog for the org\'s heartbeat — the dead-man\'s switch OUTSIDE the\n# agent loop.\n#\n# Why: the hourly heartbeat is the autonomy mechanism, but it is a row the\n# program agent itself created (sys_scheduled_task_create). If that row is lost\n# in a restart, or the scheduler wedges, nothing wakes the org again and the\n# run stops SILENTLY — the exact failure the heartbeat exists to prevent. The\n# config tells the program to "verify the heartbeat after any restart", but the\n# program only runs when woken, so that instruction cannot execute if the\n# heartbeat is what was lost. This timer is the check that does not depend on\n# the thing it is checking.\n#\n# What it does: if the project is initialized, not finished, and nothing under\n# .omni/ has changed in STALE_HOURS, post a comment on the pinned "Program\n# status" issue (a comment pushes a phone notification; a log line does not).\n# It alerts — it does NOT restart services (that would kill in-flight worker\n# turns) and does NOT try to re-create the heartbeat (only a program session\n# can, and the recovery one-liner is in the alert).\n#\n# One bookkeeping duty on top of alerting: while the org is demonstrably\n# ALIVE (files moving), it renews in-flight worker-slot TTLs\n# (`nightshift-ctl slot renew-active`) so a genuinely long worker turn is never\n# reaped mid-flight. This is the deterministic supervisor for slot renewal —\n# no worker has to remember to heartbeat its own slot. The renewal stops the\n# moment the org goes silent (exactly when TTL recovery SHOULD take over),\n# and `--max-age` inside nightshift-ctl caps any single slot\'s life at a day, so a\n# leaked slot still returns to the budget. It never touches services, tasks,\n# or files.\n#\n# Never fails loud: a watchdog that crashes the timer is worse than no watchdog.\n\nset -u\nPROJECT_DIR="${1:-/srv/project}"\nSTALE_HOURS="${NIGHTSHIFT_WATCHDOG_STALE_HOURS:-3}"     # 3 missed hourly heartbeats\nREALERT_HOURS="${NIGHTSHIFT_WATCHDOG_REALERT_HOURS:-6}" # don\'t spam the phone\nSTATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omnigent"\nMARKER="$STATE_DIR/watchdog-last-alert"\nmkdir -p "$STATE_DIR"\n\n# Not initialized yet, or wrong box — nothing to watch.\n[ -d "$PROJECT_DIR/.omni" ] || exit 0\n\n# A finished project deletes its heartbeat on purpose; silence is correct then.\nstatus_first_line=$(head -n1 "$PROJECT_DIR/.omni/STATUS.md" 2>/dev/null || true)\ncase "$status_first_line" in\n  *[Cc]omplete*) exit 0 ;;\nesac\n\n# Freshness = newest mtime under .omni/ (registries, ledger, STATUS, reports —\n# every heartbeat touches at least one of these; worktrees/transcripts excluded\n# by living elsewhere).\nnewest=$(find "$PROJECT_DIR/.omni" -type f -printf \'%T@\\n\' 2>/dev/null | sort -rn | head -1 | cut -d. -f1)\n[ -n "${newest:-}" ] || exit 0\nnow=$(date +%s)\nage_h=$(( (now - newest) / 3600 ))\nif [ "$age_h" -lt "$STALE_HOURS" ]; then\n  rm -f "$MARKER"   # healthy again — arm the next alert\n  # Org is alive: keep in-flight slots from TTL-expiring under a long turn.\n  if command -v nightshift-ctl >/dev/null 2>&1 && [ -f "$PROJECT_DIR/.omni/control.db" ]; then\n    (cd "$PROJECT_DIR" && nightshift-ctl slot renew-active) >/dev/null 2>&1 || true\n  fi\n  exit 0\nfi\n\n# Stale. Rate-limit the alert.\nif [ -f "$MARKER" ]; then\n  last=$(cat "$MARKER" 2>/dev/null || echo 0)\n  [ $(( (now - last) / 3600 )) -lt "$REALERT_HOURS" ] && exit 0\nfi\n\nserver_state=$(systemctl --user is-active omnigent-server 2>/dev/null || echo unknown)\nhost_state=$(systemctl --user is-active omnigent-host 2>/dev/null || echo unknown)\n\nbody="🚨 **Watchdog: the org has been silent for ${age_h}h** (threshold ${STALE_HOURS}h).\n\nNo file under \\`.omni/\\` has changed since $(date -u -d "@$newest" +%Y-%m-%dT%H:%MZ 2>/dev/null || date -u -r "$newest" +%Y-%m-%dT%H:%MZ). The hourly heartbeat is likely gone (lost scheduled task, wedged scheduler, or a stopped session) — the run will NOT resume on its own.\n\nServices: omnigent-server \\`${server_state}\\`, omnigent-host \\`${host_state}\\`.\n\nRecovery (one command on the box): start a session on the program agent with:\n\\`Resume from files: read .omni/goal.md, .omni/STATUS.md and the registries, reconcile against open PRs, continue the current wave. Re-create the hourly heartbeat task and confirm it with sys_scheduled_task_list.\\`"\n\nissue=$(cd "$PROJECT_DIR" && gh issue list --search "Program status in:title" --state open \\\n  --json number --jq \'.[0].number\' 2>/dev/null || true)\nif [ -n "${issue:-}" ] && [ "$issue" != "null" ]; then\n  (cd "$PROJECT_DIR" && gh issue comment "$issue" --body "$body") >/dev/null 2>&1 \\\n    && echo "$now" > "$MARKER" \\\n    && echo "watchdog: stale ${age_h}h — alerted on issue #$issue"\nelse\n  # No status issue (tracker not initialized, or gh unauthenticated): journal\n  # only. preflight already warns about the missing issue.\n  echo "watchdog: stale ${age_h}h — no Program status issue found; heartbeat likely dead" >&2\n  echo "$now" > "$MARKER"\nfi\nexit 0\n' : the watchdog must not call renew-active
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.040s
+
+FAILED (failures=3)

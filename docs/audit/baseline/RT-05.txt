@@ -1,0 +1,26 @@
+test_rt05_no_sudo_is_ever_invoked (tests.test_user_manager.RT05CapabilityAbsentButObtainable.test_rt05_no_sudo_is_ever_invoked) ... ok
+test_rt05_the_probe_precedes_every_mutation (tests.test_user_manager.RT05CapabilityAbsentButObtainable.test_rt05_the_probe_precedes_every_mutation) ... FAIL
+test_rt05_units_end_up_enabled_when_only_the_env_was_missing (tests.test_user_manager.RT05CapabilityAbsentButObtainable.test_rt05_units_end_up_enabled_when_only_the_env_was_missing) ... FAIL
+
+======================================================================
+FAIL: test_rt05_the_probe_precedes_every_mutation (tests.test_user_manager.RT05CapabilityAbsentButObtainable.test_rt05_the_probe_precedes_every_mutation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-9/tests/test_user_manager.py", line 217, in test_rt05_the_probe_precedes_every_mutation
+    self.assertTrue(probing, f"no read-only probe was ever issued: {calls}")
+AssertionError: [] is not true : no read-only probe was ever issued: []
+
+======================================================================
+FAIL: test_rt05_units_end_up_enabled_when_only_the_env_was_missing (tests.test_user_manager.RT05CapabilityAbsentButObtainable.test_rt05_units_end_up_enabled_when_only_the_env_was_missing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/beta-9/tests/test_user_manager.py", line 198, in test_rt05_units_end_up_enabled_when_only_the_env_was_missing
+    self.assertEqual(code, 0, f"install failed with a healthy manager:\n{out}")
+AssertionError: 127 != 0 : install failed with a healthy manager:
+bash: line 1: nightshift_install_user_units: command not found
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.018s
+
+FAILED (failures=2)

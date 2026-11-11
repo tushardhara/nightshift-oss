@@ -1,0 +1,16 @@
+test_unknown_schema_version_is_not_alive (test_beat.BeatValidationTest.test_unknown_schema_version_is_not_alive)
+SECURITY B1. `read_beat` checked that schema_version was PRESENT and ... FAIL
+
+======================================================================
+FAIL: test_unknown_schema_version_is_not_alive (test_beat.BeatValidationTest.test_unknown_schema_version_is_not_alive)
+SECURITY B1. `read_beat` checked that schema_version was PRESENT and
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/alpha-11-liveness/tests/test_beat.py", line 177, in test_unknown_schema_version_is_not_alive
+    self.assertEqual(code, 3)
+AssertionError: 0 != 3
+
+----------------------------------------------------------------------
+Ran 1 test in 0.261s
+
+FAILED (failures=1)

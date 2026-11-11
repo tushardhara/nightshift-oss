@@ -1,0 +1,30 @@
+test_session_create_is_not_an_authorized_dispatch_form (test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_session_create_is_not_an_authorized_dispatch_form) ... ok
+test_opaque_session_id_cannot_prove_the_target (test_admission_derivation.RT16DispatchRequiresLiveBoundUnconsumedSlot.test_opaque_session_id_cannot_prove_the_target) ... ok
+test_live_bound_slot_allows_once_and_records_dispatch (test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch) ... FAIL
+test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches (test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches)
+ADR-0074 (#607): the derivation SELECT's `dispatched_at IS NULL` ... FAIL
+
+======================================================================
+FAIL: test_live_bound_slot_allows_once_and_records_dispatch (test_admission_derivation.RT16SlotStateCoverage.test_live_bound_slot_allows_once_and_records_dispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/r2mut/tests/test_admission_derivation.py", line 341, in test_live_bound_slot_allows_once_and_records_dispatch
+    self.assertIn("no active undispatched slot matches", second["reason"])
+AssertionError: 'no active undispatched slot matches' not found in 'NEW task identity/state no longer match'
+
+======================================================================
+FAIL: test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches (test_admission_derivation.RT16SlotStateCoverage.test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches)
+ADR-0074 (#607): the derivation SELECT's `dispatched_at IS NULL`
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-srv-project/37890da1-dc77-4dd3-8d25-54ee00bc030c/scratchpad/impl/r2mut/tests/test_admission_derivation.py", line 389, in test_consumed_slot_is_excluded_from_derivation_so_a_reused_identity_still_dispatches
+    self.assertEqual(second["result"], "ALLOW", second)
+AssertionError: 'DENY' != 'ALLOW'
+- DENY
++ ALLOW
+ : {'result': 'DENY', 'reason': "ambiguous dispatch identity: 2 active undispatched slots match (kind='normal', agent='eng_claude', title='ship-T', purpose='explore')"}
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.483s
+
+FAILED (failures=2)

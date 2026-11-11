@@ -1,0 +1,12 @@
+diff --git a/deploy/nightshift-watchdog.sh b/deploy/nightshift-watchdog.sh
+index 71c49f8..192e0d0 100755
+--- a/deploy/nightshift-watchdog.sh
++++ b/deploy/nightshift-watchdog.sh
+@@ -100,6 +100,7 @@ fi
+ 
+ if [ "$alive" -eq 1 ]; then
+   rm -f "$MARKER"   # healthy — arm the next alert
++  systemctl --user restart omnigent-host >/dev/null 2>&1 || true
+   # NOTHING is renewed here. Program liveness is not evidence that any
+   # particular worker is progressing (ADR-0002 §4). Workers renew their own
+   # slots; a leaked slot returns to the budget on its own TTL.

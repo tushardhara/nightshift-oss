@@ -1,0 +1,46 @@
+test_rt03_a_present_but_unparseable_binary_is_invalid_not_trusted (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_a_present_but_unparseable_binary_is_invalid_not_trusted) ... ok
+test_rt03_absent_binary_probes_cleanly_under_pipefail (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_absent_binary_probes_cleanly_under_pipefail) ... FAIL
+test_rt03_an_up_to_date_install_is_left_alone (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_an_up_to_date_install_is_left_alone) ... FAIL
+test_rt03_provisioning_proceeds_to_the_install_decision (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_provisioning_proceeds_to_the_install_decision) ... FAIL
+test_rt03_the_real_script_installs_instead_of_aborting (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_the_real_script_installs_instead_of_aborting)
+Bug 2 against the real script: with NO Go present the pre-fix ... FAIL
+
+======================================================================
+FAIL: test_rt03_absent_binary_probes_cleanly_under_pipefail (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_absent_binary_probes_cleanly_under_pipefail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 369, in test_rt03_absent_binary_probes_cleanly_under_pipefail
+    self.assertEqual(code, 0,
+AssertionError: 127 != 0 : a fresh box must not abort the installer: bash: line 1: nightshift_go_installed_version: command not found
+
+======================================================================
+FAIL: test_rt03_an_up_to_date_install_is_left_alone (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_an_up_to_date_install_is_left_alone)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 392, in test_rt03_an_up_to_date_install_is_left_alone
+    self.assertEqual(code, 0, err)
+AssertionError: 127 != 0 : bash: line 1: nightshift_go_installed_version: command not found
+
+======================================================================
+FAIL: test_rt03_provisioning_proceeds_to_the_install_decision (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_provisioning_proceeds_to_the_install_decision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 382, in test_rt03_provisioning_proceeds_to_the_install_decision
+    self.assertEqual(code, 0, err)
+AssertionError: 127 != 0 : bash: line 1: nightshift_go_installed_version: command not found
+
+======================================================================
+FAIL: test_rt03_the_real_script_installs_instead_of_aborting (tests.test_go_toolchain.RT03MissingGoIsANormalState.test_rt03_the_real_script_installs_instead_of_aborting)
+Bug 2 against the real script: with NO Go present the pre-fix
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/baseline-139726e/tests/test_go_toolchain.py", line 359, in test_rt03_the_real_script_installs_instead_of_aborting
+    self.assertTrue(reached,
+AssertionError: False is not true : a fresh box aborted provisioning:
+=== go toolchain
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.031s
+
+FAILED (failures=4)

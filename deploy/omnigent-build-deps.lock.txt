@@ -1,0 +1,19 @@
+# Build backends for omnigent (setuptools) and its two SDK packages (hatchling),
+# which `uv tool install` builds from the pinned Git commit. Passed as
+# --build-constraints so the backend versions cannot float.
+#
+# VERSIONS ONLY, stated plainly: uv does not enforce hashes on build
+# constraints (measured: a wrong setuptools sha256 here still built), so a
+# hash in this file would look like verification without being one. Bump
+# these together with deploy/omnigent-deps.lock.txt.
+#
+# The build also runs omnigent's web UI step, a frozen-lockfile install that
+# is locked by omnigent's own JavaScript lockfile at the pinned commit,
+# integrity hashes included.
+hatchling==1.33.0
+packaging==26.3
+pathspec==1.1.1
+pluggy==1.7.0
+setuptools==84.2.1
+tomlkit==0.15.0
+trove-classifiers==2026.9.21.13

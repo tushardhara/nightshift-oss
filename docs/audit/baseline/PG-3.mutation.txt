@@ -1,0 +1,38 @@
+PASS  PG3-A   expect=red   got=red    (0.2s)  bin/nightshift_publication.py
+          guard 1 of 3: producer identity, at review()
+          test: test_publication_gateway.RefusalSelfReview.test_producer_cannot_review_own_publication_and_writes_nothing
+          -> FAIL: test_producer_cannot_review_own_publication_and_writes_nothing (test_publication_gateway.RefusalSelfReview.test_producer_cannot_review_own_publication_and_writes_nothing)
+PASS  PG3-B   expect=red   got=red    (0.2s)  bin/nightshift_publication.py
+          guard 2 of 3: same producer_run_id, at review()
+          test: test_publication_gateway.RefusalSelfReview.test_self_review_same_run_is_refused_and_writes_nothing
+          -> FAIL: test_self_review_same_run_is_refused_and_writes_nothing (test_publication_gateway.RefusalSelfReview.test_self_review_same_run_is_refused_and_writes_nothing)
+PASS  PG3-C   expect=red   got=red    (0.2s)  bin/nightshift_publication.py
+          guard 3 of 3: laundering via derived_from_stage_id, at review()
+          test: test_publication_gateway.RefusalSelfReview.test_self_review_via_lineage_is_refused_and_writes_nothing
+          -> FAIL: test_self_review_via_lineage_is_refused_and_writes_nothing (test_publication_gateway.RefusalSelfReview.test_self_review_via_lineage_is_refused_and_writes_nothing)
+PASS  PG3-D   expect=red   got=red    (0.2s)  bin/nightshift_publication.py
+          canonicalization dropped -- 'Eng_Bob' vs 'eng_bob' would pass
+          test: test_publication_gateway.RefusalSelfReview.test_producer_cannot_review_own_publication_and_writes_nothing
+          -> FAIL: test_producer_cannot_review_own_publication_and_writes_nothing (test_publication_gateway.RefusalSelfReview.test_producer_cannot_review_own_publication_and_writes_nothing)
+PASS  PG3-E   expect=red   got=red    (0.6s)  bin/nightshift_publication.py
+          GAP FOUND: nothing covered the approve()-time re-assertion (124 tests, OK). Closed by test_pg3_selfreview_depth.
+          test: test_pg3_selfreview_depth.SelfReviewIsReAssertedAtApprove
+          -> FAIL: test_approve_refuses_a_planted_same_run_review (test_pg3_selfreview_depth.SelfReviewIsReAssertedAtApprove.test_approve_refuses_a_planted_same_run_review)
+          -> FAIL: test_approve_refuses_a_self_review_row_planted_around_review (test_pg3_selfreview_depth.SelfReviewIsReAssertedAtApprove.test_approve_refuses_a_self_review_row_planted_around_review)
+PASS  PG3-F   expect=red   got=red    (0.7s)  bin/nightshift_publication.py
+          GAP FOUND: nothing covered the apply()-time re-assertion (124 tests, OK). Closed by test_pg3_selfreview_depth.
+          test: test_pg3_selfreview_depth.SelfReviewIsReAssertedAtApply
+          -> FAIL: test_apply_refuses_a_presented_stage_the_authorizing_reviewer_produced (test_pg3_selfreview_depth.SelfReviewIsReAssertedAtApply.test_apply_refuses_a_presented_stage_the_authorizing_reviewer_produced)
+          -> FAIL: test_apply_refuses_when_the_presented_stage_descends_from_the_reviewers_work (test_pg3_selfreview_depth.SelfReviewIsReAssertedAtApply.test_apply_refuses_when_the_presented_stage_descends_from_the_reviewers_work)
+PASS  PG3-G   expect=red   got=red    (0.4s)  bin/nightshift_publication.py
+          GAP FOUND: the ancestry walk was only proven one hop deep (124 tests, OK). Closed by test_pg3_selfreview_depth.
+          test: test_pg3_selfreview_depth.SelfReviewLineageWalkIsDeeperThanOneHop
+          -> FAIL: test_laundering_at_the_last_hop_the_walk_is_allowed_to_see_is_refused (test_pg3_selfreview_depth.SelfReviewLineageWalkIsDeeperThanOneHop.test_laundering_at_the_last_hop_the_walk_is_allowed_to_see_is_refused)
+          -> FAIL: test_two_hop_laundering_is_refused (test_pg3_selfreview_depth.SelfReviewLineageWalkIsDeeperThanOneHop.test_two_hop_laundering_is_refused)
+PASS  PG3-H   expect=red   got=red    (0.4s)  bin/nightshift_publication.py
+          the walk bound itself. NOTE: the first version of the new test read the depth from NSP.ANCESTRY_WALK_LIMIT and therefore shrank WITH the defect -- a self-healing test, caught by this case and rewritten to use a literal.
+          test: test_pg3_selfreview_depth.SelfReviewLineageWalkIsDeeperThanOneHop
+          -> FAIL: test_laundering_at_the_last_hop_the_walk_is_allowed_to_see_is_refused (test_pg3_selfreview_depth.SelfReviewLineageWalkIsDeeperThanOneHop.test_laundering_at_the_last_hop_the_walk_is_allowed_to_see_is_refused)
+          -> FAIL: test_the_documented_ancestry_walk_limit_has_not_shrunk (test_pg3_selfreview_depth.SelfReviewLineageWalkIsDeeperThanOneHop.test_the_documented_ancestry_walk_limit_has_not_shrunk)
+
+8/8 cases behaved as recorded

@@ -1,0 +1,25 @@
+test_no_curl_pipes_into_an_early_closing_consumer (tests.test_go_toolchain.BothSitesFixed.test_no_curl_pipes_into_an_early_closing_consumer) ... FAIL
+test_pipefail_is_not_disabled_anywhere (tests.test_go_toolchain.BothSitesFixed.test_pipefail_is_not_disabled_anywhere) ... ok
+test_provisioning_uses_the_tested_helpers (tests.test_go_toolchain.BothSitesFixed.test_provisioning_uses_the_tested_helpers) ... ok
+
+======================================================================
+FAIL: test_no_curl_pipes_into_an_early_closing_consumer (tests.test_go_toolchain.BothSitesFixed.test_no_curl_pipes_into_an_early_closing_consumer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/srv/project/.worktrees/381-392-quick-fixes/tests/test_go_toolchain.py", line 486, in test_no_curl_pipes_into_an_early_closing_consumer
+    self.assertEqual(
+AssertionError: Lists differ: ['237: go_want_regression="$(curl -fsSL \'[40 chars]1)"'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'237: go_want_regression="$(curl -fsSL \'https://go.dev/VERSION?m=text\' | head -1)"'
+
++ []
+- ['237: go_want_regression="$(curl -fsSL \'https://go.dev/VERSION?m=text\' | '
+-  'head -1)"'] : a network producer still feeds an early-closing consumer under `pipefail` — this is the defect, at whichever site:
+  237: go_want_regression="$(curl -fsSL 'https://go.dev/VERSION?m=text' | head -1)"
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.004s
+
+FAILED (failures=1)

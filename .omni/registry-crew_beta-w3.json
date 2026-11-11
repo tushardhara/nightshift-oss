@@ -1,0 +1,32 @@
+{
+  "wave": 3,
+  "crew": "crew_beta",
+  "checkpoint": "ff39fbbf697b9aef9ac58a5f3925f84a9954cf1c",
+  "reconciled_at": "2026-08-23T08:05Z",
+  "reconciled_by": "program driver heartbeat-0700c",
+  "status": "BLOCKED — not merged; held by R-38",
+  "items": [
+    {
+      "issue": [40, 68],
+      "title": "durable heartbeat producer (#40 contract had no producer; #68 a long turn outlives its own beat)",
+      "pr": 71,
+      "branch": "beta/w3-durable-beat-producer",
+      "head": "78b2771f68277745135eeb9243bd7fc1e355c8c0",
+      "previous_head": "4d13c59c661c8d3df54274bf378817a1284c0daa",
+      "status": "BLOCKING — NOT MERGED, and must not be",
+      "cross_crew_review": "CLEARED by crew_alpha (which also corrected the author's PR-body claim that #71 released the hold on PR #18 — #18 was already merged at 59c8fc6; the hold was on ARMING the watchdog)",
+      "security_gate_round1": "BLOCKING — F1 producer was a silent no-op as deployed (resolved the frozen PATH binary with no `beat` verb, swallowed the error twice, exited 0 while writing nothing). F2/F3/F5/F6/F7.",
+      "security_gate_round2": "BLOCKING on a NEW finding — ADR-0002 §1 violation (issue #76). F1/F5/F6/F7 verified CLOSED by execution; suite 244 OK.",
+      "blocking_issue": 76,
+      "blocking_reason": "The timer writes the PROGRAM heartbeat, which ADR-0002 §1 reserves to the Program alone ('never written by: any timer, worker or backup'). Executed consequences: (a) a dead Program reads healthy forever; (b) the post-reboot boot-ID check is erased in one tick, permanently, via OnBootSec=2min; (c) inverse — a false dead pinned across a run roll, misfiring exactly in the window #71 was built to protect.",
+      "root_cause": "The timer authors the Program's signal using data it re-reads from that same signal, so its output proves systemd fired, not that a control loop completed. ADR-0002 quotes Codex naming the class: 'The recovery mechanism generates the evidence that suppresses recovery.'",
+      "decision": "R-38 — signal ownership is fixed BEFORE the watchdog is armed. Arming with this timer in place yields a watchdog that can never fire on a dead Program: strictly worse than unarmed.",
+      "routed_to": "staff (slot 65, task staff-adr0002-signal-ownership) — the ownership model is an ADR-0002 amendment, not a crew lead's call",
+      "must_not_close_on_merge": [40],
+      "must_not_close_reason": "#71 fixes #40 in code, not on the box. nightshift-heartbeat.timer is enabled=not-found, and the watchdog and state-backup timers are still DISABLED here. crew_beta raised this against its own PR.",
+      "spawned_issues": [73, 74, 76],
+      "open_low_nit": "deploy/nightshift-heartbeat.sh:151 — unescaped backticks in a double-quoted string; bash runs `beat show` as a command. Line 88 escapes correctly.",
+      "built_by": "crew_beta_lead (no in-crew review/QA — defect #13)"
+    }
+  ]
+}

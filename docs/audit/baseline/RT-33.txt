@@ -1,0 +1,16 @@
+test_reviewer_continuation_succeeds_qa_continuation_still_denied (test_admission_gate.SharedFunctionAdmissionSeed.test_reviewer_continuation_succeeds_qa_continuation_still_denied)
+RT-33 (DoD condition 18/#488): after seeding, `reviewer_*`/ ... FAIL
+
+======================================================================
+FAIL: test_reviewer_continuation_succeeds_qa_continuation_still_denied (test_admission_gate.SharedFunctionAdmissionSeed.test_reviewer_continuation_succeeds_qa_continuation_still_denied)
+RT-33 (DoD condition 18/#488): after seeding, `reviewer_*`/
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/rt-baseline-2d1813fe/tests/test_admission_gate.py", line 1152, in test_reviewer_continuation_succeeds_qa_continuation_still_denied
+    self.assertEqual(code, 0, seeded)
+AssertionError: 2 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.494s
+
+FAILED (failures=1)
