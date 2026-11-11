@@ -958,8 +958,10 @@ class FenceConfigurationOwnership(unittest.TestCase):
         self.assertGreaterEqual(int(hits[0].split()[1]), 3, hits[0])
 
     def test_root_owned_files_are_ok(self):
+        # /etc, not /usr/share: GitHub's hosted runners ship /usr/share
+        # world-writable, and the ancestor walk rightly fails that.
         _, out = run_preflight(env={"NIGHTSHIFT_SERVER_ENV": "/etc/passwd",
-                                    "TEAMS_DIR": "/usr/share/nonexistent-bundle"})
+                                    "TEAMS_DIR": "/etc/nonexistent-bundle"})
         self.assertFalse(lines_for(out, "fence-configuration path(s) writable by"), out)
         self.assertTrue(lines_for(out, "not writable by"), out)
 
